@@ -50,3 +50,31 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = 'users'
         db_table_comment = 'Stores user profiles, driving social features and personalization'
+
+class Follows(models.Model):
+    FOLLOW_SOURCES = [
+        ('Search', 'Search'),
+        ('Swap', 'Swap'),
+        ('Chat', 'Chat'),
+        ('Recommendation', 'Recommendation'),
+    ]
+
+    follow_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    follower = models.ForeignKey(CustomUser, related_name='following', on_delete=models.CASCADE)
+    followed = models.ForeignKey(CustomUser, related_name='followers', on_delete=models.CASCADE)
+    is_mutual = models.BooleanField(default=False, help_text='Precomputed mutual status to accelerate chat unlocks')
+    active = models.BooleanField(default=True, help_text='Soft deletion for unfollow events, keeps social history')
+    source = models.CharField(max_length=20, choices=FOLLOW_SOURCES, default='Search', help_text='Origin of follow for funnel analysis and personalization')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'follows'
+        db_table_comment = 'Manages user follows to drive chats, personalization, and feed logic'
+        unique_together = ('follower', 'followed')
+        indexes = [
+            models.Index(fields=['follower'], name='idx_follows_follower_id'),
+            models.Index(fields=['followed'], name='idx_follows_followed_id'),
+        ]
+
+    def __str__(self):
+        return f"{self.follower.username} follows {self.followed.username}"
