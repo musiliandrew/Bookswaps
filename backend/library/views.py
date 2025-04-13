@@ -1,11 +1,14 @@
 from rest_framework import generics, filters, permissions, status
-from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Books, Libraries
-from .serializers import LibraryBookSerializer, BookDetailSerializer, BookSearchSerializer, AddBookSerializer, UserLibraryBookSerializer, BookAvailabilityUpdateSerializer
+from .models import Books, Libraries, Bookmarks, Favorites
+from .serializers import LibraryBookSerializer, BookDetailSerializer, BookSearchSerializer, AddBookSerializer, UserLibraryBookSerializer, BookAvailabilityUpdateSerializer, BookMiniSerializer
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+import uuid
+from rest_framework.permissions import IsAuthenticated
 
 class BookListView(generics.ListAPIView):
     serializer_class = LibraryBookSerializer
@@ -154,3 +157,104 @@ class RemoveBookFromLibraryView(generics.DestroyAPIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+
+class BookmarkBookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, book_id):
+        # Get the book by its UUID
+        book = get_object_or_404(Books, book_id=book_id)
+        
+        # Check if the user has already bookmarked the book
+        if Bookmarks.objects.filter(user=request.user, book=book).exists():
+            raise ValidationError("You have already bookmarked this book.")
+
+        # Create the bookmark entry
+        bookmark = Bookmarks.objects.create(
+            user=request.user,
+            book=book,
+            active=True,  # Mark the bookmark as active by default
+            created_at=request.timestamp(),  # Assuming you have a timestamp method
+        )
+        
+        # Return the response with the bookmark ID
+        return Response({
+            'bookmark_id': bookmark.bookmark_id,
+            'book_id': book.book_id,
+            'user_id': request.user.id,
+        }, status=status.HTTP_201_CREATED)
+        
+class RemoveBookmarkView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, book_id):
+        # Ensure the book exists
+        book = get_object_or_404(Books, book_id=book_id)
+
+        # Find the bookmark
+        try:
+            bookmark = Bookmarks.objects.get(user=request.user, book=book)
+        except Bookmarks.DoesNotExist:
+            raise NotFound("Bookmark not found.")
+
+        # Delete the bookmark
+        bookmark.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)        
+
+class FavoriteBookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, book_id):
+        book = get_object_or_404(Books, book_id=book_id)
+
+        # Check if already favorited
+        if Favorites.objects.filter(user=request.user, book=book, active=True).exists():
+            raise ValidationError("Book already favorited.")
+
+        favorite = Favorites.objects.create(
+            favorite_id=uuid.uuid4(),
+            user=request.user,
+            book=book,
+            active=True
+        )
+
+        return Response({
+            "favorite_id": str(favorite.favorite_id),
+            "book_id": str(book.book_id),
+            "user_id": str(request.user.id),
+        }, status=status.HTTP_201_CREATED)
+        
+class UnfavoriteBookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, book_id):
+        try:
+            favorite = Favorites.objects.get(user=request.user, book__book_id=book_id, active=True)
+        except Favorites.DoesNotExist:
+            raise NotFound("Favorite not found.")
+
+        favorite.delete()  # or favorite.active = False; favorite.save() for soft delete
+
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
+    
+class MyBookmarksView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BookMiniSerializer
+
+    def get_queryset(self):
+        return Books.objects.filter(
+            bookmarks__user=self.request.user,
+            bookmarks__active=True
+        )
+
+
+class MyFavoritesView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BookMiniSerializer
+
+    def get_queryset(self):
+        return Books.objects.filter(
+            favorites__user=self.request.user,
+            favorites__active=True
+        )

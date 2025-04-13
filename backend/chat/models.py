@@ -20,7 +20,13 @@ class Chats(models.Model):
     class Meta:
         db_table = 'chats'
         db_table_comment = 'Stores private Chat Forum messages'
+        indexes = [
+            models.Index(fields=['sender', 'receiver']),
+            models.Index(fields=['created_at']),
+        ]
 
+    def __str__(self):
+        return f"{self.sender.username} to {self.receiver.username}: {self.content[:50]}..."
 
 class Societies(models.Model):
     society_id = models.UUIDField(primary_key=True)
@@ -37,6 +43,10 @@ class Societies(models.Model):
     class Meta:
         db_table = 'societies'
         db_table_comment = 'Stores Chat Forum Societies (group chats)'
+        indexes = [models.Index(fields=['focus_type', 'focus_id'])]
+
+    def __str__(self):
+        return f"{self.name} ({self.focus_type})"
         
 class SocietyMembers(models.Model):
     member_id = models.UUIDField(primary_key=True)
@@ -51,6 +61,10 @@ class SocietyMembers(models.Model):
         db_table = 'society_members'
         unique_together = (('society', 'user'),)
         db_table_comment = 'Tracks Society membership, roles, and member lifecycle'
+        indexes = [models.Index(fields=['society', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} in {self.society.name} ({self.role})"
 
 
 class SocietyMessages(models.Model):
@@ -67,3 +81,10 @@ class SocietyMessages(models.Model):
     class Meta:
         db_table = 'society_messages'
         db_table_comment = 'Stores Society chat messages for group interactions'
+        indexes = [
+            models.Index(fields=['society']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} in {self.society.name}: {self.content[:50]}..."

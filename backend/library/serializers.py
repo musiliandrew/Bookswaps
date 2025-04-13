@@ -107,3 +107,9 @@ class BookAvailabilityUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Books
         fields = ['available_for_exchange', 'available_for_borrow']
+        
+        
+class BookMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Books
+        fields = ['book_id', 'title', 'author']
