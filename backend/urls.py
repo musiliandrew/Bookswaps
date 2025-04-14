@@ -5,4 +5,5 @@ urlpatterns = [
     path('api/library/', include('library.urls')),
     path('api/discussions/', include('discussions.urls')),
     path('api/chat/', include('chat.urls')),
+    path('api/swaps/', include('swaps.urls')),
 ]

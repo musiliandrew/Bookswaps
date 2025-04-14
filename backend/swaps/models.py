@@ -28,6 +28,13 @@ class Swaps(models.Model):
     class Meta:
         db_table = 'swaps'
         db_table_comment = 'Tracks book exchange logic, locations, statuses, and confirmations between users'
+        indexes = [
+            models.Index(fields=['initiator', 'receiver']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"Swap {self.swap_id}: {self.initiator.username} ↔ {self.receiver.username}"
         
         
 class Shares(models.Model):
@@ -45,6 +52,10 @@ class Shares(models.Model):
         db_table = 'shares'
         unique_together = (('user', 'content_type', 'content_id', 'destination'),)
         db_table_comment = 'Tracks sharing of books, discussions, profiles, and swaps for visibility analysis'
+        indexes = [models.Index(fields=['user', 'book', 'swap'])]
+
+    def __str__(self):
+        return f"{self.user.username} shared on {self.platform}"
         
 class Notifications(models.Model):
     notification_id = models.UUIDField(primary_key=True)
@@ -60,7 +71,13 @@ class Notifications(models.Model):
     class Meta:
         db_table = 'notifications'
         db_table_comment = 'Sends alerts for swaps, bookmarks, chats, and system events'
-        
+        indexes = [
+            models.Index(fields=['user', 'is_read']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username}: {self.type} notification"
         
 class Locations(models.Model):
     location_id = models.UUIDField(primary_key=True)
@@ -79,3 +96,7 @@ class Locations(models.Model):
         db_table = 'locations'
         unique_together = (('name', 'city'),)
         db_table_comment = 'Caches public exchange spots with coordinates and ratings for swap logic'
+        indexes = [models.Index(fields=['user'])]
+
+    def __str__(self):
+        return f"{self.user.username}: ({self.latitude}, {self.longitude})"
