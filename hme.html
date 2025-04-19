@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookSwap - Book List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4B0082',
+            secondary: '#FFD700',
+            success: '#00C851',
+            neutral: '#F5F5F5',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-neutral text-gray-900">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <select class="border rounded-lg p-2 focus:ring-2 focus:ring-primary">
+          <option>All Genres</option>
+          <option>Sci-Fi</option>
+          <option>Fantasy</option>
+        </select>
+        <select class="border rounded-lg p-2 focus:ring-2 focus:ring-primary">
+          <option>All Availability</option>
+          <option>Available for Exchange</option>
+          <option>Available for Borrow</option>
+          <option>Both</option>
+        </select>
+        <select class="border rounded-lg p-2 focus:ring-2 focus:ring-primary">
+          <option>Sort by Title</option>
+          <option>Sort by Author</option>
+          <option>Newest First</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Book Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Example Book Card -->
+      <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+        <div class="relative h-64 bg-secondary">
+          <img src="https://via.placeholder.com/200x300" class="w-full h-full object-cover" alt="Book Cover" />
+          <div class="absolute top-2 right-2 flex gap-2">
+            <span class="bg-success text-white px-2 py-1 rounded-full text-xs font-medium">Exchange</span>
+            <span class="bg-secondary text-primary px-2 py-1 rounded-full text-xs font-medium">Borrow</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-xl truncate">The Great Book</h3>
+          <p class="text-gray-600 text-sm mb-2">John Doe</p>
+          <div class="flex items-center justify-between text-sm">
+            <span class="bg-neutral px-2 py-1 rounded-md">Fantasy</span>
+            <div class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196z" />
+              </svg>
+              <span class="text-gray-600">nerdy_reader88</span>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <button class="bg-primary text-white py-2 rounded-lg hover:bg-opacity-90 flex items-center justify-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M18 10c0 1.105-.895 2-2 2H4c-1.105 0-2-.895-2-2s.895-2 2-2h12c1.105 0 2 .895 2 2z" />
+              </svg>
+              Details
+            </button>
+            <button class="border border-primary text-primary py-2 rounded-lg hover:bg-secondary flex items-center justify-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4 3a2 2 0 012-2h8a2 2 0 012 2v14l-6-3-6 3V3z" />
+              </svg>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-center gap-4">
+      <button class="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-opacity-90">Previous</button>
+      <span class="self-center text-gray-600">Page 1 of 10</span>
+      <button class="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-opacity-90">Next</button>
+    </div>
+  </div>
+</body>
+</html>

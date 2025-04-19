@@ -6,6 +6,10 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from discussions.models import Discussions
+from chat.models import Societies
+from users.serializers import UserSerializer
+from library.serializers import BookSerializer
 
 User = get_user_model()
 
@@ -69,18 +73,24 @@ class BookMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = Books
         fields = ['book_id', 'title']
+        
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Locations
+        fields = ['location_id', 'name', 'city', 'coords', 'type', 'rating', 'verified', 'popularity_score']
 
 class SwapSerializer(serializers.ModelSerializer):
-    initiator = UserMiniSerializer()
-    receiver = UserMiniSerializer()
-    initiator_book = BookMiniSerializer()
-    receiver_book = BookMiniSerializer(allow_null=True)
+    initiator = UserSerializer(read_only=True)
+    receiver = UserSerializer(read_only=True)
+    initiator_book = BookSerializer(read_only=True)
+    receiver_book = BookSerializer(read_only=True)
+    meetup_location = LocationSerializer(read_only=True)
     qr_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Swaps
         fields = ['swap_id', 'initiator', 'receiver', 'initiator_book', 'receiver_book', 'status', 'meetup_location', 'meetup_time', 'locked_until', 'qr_url']
-        
+
     def get_qr_url(self, obj):
         if obj.qr_code_id:
             return f"{settings.STATIC_URL}qr/{obj.qr_code_id}.png"
@@ -89,12 +99,11 @@ class SwapSerializer(serializers.ModelSerializer):
 class SwapAcceptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Swaps
-        fields = ['meetup_time', 'meetup_location', 'status']
+        fields = ['meetup_location', 'meetup_time', 'status']
 
     def validate_meetup_location(self, value):
-        required_keys = {'latitude', 'longitude', 'address'}
-        if not all(key in value for key in required_keys):
-            raise serializers.ValidationError("meetup_location must include latitude, longitude, and address")
+        if not Locations.objects.filter(location_id=value.location_id, is_active=True).exists():
+            raise serializers.ValidationError("Invalid or inactive location")
         return value
     
 class SwapConfirmSerializer(serializers.Serializer):
@@ -112,47 +121,10 @@ class BookShortSerializer(serializers.ModelSerializer):
 
 
         
-class LocationSerializer(serializers.Serializer):
-    latitude = serializers.FloatField()
-    longitude = serializers.FloatField()
-    is_default = serializers.BooleanField(default=False)
-
-    def validate_latitude(self, value):
-        if not -90 <= value <= 90:
-            raise serializers.ValidationError("Latitude must be between -90 and 90.")
-        return value
-
-    def validate_longitude(self, value):
-        if not -180 <= value <= 180:
-            raise serializers.ValidationError("Longitude must be between -180 and 180.")
-        return value
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        coords = {
-            "lat": validated_data.pop("latitude"),
-            "lng": validated_data.pop("longitude")
-        }
-
-        location = Locations.objects.create(
-            user=user,
-            coords=coords,
-            is_default=validated_data.get('is_default', False),
-            name="User Drop",
-            type="User Submitted",
-            city="Unknown",  # optional, can be updated later with reverse geocode
-            is_active=True,
-            verified=False,
-        )
-        return location
-
-    def to_representation(self, instance):
-        return {
-            "location_id": str(instance.location_id),
-            "latitude": instance.coords.get("lat"),
-            "longitude": instance.coords.get("lng"),
-            "is_default": instance.is_default
-        }
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Locations
+        fields = ['location_id', 'name', 'city', 'coords', 'type', 'rating', 'verified', 'popularity_score']
         
 class NotificationSerializer(serializers.ModelSerializer):
     # Serialize related book information if it exists
@@ -166,34 +138,44 @@ class NotificationSerializer(serializers.ModelSerializer):
         ]
         
 class ShareSerializer(serializers.ModelSerializer):
-    book_id = serializers.UUIDField(write_only=True, required=False)
-    swap_id = serializers.UUIDField(write_only=True, required=False)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Shares
-        fields = ['share_id', 'user', 'book_id', 'swap_id', 'platform', 'content', 'book', 'swap']
-        read_only_fields = ['share_id', 'user', 'book', 'swap']
+        fields = [
+            'share_id', 'user', 'content_type', 'content_id', 'destination',
+            'platform', 'is_reshare', 'metadata', 'created_at'
+        ]
+        read_only_fields = ['user', 'share_id', 'created_at']
 
-    def validate_platform(self, value):
-        allowed = ['Twitter', 'Facebook', 'LinkedIn', 'WhatsApp']
-        if value not in allowed:
-            raise serializers.ValidationError(f"Unsupported platform. Choose from: {', '.join(allowed)}.")
-        return value
+    def validate(self, data):
+        content_type = data.get('content_type')
+        content_id = data.get('content_id')
 
-    def validate(self, attrs):
-        if not attrs.get('book_id') and not attrs.get('swap_id'):
-            raise ValidationError("You must provide either a book_id or a swap_id to share.")
-        return attrs
+        # Validate content_id based on content_type
+        content_models = {
+            'book': Books,
+            'discussion': Discussions,
+            'profile': CustomUser,
+            'swap': Swaps,
+            'society': Societies
+        }
+        if content_type not in content_models:
+            raise serializers.ValidationError(f"Invalid content_type: {content_type}")
+        
+        model = content_models[content_type]
+        if not model.objects.filter(**{f"{content_type}_id": content_id}).exists():
+            raise serializers.ValidationError(f"No {content_type} found with ID {content_id}")
+
+        # Validate metadata (optional)
+        metadata = data.get('metadata')
+        if metadata and not isinstance(metadata, dict):
+            raise serializers.ValidationError("Metadata must be a JSON object")
+
+        return data
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        book = None
-        swap = None
-
-        if 'book_id' in validated_data:
-            book = Books.objects.get(book_id=validated_data.pop('book_id'))
-
-        if 'swap_id' in validated_data:
-            swap = Swaps.objects.get(swap_id=validated_data.pop('swap_id'))
-
-        return Shares.objects.create(user=user, book=book, swap=swap, **validated_data)
+        return Shares.objects.create(
+            user=self.context['user'],
+            **validated_data
+        )

@@ -11,8 +11,10 @@ from django.db import transaction
 from .serializers import SwapCreateSerializer, SwapSerializer, SwapAcceptSerializer, LocationSerializer, NotificationSerializer, ShareSerializer
 from library.models import Books, Libraries, BookHistory
 from rest_framework.pagination import PageNumberPagination
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 from django.db.models import Q
-from users.models import CustomUser
+
 import uuid
 import qrcode 
 from django.conf import settings
@@ -328,26 +330,29 @@ class MarkNotificationReadView(APIView):
         
 class ShareView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
-        serializer = ShareSerializer(data=request.data, context={'request': request})
+        serializer = ShareSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
-            share = serializer.save(user=request.user)
-            return Response(ShareSerializer(share).data, status=status.HTTP_201_CREATED)
+            share = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class MidpointView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request, other_user_id):
-        user_location = Locations.objects.filter(user=request.user, is_default=True).first()
-        other_location = Locations.objects.filter(user__user_id=other_user_id, is_default=True).first()
-        if not (user_location and other_location):
-            return Response({"error": "Missing location"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Calculate midpoint coordinates
-        lat = (user_location.latitude + other_location.latitude) / 2
-        lon = (user_location.longitude + other_location.longitude) / 2
-        
+    def get(self, request):
+        # Expect user to provide their coords and other user's coords
+        user_lat = float(request.query_params.get('user_lat'))
+        user_lon = float(request.query_params.get('user_lon'))
+        other_lat = float(request.query_params.get('other_lat'))
+        other_lon = float(request.query_params.get('other_lon'))
+
+        if not all([user_lat, user_lon, other_lat, other_lon]):
+            return Response({"error": "Missing coordinates"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate midpoint
+        lat = (user_lat + other_lat) / 2
+        lon = (user_lon + other_lon) / 2
+
         # Get formatted address from Google Maps
         try:
             response = requests.get(
@@ -355,19 +360,27 @@ class MidpointView(APIView):
             )
             response.raise_for_status()
             data = response.json()
-            if data['status'] == 'OK' and data['results']:
-                address = data['results'][0]['formatted_address']
-            else:
-                address = "Unknown location"
+            address = data['results'][0]['formatted_address'] if data['status'] == 'OK' and data['results'] else "Unknown location"
         except requests.RequestException:
             address = "Geocoding failed"
-        
-        midpoint = {
-            "latitude": lat,
-            "longitude": lon,
-            "address": address
-        }
-        return Response({"midpoint": midpoint})
+
+        # Find nearby active locations (within 5km, sorted by popularity)
+        midpoint = Point(lon, lat, srid=4326)
+        nearby_locations = Locations.objects.filter(
+            is_active=True
+        ).annotate(
+            distance=Distance('coords', midpoint)
+        ).order_by('-popularity_score', 'distance')[:5]
+
+        serializer = LocationSerializer(nearby_locations, many=True)
+        return Response({
+            "midpoint": {
+                "latitude": lat,
+                "longitude": lon,
+                "address": address
+            },
+            "suggested_locations": serializer.data
+        })
     
 class GetQRCodeView(APIView):
     permission_classes = [IsAuthenticated]

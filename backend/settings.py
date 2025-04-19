@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'channels',
+    'django.contrib.gis',
     
     #apps
     'backend.users.apps.UsersConfig',
