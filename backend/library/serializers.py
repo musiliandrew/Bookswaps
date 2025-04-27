@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from django.utils.timezone import now
+from django.utils import timezone
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from .models import Book, BookHistory, Library, Bookmark, Favorite, PopularBook
 from backend.users.models import CustomUser
 from backend.swaps.models import Swap
@@ -9,9 +10,6 @@ from backend.users.serializers import UserMiniSerializer
 import requests
 import uuid
 import re
-from django.db import transaction
-
-
 
 def fetch_open_library_data(isbn):
     """Fetch book data from Open Library API, cache for 24 hours."""
@@ -39,12 +37,10 @@ def fetch_open_library_data(isbn):
     except (requests.RequestException, ValueError):
         return {}
 
-
 class BookMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['book_id', 'title', 'author']
-
 
 class BookHistorySerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
@@ -54,21 +50,19 @@ class BookHistorySerializer(serializers.ModelSerializer):
         model = BookHistory
         fields = ['history_id', 'user', 'swap_id', 'status', 'start_date', 'end_date', 'notes']
 
-
 class LibraryBookSerializer(serializers.ModelSerializer):
-    owner = UserMiniSerializer(read_only=True)
+    user = UserMiniSerializer(read_only=True)
 
     class Meta:
         model = Book
         fields = [
             'book_id', 'title', 'author', 'genre', 'cover_image_url',
-            'available_for_exchange', 'available_for_borrow', 'owner',
+            'available_for_exchange', 'available_for_borrow', 'user',
             'qr_code_url', 'condition', 'locked_until'
         ]
 
-
 class BookDetailSerializer(serializers.ModelSerializer):
-    owner = UserMiniSerializer(read_only=True)
+    user = UserMiniSerializer(read_only=True)
     original_owner = UserMiniSerializer(read_only=True)
     history = serializers.SerializerMethodField()
 
@@ -77,7 +71,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = [
             'book_id', 'title', 'author', 'genre', 'synopsis', 'isbn',
             'cover_image_url', 'available_for_exchange', 'available_for_borrow',
-            'owner', 'original_owner', 'qr_code_url', 'condition', 'copy_count',
+            'user', 'original_owner', 'qr_code_url', 'condition', 'copy_count',
             'locked_until', 'created_at', 'updated_at', 'history'
         ]
 
@@ -85,11 +79,9 @@ class BookDetailSerializer(serializers.ModelSerializer):
         history_qs = BookHistory.objects.filter(book=obj).select_related('user', 'swap').order_by('-start_date')[:5]
         return BookHistorySerializer(history_qs, many=True).data
 
-
 class AddBookSerializer(serializers.ModelSerializer):
     condition = serializers.ChoiceField(
-        choices=Book.condition.field.choices, write_only=True,
-        db_comment='Condition for Book entry'
+        choices=Book.condition.field.choices, write_only=True
     )
     isbn = serializers.CharField(required=False, allow_blank=True)
 
@@ -115,7 +107,7 @@ class AddBookSerializer(serializers.ModelSerializer):
             return value
         if not value.startswith('https://'):
             raise ValidationError("Cover image URL must use HTTPS.")
-        allowed_domains = ['Cabeen', 'openlibrary.org', 'bookswap-bucket.s3.amazonaws.com']
+        allowed_domains = ['openlibrary.org', 'bookswap-bucket.s3.amazonaws.com']
         if not any(domain in value for domain in allowed_domains):
             raise ValidationError("Cover image URL must be from an allowed domain.")
         return value
@@ -137,34 +129,33 @@ class AddBookSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         condition = validated_data.pop('condition')
-        # Placeholder for Celery-generated QR code URL
         qr_code_url = f"https://bookswap-bucket.s3.amazonaws.com/qr/{uuid.uuid4()}.png"
+        now = timezone.now()
 
         with transaction.atomic():
             book = Book.objects.create(
                 **validated_data,
                 book_id=uuid.uuid4(),
-                owner=user,
+                user=user,
                 original_owner=user,
                 qr_code_url=qr_code_url,
                 condition=condition,
-                created_at=now()
+                created_at=now
             )
             Library.objects.create(
                 user=user,
                 book=book,
                 status='owned',
-                added_at=now()
+                added_at=now
             )
             BookHistory.objects.create(
                 book=book,
                 user=user,
                 status='added',
-                start_date=now(),
+                start_date=now,
                 notes="Book added to library"
             )
         return book
-
 
 class UserLibraryBookSerializer(serializers.ModelSerializer):
     book_id = serializers.UUIDField(source='book.book_id', read_only=True)
@@ -181,17 +172,15 @@ class UserLibraryBookSerializer(serializers.ModelSerializer):
             'available_for_exchange', 'qr_code_url', 'locked_until', 'added_at'
         ]
 
-
 class BookAvailabilityUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['available_for_exchange', 'available_for_borrow']
 
     def validate(self, data):
-        if self.instance and self.instance.locked_until and self.instance.locked_until > now():
+        if self.instance and self.instance.locked_until and self.instance.locked_until > timezone.now():
             raise ValidationError("Cannot update availability for a locked book.")
         return data
-
 
 class BookmarkSerializer(serializers.ModelSerializer):
     book = BookMiniSerializer(read_only=True)
@@ -214,7 +203,6 @@ class BookmarkSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-
 class FavoriteSerializer(serializers.ModelSerializer):
     book = BookMiniSerializer(read_only=True)
     book_id = serializers.UUIDField(write_only=True)
@@ -235,7 +223,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
             book=Book.objects.get(book_id=book_id),
             **validated_data
         )
-
 
 class PopularBookSerializer(serializers.ModelSerializer):
     book = BookMiniSerializer(read_only=True)

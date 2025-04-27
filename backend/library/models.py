@@ -1,280 +1,319 @@
-from django.db import models
-from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.conf import settings
-import uuid
-import re
-#from backend.swaps.models import Swap
+from rest_framework import generics, filters, status
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from django.core.cache import cache
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
+from django.db import transaction
+from .models import Book, Library, Bookmark, Favorite, BookHistory, PopularBook
+from .serializers import (
+    LibraryBookSerializer, BookDetailSerializer, BookMiniSerializer,
+    AddBookSerializer, UserLibraryBookSerializer, BookAvailabilityUpdateSerializer,
+    BookHistorySerializer, BookmarkSerializer, FavoriteSerializer, PopularBookSerializer
+)
+from backend.swaps.models import Notification
 
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
-def validate_isbn(value):
-    """Validate ISBN-10 or ISBN-13 format."""
-    if not value:
-        return
-    cleaned = re.sub(r'[- ]', '', value)
-    if not re.match(r'^(?:97[89][0-9]{10}|[0-9]{9}[0-9X])$', cleaned):
-        raise ValidationError("Invalid ISBN-10 or ISBN-13 format.")
-    return cleaned
+class BookListView(generics.ListAPIView):
+    serializer_class = LibraryBookSerializer
+    queryset = Book.objects.select_related('user')
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ['title', 'author', 'created_at']
+    ordering = ['title']
+    pagination_class = StandardPagination
 
+    def get_queryset(self):
+        cache_key = f"book_list_{self.request.query_params.get('genre', '')}_{self.request.query_params.get('available', '')}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
 
-def validate_cover_image_url(value):
-    """Sanitize cover image URL (HTTPS, valid domains)."""
-    if not value:
-        return
-    if not value.startswith('https://'):
-        raise ValidationError("Cover image URL must use HTTPS.")
-    allowed_domains = ['openlibrary.org', 'bookswap-bucket.s3.amazonaws.com']
-    if not any(domain in value for domain in allowed_domains):
-        raise ValidationError("Cover image URL must be from an allowed domain.")
-    return value
+        queryset = super().get_queryset()
+        genre = self.request.query_params.get('genre')
+        if genre:
+            queryset = queryset.filter(genre__iexact=genre)
 
+        available = self.request.query_params.get('available')
+        if available == 'exchange':
+            queryset = queryset.filter(available_for_exchange=True, locked_until__isnull=True)
+        elif available == 'borrow':
+            queryset = queryset.filter(available_for_borrow=True, locked_until__isnull=True)
+        elif available == 'both':
+            queryset = queryset.filter(
+                Q(available_for_exchange=True) | Q(available_for_borrow=True),
+                locked_until__isnull=True
+            )
 
-class Book(models.Model):
-    book_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=255, db_comment='Book title')
-    author = models.CharField(max_length=255, db_comment='Author(s), comma-separated or JSON')
-    year = models.IntegerField(
-        blank=True, null=True,
-        validators=[MinValueValidator(0), MaxValueValidator(9999)],
-        db_comment='Publication year'
-    )
-    genre = models.CharField(max_length=100, blank=True, null=True, db_comment='Book genre')
-    isbn = models.CharField(
-        max_length=13, unique=True, blank=True, null=True,
-        validators=[validate_isbn], db_comment='ISBN-10 or ISBN-13'
-    )
-    cover_image_url = models.URLField(
-        max_length=500, blank=True, null=True,
-        validators=[validate_cover_image_url], db_comment='Cover image URL (Open Library or S3)'
-    )
-    original_owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='originally_owned_books',
-        on_delete=models.SET_NULL, blank=True, null=True,
-        db_comment='User who first added the book'
-    )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='owned_books',
-        on_delete=models.SET_NULL, blank=True, null=True,
-        db_comment='Current owner of the book'
-    )
-    qr_code_url = models.URLField(
-        max_length=500, unique=True, blank=True, null=True,
-        db_comment='S3 URL for QR code used in swaps'
-    )
-    available_for_exchange = models.BooleanField(
-        default=True, db_comment='True if available for swapping'
-    )
-    available_for_borrow = models.BooleanField(
-        default=True, db_comment='True if available for borrowing'
-    )
-    condition = models.CharField(
-        max_length=50, blank=True, null=True,
-        choices=[('new', 'New'), ('good', 'Good'), ('fair', 'Fair'), ('poor', 'Poor')],
-        db_comment='Physical condition of the book'
-    )
-    synopsis = models.TextField(blank=True, null=True, db_comment='Book summary')
-    copy_count = models.IntegerField(
-        default=1, validators=[MinValueValidator(1)],
-        db_comment='Number of copies (for multiple identical books)'
-    )
-    locked_until = models.DateTimeField(
-        blank=True, null=True, db_comment='Prevents re-swaps during cooldown'
-    )
-    created_at = models.DateTimeField(auto_now_add=True, db_comment='When book was added')
-    updated_at = models.DateTimeField(auto_now=True, db_comment='When book was last updated')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
 
-    class Meta:
-        db_table = 'books'
-        db_table_comment = 'Central catalog tracking book ownership, metadata, and availability for swap/borrow'
-        indexes = [
-            models.Index(fields=['owner']),
-            models.Index(fields=['isbn']),
-            models.Index(fields=['available_for_exchange', 'available_for_borrow']),
-        ]
+class BookDetailView(generics.RetrieveAPIView):
+    queryset = Book.objects.select_related('user', 'original_owner')
+    serializer_class = BookDetailSerializer
+    lookup_field = 'book_id'
 
-    def __str__(self):
-        return f"{self.title} by {self.author or 'Unknown'}"
+    def get_object(self):
+        try:
+            return self.queryset.get(book_id=self.kwargs['book_id'])
+        except Book.DoesNotExist:
+            raise NotFound(detail="Book not found.")
 
-    def clean(self):
-        """Validate book constraints."""
-        if self.copy_count < 1:
-            raise ValidationError("Copy count must be positive.")
-        if self.isbn:
-            self.isbn = validate_isbn(self.isbn)
+class BookSearchView(generics.ListAPIView):
+    serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
 
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '').strip()
+        if len(query) < 3:
+            raise ValidationError({"detail": "Query param 'q' must be at least 3 characters."})
 
-class BookHistory(models.Model):
-    STATUS_CHOICES = [
-        ('swapped', 'Swapped'),
-        ('borrowed', 'Borrowed'),
-        ('returned', 'Returned'),
-        ('added', 'Added')
-    ]
+        cache_key = f"book_search_{query}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
 
-    history_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    book = models.ForeignKey(
-        'Book', on_delete=models.CASCADE, related_name='history',
-        db_comment='Book involved in the interaction'
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,
-        db_comment='User involved in the interaction'
-    )
-    swap = models.ForeignKey(
-        'swaps.Swap', on_delete=models.SET_NULL, blank=True, null=True,
-        db_comment='Associated swap (if applicable)'
-    )
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES,
-        db_comment='Type of interaction (swapped, borrowed, returned, added)'
-    )
-    start_date = models.DateTimeField(
-        blank=True, null=True, db_comment='Start of interaction'
-    )
-    end_date = models.DateTimeField(
-        blank=True, null=True, db_comment='End of interaction (e.g., return)'
-    )
-    notes = models.TextField(
-        blank=True, null=True, db_comment='Optional comments about the interaction'
-    )
+        queryset = Book.objects.filter(
+            Q(title__icontains=query) |
+            Q(author__icontains=query) |
+            Q(isbn__iexact=query)
+        ).order_by('title')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
 
-    class Meta:
-        db_table = 'book_history'
-        db_table_comment = 'Ledger of all user-book interactions for transparency and timeline rendering'
-        indexes = [
-            models.Index(fields=['book']),
-            models.Index(fields=['user']),
-            models.Index(fields=['swap']),
-            models.Index(fields=['start_date']),
-        ]
+class AddUserBookView(generics.CreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = AddBookSerializer
+    permission_classes = [IsAuthenticated]
 
-    def __str__(self):
-        username = self.user.username if self.user else 'Anonymous'
-        return f"{self.book.title}: {self.status} by {username}"
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        book = serializer.save()
 
+        Notification.objects.create(
+            user=book.user,
+            book=book,
+            type='book_added',
+            message=f"You added {book.title} to your library."
+        )
+        return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
 
-class Bookmark(models.Model):
-    bookmark_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookmarks',
-        db_comment='User who bookmarked the book'
-    )
-    book = models.ForeignKey(
-        'Book', on_delete=models.CASCADE, related_name='bookmarked_by',
-        db_comment='Book of interest'
-    )
-    notify_on_available = models.BooleanField(
-        default=False, db_comment='Notify user when book becomes available'
-    )
-    active = models.BooleanField(
-        default=True, db_comment='True if bookmark is active'
-    )
-    notified_at = models.DateTimeField(
-        blank=True, null=True, db_comment='When availability notification was sent'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True, db_comment='When bookmark was created'
-    )
+class UserLibraryListView(generics.ListAPIView):
+    serializer_class = UserLibraryBookSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
 
-    class Meta:
-        db_table = 'bookmarks'
-        db_table_comment = 'Tracks user interest in books and notifies when available for exchange'
-        unique_together = (('user', 'book'),)
-        indexes = [
-            models.Index(fields=['user', 'active']),
-            models.Index(fields=['book', 'notify_on_available']),
-        ]
+    def get_queryset(self):
+        cache_key = f"user_library_{self.request.user.id}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
 
-    def __str__(self):
-        return f"{self.user.username} bookmarked {self.book.title}"
+        queryset = Library.objects.filter(user=self.request.user).select_related('book', 'book__user')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
 
+class BookAvailabilityUpdateView(generics.UpdateAPIView):
+    serializer_class = BookAvailabilityUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+    queryset = Book.objects.all()
 
-class Favorite(models.Model):
-    favorite_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites',
-        db_comment='User who favorited the book'
-    )
-    book = models.ForeignKey(
-        'Book', on_delete=models.CASCADE, related_name='favorited_by',
-        db_comment='Favorite book'
-    )
-    reason = models.TextField(
-        blank=True, null=True, db_comment='Why the book was favorited'
-    )
-    active = models.BooleanField(
-        default=True, db_comment='True if favorite is active'
-    )
-    notified_on_match = models.BooleanField(
-        default=False, db_comment='Notify user on matching recommendations'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True, db_comment='When favorite was created'
-    )
+    def get_object(self):
+        book_id = self.kwargs.get(self.lookup_url_kwarg)
+        try:
+            library_entry = Library.objects.select_related('book').get(
+                user=self.request.user,
+                book__book_id=book_id,
+                status='owned'
+            )
+        except Library.DoesNotExist:
+            raise PermissionDenied("You do not own this book.")
+        return library_entry.book
 
-    class Meta:
-        db_table = 'favorites'
-        db_table_comment = 'Stores users’ favorite books to drive ExchangeNow and Favourites tab'
-        unique_together = (('user', 'book'),)
-        indexes = [
-            models.Index(fields=['user', 'active']),
-            models.Index(fields=['book']),
-        ]
+    def update(self, request, *args, **kwargs):
+        book = self.get_object()
+        serializer = self.get_serializer(book, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-    def __str__(self):
-        return f"{self.user.username} favorited {self.book.title}"
+        if book.available_for_exchange or book.available_for_borrow:
+            bookmarks = Bookmark.objects.filter(
+                book=book, notify_on_available=True, active=True
+            ).select_related('user')
+            notifications = [
+                Notification(
+                    user=bookmark.user,
+                    book=book,
+                    type='book_available',
+                    message=f"{book.title} is now available for {'exchange' if book.available_for_exchange else 'borrowing'}."
+                )
+                for bookmark in bookmarks
+            ]
+            Notification.objects.bulk_create(notifications)
 
+        return Response(BookDetailSerializer(book).data, status=status.HTTP_200_OK)
 
-class Library(models.Model):
-    library_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='library',
-        db_comment='User who owns the library entry'
-    )
-    book = models.ForeignKey(
-        'Book', on_delete=models.CASCADE, related_name='library_entries',
-        db_comment='Book in the user’s library'
-    )
-    status = models.CharField(
-        max_length=20, 
-        choices=[('owned', 'Owned'), ('borrowed', 'Borrowed'), ('exchanged', 'Exchanged')],
-        db_comment='Status of the book in the user’s library'
-    )
-    added_at = models.DateTimeField(
-        auto_now_add=True, db_comment='When book was added to library'
-    )
-    last_status_change_at = models.DateTimeField(
-        auto_now=True, db_comment='When status last changed'
-    )
+class RemoveBookFromLibraryView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+    queryset = Library.objects.select_related('book')
 
-    class Meta:
-        db_table = 'libraries'
-        db_table_comment = 'Links users to their books, forming their personal library and swap trail'
-        unique_together = (('user', 'book'),)
-        indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['book']),
-        ]
+    def get_object(self):
+        book_id = self.kwargs.get(self.lookup_url_kwarg)
+        try:
+            library_entry = Library.objects.get(
+                user=self.request.user,
+                book__book_id=book_id,
+                status='owned'
+            )
+        except Library.DoesNotExist:
+            raise PermissionDenied("You do not own this book.")
+        return library_entry
 
-    def __str__(self):
-        return f"{self.user.username}’s {self.book.title} ({self.status})"
+    def perform_destroy(self, instance):
+        book = instance.book
+        with transaction.atomic():
+            instance.delete()
+            if book.copy_count > 1:
+                book.copy_count -= 1
+                book.save()
+            else:
+                book.user = None
+                book.available_for_exchange = False
+                book.available_for_borrow = False
+                book.save()
 
+            BookHistory.objects.create(
+                book=book,
+                user=self.request.user,
+                status='removed',
+                start_date=now(),
+                notes=f"Book removed from {self.request.user.username}'s library"
+            )
 
-class PopularBook(models.Model):
-    book = models.OneToOneField(
-        'Book', on_delete=models.CASCADE, primary_key=True,
-        db_comment='Book with popularity metrics'
-    )
-    swap_count = models.PositiveIntegerField(
-        default=0, db_comment='Number of swaps for this book'
-    )
-    last_updated = models.DateTimeField(
-        auto_now=True, db_comment='When popularity was last updated'
-    )
+        Notification.objects.create(
+            user=self.request.user,
+            book=book,
+            type='book_removed',
+            message=f"You removed {book.title} from your library."
+        )
 
-    class Meta:
-        db_table = 'popular_books'
-        db_table_comment = 'Tracks book swap popularity for recommendations'
+class BookHistoryView(generics.ListAPIView):
+    serializer_class = BookHistorySerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
 
-    def __str__(self):
-        return f"{self.book.title}: {self.swap_count} swaps"
+    def get_queryset(self):
+        book_id = self.request.query_params.get('book_id')
+        cache_key = f"book_history_{book_id or self.request.user.id}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        if book_id:
+            queryset = BookHistory.objects.filter(
+                book__book_id=book_id
+            ).select_related('book', 'user', 'swap').order_by('-start_date')
+        else:
+            queryset = BookHistory.objects.filter(
+                book__user=self.request.user
+            ).select_related('book', 'user', 'swap').order_by('-start_date')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
+
+class BookmarkBookView(generics.CreateAPIView):
+    serializer_class = BookmarkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+        serializer.is_valid(raise_exception=True)
+        bookmark = serializer.save()
+        return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
+
+class RemoveBookmarkView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+
+    def get_object(self):
+        book = get_object_or_404(Book, book_id=self.kwargs['book_id'])
+        try:
+            return Bookmark.objects.get(user=self.request.user, book=book, active=True)
+        except Bookmark.DoesNotExist:
+            raise NotFound("Bookmark not found.")
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save()
+
+class FavoriteBookView(generics.CreateAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+        serializer.is_valid(raise_exception=True)
+        favorite = serializer.save()
+        return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
+
+class UnfavoriteBookView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+
+    def get_object(self):
+        book = get_object_or_404(Book, book_id=self.kwargs['book_id'])
+        try:
+            return Favorite.objects.get(user=self.request.user, book=book, active=True)
+        except Favorite.DoesNotExist:
+            raise NotFound("Favorite not found.")
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save()
+
+class MyBookmarksView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        return Book.objects.filter(
+            bookmarked_by__user=self.request.user,
+            bookmarked_by__active=True
+        ).select_related('user')
+
+class MyFavoritesView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        return Book.objects.filter(
+            favorited_by__user=self.request.user,
+            favorited_by__active=True
+        ).select_related('user')
+
+class RecommendedBooksView(generics.ListAPIView):
+    serializer_class = PopularBookSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        cache_key = "recommended_books"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        queryset = PopularBook.objects.select_related('book', 'book__user').order_by('-swap_count')[:50]
+        cache.set(cache_key, queryset, timeout=3600)  # 1 hour
+        return queryset

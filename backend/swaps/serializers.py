@@ -1,98 +1,97 @@
 from rest_framework import serializers
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.conf import settings
-from backend.users.models import CustomUser
-from backend.users.serializers import UserSerializer
-from backend.library.models import Books
-from backend.library.serializers import BookSerializer
-from backend.swaps.models import Swap, Share, Notification, Location
-from backend.users.models import Follows
-
+from .models import Swap, Location, Notification, Share
+from backend.users.models import CustomUser, Follows
+from backend.library.models import Book
+from datetime import timedelta
 
 class UserMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username']
-
+        fields = ['user_id', 'username']
 
 class BookMiniSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Books
-        fields = ['book_id', 'title']
-
+        model = Book
+        fields = ['book_id', 'title', 'isbn']
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = ['location_id', 'name', 'city', 'coords', 'type', 'rating', 'verified', 'popularity_score']
+        fields = [
+            'location_id', 'name', 'type', 'coords', 'city', 'rating',
+            'last_fetched', 'source', 'verified', 'popularity_score', 'is_active'
+        ]
 
     def validate_coords(self, value):
-        """Ensure coords are valid for Google Maps integration."""
-        try:
-            lat = float(value['latitude'])
-            lon = float(value['longitude'])
-            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-                raise serializers.ValidationError("Invalid latitude or longitude range.")
-        except (KeyError, TypeError, ValueError):
-            raise serializers.ValidationError("Coords must include valid latitude and longitude.")
+        from .models import validate_coords
+        validate_coords(value)
         return value
 
-
 class SwapCreateSerializer(serializers.ModelSerializer):
-    receiver_id = serializers.UUIDField(write_only=True)
     initiator_book_id = serializers.UUIDField(write_only=True)
+    receiver_id = serializers.UUIDField(write_only=True)
     receiver_book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Swap
-        fields = ['receiver_id', 'initiator_book_id', 'receiver_book_id']
+        fields = ['initiator_book_id', 'receiver_id', 'receiver_book_id']
+
+    def validate_initiator_book_id(self, value):
+        try:
+            book = Book.objects.get(book_id=value)
+            if book.user != self.context['request'].user:
+                raise serializers.ValidationError("Not your book.")
+            if book.locked_until and book.locked_until > timezone.now():
+                raise serializers.ValidationError("Book is locked.")
+            return value
+        except Book.DoesNotExist:
+            raise serializers.ValidationError("Invalid book ID.")
+
+    def validate_receiver_id(self, value):
+        try:
+            receiver = CustomUser.objects.get(user_id=value)
+            if receiver == self.context['request'].user:
+                raise serializers.ValidationError("Cannot swap with yourself.")
+            if not Follows.objects.filter(
+                follower=self.context['request'].user,
+                followed=receiver,
+                active=True
+            ).exists():
+                raise serializers.ValidationError("You must follow the receiver to initiate a swap.")
+            return value
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("Invalid receiver ID.")
+
+    def validate_receiver_book_id(self, value):
+        if value:
+            try:
+                book = Book.objects.get(book_id=value)
+                receiver = CustomUser.objects.get(user_id=self.initial_data['receiver_id'])
+                if book.user != receiver:
+                    raise serializers.ValidationError("Receiver book must belong to receiver.")
+                if book.locked_until and book.locked_until > timezone.now():
+                    raise serializers.ValidationError("Receiver book is locked.")
+                return value
+            except Book.DoesNotExist:
+                raise serializers.ValidationError("Invalid receiver book ID.")
+        return value
 
     def validate(self, data):
-        initiator = self.context.get('request').user
-        receiver_id = data.get('receiver_id')
-        initiator_book_id = data.get('initiator_book_id')
-        receiver_book_id = data.get('receiver_book_id')
+        initiator = self.context['request'].user
+        receiver = CustomUser.objects.get(user_id=data['receiver_id'])
+        initiator_book = Book.objects.get(book_id=data['initiator_book_id'])
+        receiver_book = Book.objects.get(book_id=data['receiver_book_id']) if data.get('receiver_book_id') else None
 
-        # Validate user and book existence
-        try:
-            receiver = CustomUser.objects.get(id=receiver_id)
-            initiator_book = Books.objects.get(book_id=initiator_book_id)
-            receiver_book = Books.objects.get(book_id=receiver_book_id) if receiver_book_id else None
-        except (CustomUser.DoesNotExist, Books.DoesNotExist):
-            raise serializers.ValidationError("Invalid user or book IDs.")
-
-        # Prevent self-swaps
-        if initiator == receiver:
-            raise serializers.ValidationError("Cannot initiate a swap with yourself.")
-
-        # Check follow relationship (assumes mutual followers)
-        if not Follows.objects.filter(follower=initiator, followed=receiver, active=True).exists():
-            raise serializers.ValidationError("You must follow the receiver to initiate a swap.")
-
-        # Validate book ownership (assumes Books.owner exists)
-        if initiator_book.owner != initiator:
-            raise serializers.ValidationError("You do not own the initiator book.")
-        if receiver_book and receiver_book.owner != receiver:
-            raise serializers.ValidationError("Receiver does not own the selected book.")
-
-        # Check book lock status
-        now = timezone.now()
-        if initiator_book.locked_until and initiator_book.locked_until > now:
-            raise serializers.ValidationError("Your book is currently locked.")
-        if receiver_book and receiver_book.locked_until and receiver_book.locked_until > now:
-            raise serializers.ValidationError("Receiver's book is currently locked.")
-
-        # Populate validated data
         data['initiator'] = initiator
         data['receiver'] = receiver
         data['initiator_book'] = initiator_book
         data['receiver_book'] = receiver_book
-
         return data
 
     def create(self, validated_data):
-        qr_code_url = self.context.get('qr_code_url')  # Injected by Celery task
+        qr_code_url = self.context.get('qr_code_url')
         return Swap.objects.create(
             initiator=validated_data['initiator'],
             receiver=validated_data['receiver'],
@@ -101,7 +100,6 @@ class SwapCreateSerializer(serializers.ModelSerializer):
             qr_code_url=qr_code_url,
             status='Requested'
         )
-
 
 class SwapSerializer(serializers.ModelSerializer):
     initiator = UserMiniSerializer(read_only=True)
@@ -120,25 +118,25 @@ class SwapSerializer(serializers.ModelSerializer):
         ]
 
     def get_qr_url(self, obj):
-        if obj.qr_code_url:
-            return obj.qr_code_url  # S3 URL (e.g., https://bookswap-bucket.s3.amazonaws.com/qr/<swap_id>.png)
-        return None
-
+        return obj.qr_code_url if obj.qr_code_url else None
 
 class SwapAcceptSerializer(serializers.ModelSerializer):
-    meetup_location_id = serializers.UUIDField(write_only=True)
+    meetup_location_id = serializers.UUIDField(write_only=True, required=False)
+    meetup_time = serializers.DateTimeField(required=False)
 
     class Meta:
         model = Swap
-        fields = ['meetup_location_id', 'meetup_time', 'status']
+        fields = ['status', 'meetup_location_id', 'meetup_time']
 
     def validate_meetup_location_id(self, value):
-        if not Location.objects.filter(location_id=value, is_active=True).exists():
+        try:
+            location = Location.objects.get(location_id=value, is_active=True)
+            return location
+        except Location.DoesNotExist:
             raise serializers.ValidationError("Invalid or inactive location.")
-        return value
 
     def validate_meetup_time(self, value):
-        if value <= timezone.now():
+        if value and value <= timezone.now():
             raise serializers.ValidationError("Meetup time must be in the future.")
         return value
 
@@ -148,21 +146,26 @@ class SwapAcceptSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        swap = self.instance
-        if swap.status != 'Requested':
+        if self.instance.status != 'Requested':
             raise serializers.ValidationError("Only requested swaps can be accepted.")
-        data['meetup_location'] = Location.objects.get(location_id=data.pop('meetup_location_id'))
         return data
 
+    def update(self, instance, validated_data):
+        instance.status = validated_data.get('status', instance.status)
+        if 'meetup_location_id' in validated_data:
+            instance.meetup_location = validated_data['meetup_location_id']
+        if 'meetup_time' in validated_data:
+            instance.meetup_time = validated_data['meetup_time']
+        instance.save()
+        return instance
 
 class SwapConfirmSerializer(serializers.Serializer):
-    qr_code_url = serializers.URLField(required=True)
+    qr_code_url = serializers.URLField()
 
     def validate_qr_code_url(self, value):
         if not Swap.objects.filter(qr_code_url=value, status='Accepted').exists():
             raise serializers.ValidationError("Invalid or inactive QR code.")
         return value
-
 
 class SwapHistorySerializer(serializers.ModelSerializer):
     initiator = UserMiniSerializer(read_only=True)
@@ -177,18 +180,19 @@ class SwapHistorySerializer(serializers.ModelSerializer):
             'status', 'created_at', 'updated_at'
         ]
 
-
 class NotificationSerializer(serializers.ModelSerializer):
+    book = BookMiniSerializer(read_only=True)
+    swap = SwapSerializer(read_only=True)
     book_title = serializers.CharField(source='book.title', read_only=True, allow_null=True)
     swap_id = serializers.UUIDField(source='swap.swap_id', read_only=True, allow_null=True)
 
     class Meta:
         model = Notification
         fields = [
-            'notification_id', 'type', 'message', 'is_read', 'is_archived',
-            'delivered_at', 'created_at', 'book_title', 'swap_id'
+            'notification_id', 'user', 'book', 'swap', 'type', 'message',
+            'is_read', 'is_archived', 'delivered_at', 'created_at',
+            'book_title', 'swap_id'
         ]
-
 
 class ShareSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
@@ -205,30 +209,30 @@ class ShareSerializer(serializers.ModelSerializer):
         content_type = data.get('content_type')
         content_id = data.get('content_id')
 
-        # Validate content_id
         content_models = {
-            'book': Books,
+            'book': Book,
             'profile': CustomUser,
-            'swap': Swap
-            # Add Discussions, Societies when defined
+            'swap': Swap,
+            # 'discussion': Discussion,  # Uncomment when defined
+            # 'society': Society
         }
         if content_type not in content_models:
             raise serializers.ValidationError(f"Invalid content_type: {content_type}")
-        
+
         model = content_models[content_type]
-        field = 'id' if content_type == 'profile' else f'{content_type}_id'
+        field = 'user_id' if content_type == 'profile' else f'{content_type}_id'
         if not model.objects.filter(**{field: content_id}).exists():
             raise serializers.ValidationError(f"No {content_type} found with ID {content_id}")
 
-        # Validate metadata
-        metadata = data.get('metadata')
-        if metadata and not isinstance(metadata, dict):
+        metadata = data.get('metadata', {})
+        if not isinstance(metadata, dict):
             raise serializers.ValidationError("Metadata must be a JSON object.")
-        if metadata and not metadata.get('url'):
+        if not metadata.get('url'):
             raise serializers.ValidationError("Metadata must include a URL.")
-        if content_type == 'swap' and metadata:
+        if content_type == 'swap':
             metadata['text'] = metadata.get('text', 'Check out my book swap on BookSwap!')
 
+        data['metadata'] = metadata
         return data
 
     def create(self, validated_data):

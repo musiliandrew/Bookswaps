@@ -18,16 +18,14 @@ from .serializers import (
 )
 from backend.swaps.models import Notification
 
-
 class StandardPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
 class BookListView(generics.ListAPIView):
     serializer_class = LibraryBookSerializer
-    queryset = Book.objects.select_related('owner')
+    queryset = Book.objects.select_related('user')
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     ordering_fields = ['title', 'author', 'created_at']
     ordering = ['title']
@@ -58,9 +56,8 @@ class BookListView(generics.ListAPIView):
         cache.set(cache_key, queryset, timeout=300)  # 5 minutes
         return queryset
 
-
 class BookDetailView(generics.RetrieveAPIView):
-    queryset = Book.objects.select_related('owner', 'original_owner')
+    queryset = Book.objects.select_related('user', 'original_owner')
     serializer_class = BookDetailSerializer
     lookup_field = 'book_id'
 
@@ -69,7 +66,6 @@ class BookDetailView(generics.RetrieveAPIView):
             return self.queryset.get(book_id=self.kwargs['book_id'])
         except Book.DoesNotExist:
             raise NotFound(detail="Book not found.")
-
 
 class BookSearchView(generics.ListAPIView):
     serializer_class = BookMiniSerializer
@@ -93,7 +89,6 @@ class BookSearchView(generics.ListAPIView):
         cache.set(cache_key, queryset, timeout=300)  # 5 minutes
         return queryset
 
-
 class AddUserBookView(generics.CreateAPIView):
     queryset = Book.objects.all()
     serializer_class = AddBookSerializer
@@ -105,13 +100,12 @@ class AddUserBookView(generics.CreateAPIView):
         book = serializer.save()
 
         Notification.objects.create(
-            user=book.owner,
+            user=book.user,
             book=book,
             type='book_added',
             message=f"You added {book.title} to your library."
         )
         return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
-
 
 class UserLibraryListView(generics.ListAPIView):
     serializer_class = UserLibraryBookSerializer
@@ -124,10 +118,9 @@ class UserLibraryListView(generics.ListAPIView):
         if cached_queryset:
             return cached_queryset
 
-        queryset = Library.objects.filter(user=self.request.user).select_related('book', 'book__owner')
+        queryset = Library.objects.filter(user=self.request.user).select_related('book', 'book__user')
         cache.set(cache_key, queryset, timeout=300)  # 5 minutes
         return queryset
-
 
 class BookAvailabilityUpdateView(generics.UpdateAPIView):
     serializer_class = BookAvailabilityUpdateSerializer
@@ -153,7 +146,6 @@ class BookAvailabilityUpdateView(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Notify bookmarkers if book becomes available
         if book.available_for_exchange or book.available_for_borrow:
             bookmarks = Bookmark.objects.filter(
                 book=book, notify_on_available=True, active=True
@@ -170,7 +162,6 @@ class BookAvailabilityUpdateView(generics.UpdateAPIView):
             Notification.objects.bulk_create(notifications)
 
         return Response(BookDetailSerializer(book).data, status=status.HTTP_200_OK)
-
 
 class RemoveBookFromLibraryView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -197,10 +188,18 @@ class RemoveBookFromLibraryView(generics.DestroyAPIView):
                 book.copy_count -= 1
                 book.save()
             else:
-                book.owner = None
+                book.user = None
                 book.available_for_exchange = False
                 book.available_for_borrow = False
                 book.save()
+
+            BookHistory.objects.create(
+                book=book,
+                user=self.request.user,
+                status='removed',
+                start_date=now(),
+                notes=f"Book removed from {self.request.user.username}'s library"
+            )
 
         Notification.objects.create(
             user=self.request.user,
@@ -209,7 +208,6 @@ class RemoveBookFromLibraryView(generics.DestroyAPIView):
             message=f"You removed {book.title} from your library."
         )
 
-
 class BookHistoryView(generics.ListAPIView):
     serializer_class = BookHistorySerializer
     permission_classes = [IsAuthenticated]
@@ -217,14 +215,21 @@ class BookHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         book_id = self.request.query_params.get('book_id')
+        cache_key = f"book_history_{book_id or self.request.user.id}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
         if book_id:
-            return BookHistory.objects.filter(
+            queryset = BookHistory.objects.filter(
                 book__book_id=book_id
             ).select_related('book', 'user', 'swap').order_by('-start_date')
-        return BookHistory.objects.filter(
-            book__owner=self.request.user
-        ).select_related('book', 'user', 'swap').order_by('-start_date')
-
+        else:
+            queryset = BookHistory.objects.filter(
+                book__user=self.request.user
+            ).select_related('book', 'user', 'swap').order_by('-start_date')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
 
 class BookmarkBookView(generics.CreateAPIView):
     serializer_class = BookmarkSerializer
@@ -235,7 +240,6 @@ class BookmarkBookView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         bookmark = serializer.save()
         return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
-
 
 class RemoveBookmarkView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -252,7 +256,6 @@ class RemoveBookmarkView(generics.DestroyAPIView):
         instance.active = False
         instance.save()
 
-
 class FavoriteBookView(generics.CreateAPIView):
     serializer_class = FavoriteSerializer
     permission_classes = [IsAuthenticated]
@@ -262,7 +265,6 @@ class FavoriteBookView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         favorite = serializer.save()
         return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
-
 
 class UnfavoriteBookView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -279,7 +281,6 @@ class UnfavoriteBookView(generics.DestroyAPIView):
         instance.active = False
         instance.save()
 
-
 class MyBookmarksView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = BookMiniSerializer
@@ -289,8 +290,7 @@ class MyBookmarksView(generics.ListAPIView):
         return Book.objects.filter(
             bookmarked_by__user=self.request.user,
             bookmarked_by__active=True
-        ).select_related('owner')
-
+        ).select_related('user')
 
 class MyFavoritesView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -301,8 +301,7 @@ class MyFavoritesView(generics.ListAPIView):
         return Book.objects.filter(
             favorited_by__user=self.request.user,
             favorited_by__active=True
-        ).select_related('owner')
-
+        ).select_related('user')
 
 class RecommendedBooksView(generics.ListAPIView):
     serializer_class = PopularBookSerializer
@@ -315,6 +314,6 @@ class RecommendedBooksView(generics.ListAPIView):
         if cached_queryset:
             return cached_queryset
 
-        queryset = PopularBook.objects.select_related('book', 'book__owner').order_by('-swap_count')[:50]
+        queryset = PopularBook.objects.select_related('book', 'book__user').order_by('-swap_count')[:50]
         cache.set(cache_key, queryset, timeout=3600)  # 1 hour
         return queryset

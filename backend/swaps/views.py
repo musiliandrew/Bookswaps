@@ -8,10 +8,9 @@ from datetime import timedelta
 from django.db import transaction
 from django.core.cache import cache
 from rest_framework.pagination import PageNumberPagination
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.geos import Point
 from django.db.models import Q
 import requests
+from math import radians, sin, cos, sqrt, atan2
 from .models import Swap, Notification, Location
 from .serializers import (
     SwapCreateSerializer, SwapSerializer, SwapAcceptSerializer,
@@ -23,25 +22,32 @@ from backend.users.models import Follows
 from django.conf import settings
 import uuid
 
-
-
+def haversine(coord1, coord2):
+    """Calculate distance (km) between two coordinates."""
+    try:
+        lat1, lon1 = radians(float(coord1['latitude'])), radians(float(coord1['longitude']))
+        lat2, lon2 = radians(float(coord2['latitude'])), radians(float(coord2['longitude']))
+        dlat, dlon = lat2 - lat1, lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return 6371 * c  # Earth's radius in km
+    except (KeyError, TypeError, ValueError):
+        return float('inf')
 
 class InitiateSwapView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Validate initiator book ownership
         try:
             initiator_book = Book.objects.get(book_id=request.data.get('initiator_book_id'))
         except Book.DoesNotExist:
             return Response({"error": "Invalid initiator book ID"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if initiator_book.owner != request.user:
+        if initiator_book.user != request.user:
             return Response({"error": "Not your book"}, status=status.HTTP_403_FORBIDDEN)
         if initiator_book.locked_until and initiator_book.locked_until > timezone.now():
             return Response({"error": "Book locked"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Placeholder for Celery-generated QR code URL (S3)
         qr_code_url = f"https://bookswap-bucket.s3.amazonaws.com/qr/{uuid.uuid4()}.png"
 
         serializer = SwapCreateSerializer(
@@ -52,14 +58,12 @@ class InitiateSwapView(APIView):
             with transaction.atomic():
                 swap = serializer.save()
 
-                # Lock books for 24 hours
                 initiator_book.locked_until = timezone.now() + timedelta(hours=24)
                 initiator_book.save()
                 if swap.receiver_book:
                     swap.receiver_book.locked_until = timezone.now() + timedelta(hours=24)
                     swap.receiver_book.save()
 
-                # Create notification
                 Notification.objects.create(
                     user=swap.receiver,
                     swap=swap,
@@ -69,7 +73,6 @@ class InitiateSwapView(APIView):
 
             return Response(SwapSerializer(swap).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class AcceptSwapView(APIView):
     permission_classes = [IsAuthenticated]
@@ -86,7 +89,6 @@ class AcceptSwapView(APIView):
             with transaction.atomic():
                 serializer.save(status='Accepted')
 
-                # Notify initiator
                 Notification.objects.create(
                     user=swap.initiator,
                     swap=swap,
@@ -96,7 +98,6 @@ class AcceptSwapView(APIView):
 
             return Response(SwapSerializer(swap).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ConfirmSwapView(APIView):
     permission_classes = [IsAuthenticated]
@@ -111,38 +112,32 @@ class ConfirmSwapView(APIView):
         serializer = SwapConfirmSerializer(data=request.data)
         if serializer.is_valid():
             with transaction.atomic():
-                # Track confirmations in database (instead of cache)
                 swap_confirm_key = f"swap_confirm_{swap_id}_{request.user.id}"
                 if cache.get(swap_confirm_key):
                     return Response({"error": "User already confirmed"}, status=status.HTTP_400_BAD_REQUEST)
                 cache.set(swap_confirm_key, True, timeout=3600)
 
-                # Check if both confirmed
                 other_user = swap.receiver if request.user == swap.initiator else swap.initiator
                 other_confirm_key = f"swap_confirm_{swap_id}_{other_user.id}"
                 if cache.get(other_confirm_key):
                     swap.set_status('Completed')
 
-                    # Swap/borrow logic (assumes no Libraries model)
                     initiator_book = swap.initiator_book
                     receiver_book = swap.receiver_book
                     if receiver_book:
-                        initiator_book.owner, receiver_book.owner = swap.receiver, swap.initiator
+                        initiator_book.user, receiver_book.user = swap.receiver, swap.initiator
                         initiator_book.save()
                         receiver_book.save()
                     else:
-                        # Borrow: Update owner (simplified)
-                        initiator_book.owner = swap.receiver
+                        initiator_book.user = swap.receiver
                         initiator_book.save()
 
-                    # Unlock books
                     initiator_book.locked_until = None
                     initiator_book.save()
                     if receiver_book:
                         receiver_book.locked_until = None
                         receiver_book.save()
 
-                    # Notify both users
                     Notification.objects.bulk_create([
                         Notification(
                             user=swap.initiator,
@@ -158,7 +153,6 @@ class ConfirmSwapView(APIView):
                         )
                     ])
 
-                    # Clear cache
                     cache.delete(swap_confirm_key)
                     cache.delete(other_confirm_key)
                 else:
@@ -167,7 +161,6 @@ class ConfirmSwapView(APIView):
                 swap.save()
             return Response(SwapSerializer(swap).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CancelSwapView(APIView):
     permission_classes = [IsAuthenticated]
@@ -200,7 +193,6 @@ class CancelSwapView(APIView):
             swap.save()
         return Response(SwapSerializer(swap).data, status=status.HTTP_200_OK)
 
-
 class SwapListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -224,9 +216,8 @@ class SwapListView(APIView):
         serializer = SwapSerializer(result_page, many=True)
 
         response_data = paginator.get_paginated_response(serializer.data).data
-        cache.set(cache_key, response_data, timeout=300)  # 5 minutes
+        cache.set(cache_key, response_data, timeout=300)
         return Response(response_data)
-
 
 class SwapHistoryView(APIView):
     permission_classes = [IsAuthenticated]
@@ -242,7 +233,6 @@ class SwapHistoryView(APIView):
         serializer = SwapHistorySerializer(result_page, many=True)
         
         return paginator.get_paginated_response(serializer.data)
-
 
 class AddLocationView(APIView):
     permission_classes = [IsAuthenticated]
@@ -262,7 +252,6 @@ class AddLocationView(APIView):
                 return Response({"error": f"Failed to create location: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -280,7 +269,6 @@ class NotificationListView(APIView):
         
         return paginator.get_paginated_response(serializer.data)
 
-
 class MarkNotificationReadView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -290,7 +278,6 @@ class MarkNotificationReadView(APIView):
         notification.save()
         return Response(NotificationSerializer(notification).data, status=status.HTTP_200_OK)
 
-
 class ShareView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -299,13 +286,11 @@ class ShareView(APIView):
         if serializer.is_valid():
             with transaction.atomic():
                 share = serializer.save()
-                # Placeholder for X sharing (e.g., intent URL)
                 share.metadata['url'] = f"https://x.com/intent/post?text={share.metadata.get('text')}"
                 share.status = 'success'
                 share.save()
             return Response(ShareSerializer(share).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class MidpointView(APIView):
     permission_classes = [IsAuthenticated]
@@ -324,13 +309,15 @@ class MidpointView(APIView):
         if cached_result:
             return Response(cached_result, status=status.HTTP_200_OK)
 
-        lat = (user_lat + other_lat) / 2
-        lon = (user_lon + other_lon) / 2
+        midpoint = {
+            'latitude': (user_lat + other_lat) / 2,
+            'longitude': (user_lon + other_lon) / 2
+        }
         address = "Unknown location"
         if hasattr(settings, 'GOOGLE_MAPS_API_KEY'):
             try:
                 response = requests.get(
-                    f"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lon}&key={settings.GOOGLE_MAPS_API_KEY}",
+                    f"https://maps.googleapis.com/maps/api/geocode/json?latlng={midpoint['latitude']},{midpoint['longitude']}&key={settings.GOOGLE_MAPS_API_KEY}",
                     timeout=5
                 )
                 response.raise_for_status()
@@ -340,25 +327,22 @@ class MidpointView(APIView):
             except requests.RequestException:
                 address = "Geocoding failed"
 
-        midpoint = Point(lon, lat, srid=4326)
-        nearby_locations = Location.objects.filter(
-            is_active=True
-        ).annotate(
-            distance=Distance('coords', midpoint)
-        ).order_by('-popularity_score', 'distance')[:5]
+        nearby_locations = sorted(
+            Location.objects.filter(is_active=True),
+            key=lambda loc: haversine(midpoint, loc.coords)
+        )[:5]
 
         serializer = LocationSerializer(nearby_locations, many=True)
         response_data = {
             "midpoint": {
-                "latitude": lat,
-                "longitude": lon,
+                "latitude": midpoint['latitude'],
+                "longitude": midpoint['longitude'],
                 "address": address
             },
             "suggested_locations": serializer.data
         }
-        cache.set(cache_key, response_data, timeout=3600)  # 1 hour
+        cache.set(cache_key, response_data, timeout=3600)
         return Response(response_data, status=status.HTTP_200_OK)
-
 
 class GetQRCodeView(APIView):
     permission_classes = [IsAuthenticated]

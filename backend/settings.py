@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
 DEBUG = os.getenv("DEBUG", "False") == "True"
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,7 +36,7 @@ INSTALLED_APPS = [
     'django_filters',
     'channels',
     'axes',
-    'django.contrib.gis',
+
     
     #apps
     'backend.users.apps.UsersConfig',
@@ -44,6 +45,9 @@ INSTALLED_APPS = [
     'backend.discussions.apps.DiscussionsConfig', 
     'backend.swaps.apps.SwapsConfig',    
 ]
+
+
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
