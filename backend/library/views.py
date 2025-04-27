@@ -1,260 +1,320 @@
-from rest_framework import generics, filters, permissions, status
+from rest_framework import generics, filters, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Books, Libraries, Bookmarks, Favorites
-from .serializers import LibraryBookSerializer, BookDetailSerializer, BookSearchSerializer, AddBookSerializer, UserLibraryBookSerializer, BookAvailabilityUpdateSerializer, BookMiniSerializer
+from django.core.cache import cache
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-import uuid
-from rest_framework.permissions import IsAuthenticated
+from django.utils.timezone import now
+from django.db import transaction
+from .models import Book, Library, Bookmark, Favorite, BookHistory, PopularBook
+from .serializers import (
+    LibraryBookSerializer, BookDetailSerializer, BookMiniSerializer,
+    AddBookSerializer, UserLibraryBookSerializer, BookAvailabilityUpdateSerializer,
+    BookHistorySerializer, BookmarkSerializer, FavoriteSerializer, PopularBookSerializer
+)
+from backend.swaps.models import Notification
+
+
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 
 class BookListView(generics.ListAPIView):
     serializer_class = LibraryBookSerializer
-    queryset = Books.objects.select_related('owner')  # optimize DB hit
+    queryset = Book.objects.select_related('owner')
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     ordering_fields = ['title', 'author', 'created_at']
-    ordering = ['title']  # default sort
+    ordering = ['title']
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        cache_key = f"book_list_{self.request.query_params.get('genre', '')}_{self.request.query_params.get('available', '')}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
 
-        # Genre filter
+        queryset = super().get_queryset()
         genre = self.request.query_params.get('genre')
         if genre:
             queryset = queryset.filter(genre__iexact=genre)
 
-        # Availability filter
         available = self.request.query_params.get('available')
         if available == 'exchange':
-            queryset = queryset.filter(available_for_exchange=True)
+            queryset = queryset.filter(available_for_exchange=True, locked_until__isnull=True)
         elif available == 'borrow':
-            queryset = queryset.filter(available_for_borrow=True)
+            queryset = queryset.filter(available_for_borrow=True, locked_until__isnull=True)
         elif available == 'both':
             queryset = queryset.filter(
-                Q(available_for_exchange=True) | Q(available_for_borrow=True)
+                Q(available_for_exchange=True) | Q(available_for_borrow=True),
+                locked_until__isnull=True
             )
 
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
         return queryset
-    
+
+
 class BookDetailView(generics.RetrieveAPIView):
-    queryset = Books.objects.select_related('owner', 'original_owner')
+    queryset = Book.objects.select_related('owner', 'original_owner')
     serializer_class = BookDetailSerializer
     lookup_field = 'book_id'
 
     def get_object(self):
         try:
             return self.queryset.get(book_id=self.kwargs['book_id'])
-        except Books.DoesNotExist:
+        except Book.DoesNotExist:
             raise NotFound(detail="Book not found.")
-        
+
+
 class BookSearchView(generics.ListAPIView):
-    serializer_class = BookSearchSerializer
+    serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        query = self.request.query_params.get('q', None)
-        if not query:
-            raise ValidationError({"detail": "Query param 'q' is required."})
+        query = self.request.query_params.get('q', '').strip()
+        if len(query) < 3:
+            raise ValidationError({"detail": "Query param 'q' must be at least 3 characters."})
 
-        return Books.objects.filter(
+        cache_key = f"book_search_{query}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        queryset = Book.objects.filter(
             Q(title__icontains=query) |
             Q(author__icontains=query) |
-            Q(isbn__icontains=query)
+            Q(isbn__iexact=query)
         ).order_by('title')
-        
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
+
+
 class AddUserBookView(generics.CreateAPIView):
-    queryset = Books.objects.all()
+    queryset = Book.objects.all()
     serializer_class = AddBookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         book = serializer.save()
 
-        return Response({
-            "book_id": str(book.book_id),
-            "title": book.title,
-            "author": book.author,
-            "owner": {
-                "user_id": str(book.owner.user_id),
-                "username": book.owner.username
-            }
-        }, status=status.HTTP_201_CREATED)
-        
+        Notification.objects.create(
+            user=book.owner,
+            book=book,
+            type='book_added',
+            message=f"You added {book.title} to your library."
+        )
+        return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
+
+
 class UserLibraryListView(generics.ListAPIView):
     serializer_class = UserLibraryBookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        return Libraries.objects.filter(user=self.request.user).select_related('book')
-    
-    
+        cache_key = f"user_library_{self.request.user.id}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        queryset = Library.objects.filter(user=self.request.user).select_related('book', 'book__owner')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
+
+
 class BookAvailabilityUpdateView(generics.UpdateAPIView):
     serializer_class = BookAvailabilityUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = 'book_id'
-    queryset = Books.objects.all()
+    queryset = Book.objects.all()
 
     def get_object(self):
         book_id = self.kwargs.get(self.lookup_url_kwarg)
         try:
-            # Verify user owns this book
-            library_entry = Libraries.objects.select_related('book').get(
+            library_entry = Library.objects.select_related('book').get(
                 user=self.request.user,
-                book__book_id=book_id
+                book__book_id=book_id,
+                status='owned'
             )
-        except Libraries.DoesNotExist:
+        except Library.DoesNotExist:
             raise PermissionDenied("You do not own this book.")
+        return library_entry.book
 
-        book = library_entry.book
-        # Optional: Check lock
-        if getattr(book, 'locked_until', None):
-            raise PermissionDenied("This book is currently locked and cannot be updated.")
-
-        return book
-
-    def patch(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         book = self.get_object()
         serializer = self.get_serializer(book, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({
-            "book_id": str(book.book_id),
-            "title": book.title,
-            "available_for_exchange": book.available_for_exchange,
-            "available_for_borrow": book.available_for_borrow,
-        }, status=status.HTTP_200_OK)
-        
+        # Notify bookmarkers if book becomes available
+        if book.available_for_exchange or book.available_for_borrow:
+            bookmarks = Bookmark.objects.filter(
+                book=book, notify_on_available=True, active=True
+            ).select_related('user')
+            notifications = [
+                Notification(
+                    user=bookmark.user,
+                    book=book,
+                    type='book_available',
+                    message=f"{book.title} is now available for {'exchange' if book.available_for_exchange else 'borrowing'}."
+                )
+                for bookmark in bookmarks
+            ]
+            Notification.objects.bulk_create(notifications)
+
+        return Response(BookDetailSerializer(book).data, status=status.HTTP_200_OK)
+
+
 class RemoveBookFromLibraryView(generics.DestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = 'book_id'
-    queryset = Libraries.objects.select_related('book')
+    queryset = Library.objects.select_related('book')
 
     def get_object(self):
         book_id = self.kwargs.get(self.lookup_url_kwarg)
         try:
-            library_entry = Libraries.objects.get(user=self.request.user, book__book_id=book_id)
-        except Libraries.DoesNotExist:
+            library_entry = Library.objects.get(
+                user=self.request.user,
+                book__book_id=book_id,
+                status='owned'
+            )
+        except Library.DoesNotExist:
             raise PermissionDenied("You do not own this book.")
         return library_entry
 
-    def delete(self, request, *args, **kwargs):
-        library_entry = self.get_object()
-        book = library_entry.book
+    def perform_destroy(self, instance):
+        book = instance.book
+        with transaction.atomic():
+            instance.delete()
+            if book.copy_count > 1:
+                book.copy_count -= 1
+                book.save()
+            else:
+                book.owner = None
+                book.available_for_exchange = False
+                book.available_for_borrow = False
+                book.save()
 
-        # Delete library entry (removes user's ownership)
-        library_entry.delete()
-
-        # Update or delete book record
-        if book.copy_count and book.copy_count > 1:
-            book.copy_count -= 1
-            book.save()
-        else:
-            book.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
-class BookmarkBookView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, book_id):
-        # Get the book by its UUID
-        book = get_object_or_404(Books, book_id=book_id)
-        
-        # Check if the user has already bookmarked the book
-        if Bookmarks.objects.filter(user=request.user, book=book).exists():
-            raise ValidationError("You have already bookmarked this book.")
-
-        # Create the bookmark entry
-        bookmark = Bookmarks.objects.create(
-            user=request.user,
+        Notification.objects.create(
+            user=self.request.user,
             book=book,
-            active=True,  # Mark the bookmark as active by default
-            created_at=request.timestamp(),  # Assuming you have a timestamp method
-        )
-        
-        # Return the response with the bookmark ID
-        return Response({
-            'bookmark_id': bookmark.bookmark_id,
-            'book_id': book.book_id,
-            'user_id': request.user.id,
-        }, status=status.HTTP_201_CREATED)
-        
-class RemoveBookmarkView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def delete(self, request, book_id):
-        # Ensure the book exists
-        book = get_object_or_404(Books, book_id=book_id)
-
-        # Find the bookmark
-        try:
-            bookmark = Bookmarks.objects.get(user=request.user, book=book)
-        except Bookmarks.DoesNotExist:
-            raise NotFound("Bookmark not found.")
-
-        # Delete the bookmark
-        bookmark.delete()
-
-        return Response(status=status.HTTP_204_NO_CONTENT)        
-
-class FavoriteBookView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, book_id):
-        book = get_object_or_404(Books, book_id=book_id)
-
-        # Check if already favorited
-        if Favorites.objects.filter(user=request.user, book=book, active=True).exists():
-            raise ValidationError("Book already favorited.")
-
-        favorite = Favorites.objects.create(
-            favorite_id=uuid.uuid4(),
-            user=request.user,
-            book=book,
-            active=True
+            type='book_removed',
+            message=f"You removed {book.title} from your library."
         )
 
-        return Response({
-            "favorite_id": str(favorite.favorite_id),
-            "book_id": str(book.book_id),
-            "user_id": str(request.user.id),
-        }, status=status.HTTP_201_CREATED)
-        
-class UnfavoriteBookView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, book_id):
-        try:
-            favorite = Favorites.objects.get(user=request.user, book__book_id=book_id, active=True)
-        except Favorites.DoesNotExist:
-            raise NotFound("Favorite not found.")
-
-        favorite.delete()  # or favorite.active = False; favorite.save() for soft delete
-
-        return Response({}, status=status.HTTP_204_NO_CONTENT)
-    
-class MyBookmarksView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = BookMiniSerializer
+class BookHistoryView(generics.ListAPIView):
+    serializer_class = BookHistorySerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        return Books.objects.filter(
-            bookmarks__user=self.request.user,
-            bookmarks__active=True
-        )
+        book_id = self.request.query_params.get('book_id')
+        if book_id:
+            return BookHistory.objects.filter(
+                book__book_id=book_id
+            ).select_related('book', 'user', 'swap').order_by('-start_date')
+        return BookHistory.objects.filter(
+            book__owner=self.request.user
+        ).select_related('book', 'user', 'swap').order_by('-start_date')
+
+
+class BookmarkBookView(generics.CreateAPIView):
+    serializer_class = BookmarkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+        serializer.is_valid(raise_exception=True)
+        bookmark = serializer.save()
+        return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
+
+
+class RemoveBookmarkView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+
+    def get_object(self):
+        book = get_object_or_404(Book, book_id=self.kwargs['book_id'])
+        try:
+            return Bookmark.objects.get(user=self.request.user, book=book, active=True)
+        except Bookmark.DoesNotExist:
+            raise NotFound("Bookmark not found.")
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save()
+
+
+class FavoriteBookView(generics.CreateAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+        serializer.is_valid(raise_exception=True)
+        favorite = serializer.save()
+        return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
+
+
+class UnfavoriteBookView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'book_id'
+
+    def get_object(self):
+        book = get_object_or_404(Book, book_id=self.kwargs['book_id'])
+        try:
+            return Favorite.objects.get(user=self.request.user, book=book, active=True)
+        except Favorite.DoesNotExist:
+            raise NotFound("Favorite not found.")
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save()
+
+
+class MyBookmarksView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        return Book.objects.filter(
+            bookmarked_by__user=self.request.user,
+            bookmarked_by__active=True
+        ).select_related('owner')
 
 
 class MyFavoritesView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = BookMiniSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        return Books.objects.filter(
-            favorites__user=self.request.user,
-            favorites__active=True
-        )
+        return Book.objects.filter(
+            favorited_by__user=self.request.user,
+            favorited_by__active=True
+        ).select_related('owner')
+
+
+class RecommendedBooksView(generics.ListAPIView):
+    serializer_class = PopularBookSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        cache_key = "recommended_books"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        queryset = PopularBook.objects.select_related('book', 'book__owner').order_by('-swap_count')[:50]
+        cache.set(cache_key, queryset, timeout=3600)  # 1 hour
+        return queryset

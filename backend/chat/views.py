@@ -3,41 +3,104 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Chats, SocietyMembers, Societies, SocietyMessages
-from users.models import CustomUser, Follows
-from .serializers import ChatSerializer, ChatReadStatusSerializer, SocietyCreateSerializer, SocietySerializer, SocietyMessageSerializer
+from backend.discussions.models import Society, SocietyMember, SocietyMessage
+from backend.users.models import CustomUser, Follows
+from backend.swaps.models import Notification
+from .serializers import (
+    ChatSerializer, ChatReadStatusSerializer, SocietyCreateSerializer,
+    SocietySerializer, SocietyMessageSerializer, MessageReactionSerializer
+)
+from .models import Chats, MessageReaction
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+# WebSocket placeholder
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
 
 class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         receiver_id = request.data.get('receiver_id')
-
         try:
             receiver = CustomUser.objects.get(user_id=receiver_id)
         except CustomUser.DoesNotExist:
             return Response({"error": "Receiver not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Follow gating logic (upgradeable later to mutual follow check)
-        if not Follows.objects.filter(follower=request.user, followed=receiver).exists():
-            return Response({"error": "You must follow the user to send messages."}, status=status.HTTP_403_FORBIDDEN)
+        if not (Follows.objects.filter(follower=request.user, followed=receiver).exists() and
+                Follows.objects.filter(follower=receiver, followed=request.user).exists()):
+            return Response({"error": "Mutual follow required."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ChatSerializer(data=request.data, context={'sender': request.user})
         if serializer.is_valid():
             chat = serializer.save()
+            # WebSocket placeholder
+            # channel_layer = get_channel_layer()
+            # async_to_sync(channel_layer.group_send)(
+            #     f"chat_{receiver.user_id}",
+            #     {"type": "message.received", "data": ChatSerializer(chat).data}
+            # )
             return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EditMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, chat_id):
+        try:
+            chat = Chats.objects.get(chat_id=chat_id, sender=request.user)
+        except Chats.DoesNotExist:
+            return Response({"error": "Chat not found or not your message."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ChatSerializer(chat, data=request.data, partial=True, context={'sender': request.user})
+        if serializer.is_valid():
+            chat = serializer.save()
+            Notification.objects.create(
+                user=chat.receiver,
+                type='message_edited',
+                message=f"{request.user.username} edited a message.",
+                content_type='chat',
+                content_id=chat.chat_id
+            )
+            return Response(ChatSerializer(chat).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, chat_id):
+        try:
+            chat = Chats.objects.get(chat_id=chat_id)
+        except Chats.DoesNotExist:
+            return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if chat.sender == request.user:
+            chat.is_deleted_by_sender = True
+        elif chat.receiver == request.user:
+            chat.is_deleted_by_receiver = True
+        else:
+            return Response({"error": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
+
+        chat.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class MessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        chats = Chats.objects.filter(Q(sender=user) | Q(receiver=user)).select_related('sender', 'receiver', 'book')
+        cache_key = f"chat_list_{user.user_id}_{request.query_params}"
+        cached_chats = cache.get(cache_key)
+        if cached_chats:
+            return cached_chats
+
+        chats = Chats.objects.filter(
+            Q(sender=user) | Q(receiver=user),
+            is_deleted_by_sender=False,
+            is_deleted_by_receiver=False
+        ).select_related('sender', 'receiver', 'book')
 
         receiver_id = request.query_params.get('receiver_id')
         unread = request.query_params.get('unread')
@@ -47,106 +110,156 @@ class MessageListView(APIView):
                 Q(sender__user_id=receiver_id, receiver=user) |
                 Q(receiver__user_id=receiver_id, sender=user)
             )
-
         if unread == 'true':
-            chats = chats.filter(status__in=['Sent', 'Received'], receiver=user)
+            chats = chats.filter(status='UNREAD', receiver=user)
 
         chats = chats.order_by('-created_at')
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(chats, request)
         serializer = ChatSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-    
+        response = paginator.get_paginated_response(serializer.data)
+        cache.set(cache_key, response, timeout=300)
+        return response
+
 class MarkReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, chat_id):
-        # Fetch the chat message by chat_id and verify the receiver
         try:
             chat = Chats.objects.get(chat_id=chat_id, receiver=request.user)
         except Chats.DoesNotExist:
-            raise NotFound("Chat not found or you're not the intended recipient.")
+            raise NotFound("Chat not found or you're not the recipient.")
 
-        # Mark the message as read
-        chat.status = 'Read'
+        chat.status = 'READ'
         chat.save()
-
-        # Serialize the response
         serializer = ChatReadStatusSerializer(chat)
+        Notification.objects.create(
+            user=chat.sender,
+            type='message_read',
+            message=f"{request.user.username} read your message.",
+            content_type='chat',
+            content_id=chat.chat_id
+        )
         return Response(serializer.data)
-    
+
+class AddReactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, chat_id=None, message_id=None):
+        if chat_id:
+            try:
+                chat = Chats.objects.get(chat_id=chat_id)
+            except Chats.DoesNotExist:
+                return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
+            context = {'chat': chat, 'user': request.user}
+        elif message_id:
+            try:
+                society_message = SocietyMessage.objects.get(message_id=message_id)
+            except SocietyMessage.DoesNotExist:
+                return Response({"error": "Society message not found."}, status=status.HTTP_404_NOT_FOUND)
+            context = {'society_message': society_message, 'user': request.user}
+        else:
+            return Response({"error": "Chat or message ID required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = MessageReactionSerializer(data=request.data, context=context)
+        if serializer.is_valid():
+            reaction = serializer.save()
+            return Response(MessageReactionSerializer(reaction).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ListReactionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, chat_id=None, message_id=None):
+        if chat_id:
+            try:
+                Chats.objects.get(chat_id=chat_id)
+            except Chats.DoesNotExist:
+                return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
+            reactions = MessageReaction.objects.filter(chat__chat_id=chat_id)
+        elif message_id:
+            try:
+                SocietyMessage.objects.get(message_id=message_id)
+            except SocietyMessage.DoesNotExist:
+                return Response({"error": "Society message not found."}, status=status.HTTP_404_NOT_FOUND)
+            reactions = MessageReaction.objects.filter(society_message__message_id=message_id)
+        else:
+            return Response({"error": "Chat or message ID required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = MessageReactionSerializer(reactions, many=True)
+        return Response(serializer.data)
+
 class CreateSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = SocietyCreateSerializer(data=request.data)
-
         if serializer.is_valid():
-            # Validate that the user is authenticated
-            creator = request.user
+            society = serializer.save(creator=request.user)
+            SocietyMember.objects.create(
+                society=society,
+                user=request.user,
+                role='admin',
+                status='ACTIVE'
+            )
+            Notification.objects.create(
+                user=request.user,
+                type='society_created',
+                message=f"You created a new society: {society.name}",
+                content_type='society',
+                content_id=society.society_id
+            )
+            return Response(SocietySerializer(society).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # Save the society instance
-            society = serializer.save(creator=creator)
-
-            # Add the creator as a member with the 'Admin' role
-            SocietyMembers.objects.create(society=society, user=creator, role='Admin', is_creator=True)
-
-            # Serialize and return the created society data
-            society_data = SocietySerializer(society).data
-            return Response(society_data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 class JoinSocietyView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensures only authenticated users can join societies.
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id):
-        # Fetch the society using the provided ID
-        society = get_object_or_404(Societies, society_id=society_id)
-
-        # Check if society is public or if an invitation is required (future feature)
-        if not society.is_public:
+        society = get_object_or_404(Society, society_id=society_id)
+        if society.visibility == 'private':
             return Response({"error": "Private society. Join by invitation only."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Prevent the user from joining the society more than once
-        member, created = SocietyMembers.objects.get_or_create(
+        member, created = SocietyMember.objects.get_or_create(
             society=society,
             user=request.user,
-            defaults={'role': 'Member'}
+            defaults={'role': 'member', 'status': 'ACTIVE'}
         )
-        
-        if not created:  # If the user is already a member, no need to create another membership
-            return Response({"error": "User is already a member of this society."}, status=status.HTTP_400_BAD_REQUEST)
+        if not created:
+            return Response({"error": "Already a member."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Return success response with member details
-        return Response({
-            "member_id": str(member.member_id),
-            "society_id": str(society.society_id),
-            "user": {
-                "user_id": str(request.user.user_id),
-                "username": request.user.username
-            }
-        }, status=status.HTTP_201_CREATED)
-        
+        Notification.objects.create(
+            user=request.user,
+            type='society_joined',
+            message=f"You joined the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+        return Response(SocietySerializer(society).data, status=status.HTTP_201_CREATED)
+
 class LeaveSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, society_id):
-        # Check if the user is a member of the society
         try:
-            member = SocietyMembers.objects.get(society__society_id=society_id, user=request.user)
-        except SocietyMembers.DoesNotExist:
-            return Response({"error": "You are not a member of this society."}, status=status.HTTP_404_NOT_FOUND)
+            member = SocietyMember.objects.get(society__society_id=society_id, user=request.user)
+        except SocietyMember.DoesNotExist:
+            return Response({"error": "Not a member."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Prevent creator from leaving the society unless they are the last member
         society = member.society
-        if society.creator == request.user and society.societymembers_set.count() > 1:
-            return Response({"error": "Creator cannot leave unless they are the last member."}, status=status.HTTP_400_BAD_REQUEST)
+        if member.role == 'admin' and SocietyMember.objects.filter(society=society, role='admin').count() == 1:
+            return Response({"error": "Cannot leave as the only admin."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Delete the user from the society
         member.delete()
+        Notification.objects.create(
+            user=request.user,
+            type='society_left',
+            message=f"You left the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 class SocietyListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -156,12 +269,16 @@ class SocietyListView(APIView):
         focus_id = request.query_params.get('focus_id')
         my_societies = request.query_params.get('my_societies') == 'true'
 
-        societies = Societies.objects.all()
+        cache_key = f"society_list_{user.user_id if user else 'anon'}_{request.query_params}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return cached_response
 
+        societies = Society.objects.all()
         if my_societies and user:
-            societies = societies.filter(societymembers__user=user)
+            societies = societies.filter(members__user=user, members__status='ACTIVE')
         else:
-            societies = societies.filter(Q(is_public=True) | Q(societymembers__user=user))
+            societies = societies.filter(Q(visibility='public') | Q(members__user=user, members__status='ACTIVE'))
 
         if focus_type:
             societies = societies.filter(focus_type=focus_type)
@@ -169,125 +286,121 @@ class SocietyListView(APIView):
             societies = societies.filter(focus_id=focus_id)
 
         societies = societies.distinct()
-
         paginator = PageNumberPagination()
         paginated = paginator.paginate_queryset(societies, request)
         serializer = SocietySerializer(paginated, many=True)
-        return paginator.get_paginated_response(serializer.data)
-    
+        response = paginator.get_paginated_response(serializer.data)
+        cache.set(cache_key, response, timeout=3600)
+        return response
+
 class SendSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id):
-        user = request.user
-
-        # Check membership
-        is_member = SocietyMembers.objects.filter(
-            society__society_id=society_id, user=user
+        is_member = SocietyMember.objects.filter(
+            society__society_id=society_id, user=request.user, status='ACTIVE'
         ).exists()
-
         if not is_member:
-            return Response({"error": "Not a member of this society."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Not a member."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = SocietyMessageSerializer(
             data=request.data,
-            context={'society_id': society_id, 'user': user}
+            context={'society_id': society_id, 'user': request.user}
         )
-
         if serializer.is_valid():
             message = serializer.save()
+            # WebSocket placeholder
+            # channel_layer = get_channel_layer()
+            # async_to_sync(channel_layer.group_send)(
+            #     f"society_{society_id}",
+            #     {"type": "message.sent", "data": SocietyMessageSerializer(message).data}
+            # )
             return Response(SocietyMessageSerializer(message).data, status=status.HTTP_201_CREATED)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class SocietyMessageListView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request, society_id):
-        # Step 1: Access control – verify user is a member
-        is_member = SocietyMembers.objects.filter(
-            society__society_id=society_id,
-            user=request.user,
-            status='Active'  # Optional filter if you want to exclude banned/removed
-        ).exists()
-
-        if not is_member:
-            return Response({"error": "Access denied. User is not a member of this society."},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        # Step 2: Fetch messages with pinned ones first
-        messages = SocietyMessages.objects.filter(
-            society__society_id=society_id
-        ).select_related('user', 'book').order_by('-is_pinned', '-created_at')
-
-        # Step 3: Paginate results
-        paginator = PageNumberPagination()
-        paginated_messages = paginator.paginate_queryset(messages, request)
-
-        # Step 4: Serialize data
-        serializer = SocietyMessageSerializer(paginated_messages, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-    
-class PinMessageView(APIView):
+class EditSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, society_id, message_id):
         try:
-            # Verify that the user is an Admin of the society
-            is_admin = SocietyMembers.objects.filter(
-                society__society_id=society_id,
-                user=request.user,
-                role='Admin'
-            ).exists()
+            message = SocietyMessage.objects.get(message_id=message_id, society__society_id=society_id, user=request.user)
+        except SocietyMessage.DoesNotExist:
+            return Response({"error": "Message not found or not yours."}, status=status.HTTP_404_NOT_FOUND)
 
-            if not is_admin:
-                return Response({"error": "Admins only"}, status=status.HTTP_403_FORBIDDEN)
+        serializer = SocietyMessageSerializer(message, data=request.data, partial=True, context={'society_id': society_id, 'user': request.user})
+        if serializer.is_valid():
+            message = serializer.save()
+            return Response(SocietyMessageSerializer(message).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # Fetch and update the message
-            message = SocietyMessages.objects.get(
-                message_id=message_id,
-                society__society_id=society_id
-            )
+class DeleteSocietyMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, society_id, message_id):
+        try:
+            message = SocietyMessage.objects.get(message_id=message_id, society__society_id=society_id)
+        except SocietyMessage.DoesNotExist:
+            return Response({"error": "Message not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if message.user != request.user and not SocietyMember.objects.filter(
+            society__society_id=society_id, user=request.user, role='admin'
+        ).exists():
+            return Response({"error": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
+
+        message.status = 'DELETED'
+        message.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class SocietyMessageListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        is_member = SocietyMember.objects.filter(
+            society__society_id=society_id, user=request.user, status='ACTIVE'
+        ).exists()
+        if not is_member:
+            return Response({"error": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        cache_key = f"society_messages_{society_id}_{request.query_params}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return cached_response
+
+        messages = SocietyMessage.objects.filter(
+            society__society_id=society_id, status='ACTIVE'
+        ).select_related('user', 'book').order_by('-is_pinned', '-created_at')
+
+        paginator = PageNumberPagination()
+        paginated_messages = paginator.paginate_queryset(messages, request)
+        serializer = SocietyMessageSerializer(paginated_messages, many=True)
+        response = paginator.get_paginated_response(serializer.data)
+        cache.set(cache_key, response, timeout=300)
+        return response
+
+class PinMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, society_id, message_id):
+        is_admin = SocietyMember.objects.filter(
+            society__society_id=society_id, user=request.user, role='admin'
+        ).exists()
+        if not is_admin:
+            return Response({"error": "Admins only."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            message = SocietyMessage.objects.get(message_id=message_id, society__society_id=society_id)
             message.is_pinned = True
             message.save()
-
+            Notification.objects.create(
+                user=message.user,
+                type='message_pinned',
+                message=f"Your message in {message.society.name} was pinned.",
+                content_type='society_message',
+                content_id=message.message_id
+            )
             return Response({
                 "message_id": str(message.message_id),
                 "is_pinned": message.is_pinned
             }, status=status.HTTP_200_OK)
-
-        except SocietyMessages.DoesNotExist:
-            return Response({"error": "Message not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-class SocietyListView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get(self, request):
-        societies = Societies.objects.all()
-
-        # Filter for user's societies
-        if request.query_params.get('my_societies') == 'true' and request.user.is_authenticated:
-            societies = societies.filter(members__user=request.user)
-        else:
-            societies = societies.filter(is_public=True)
-
-        # Optional filtering
-        focus_type = request.query_params.get('focus_type')
-        if focus_type:
-            societies = societies.filter(focus_type=focus_type)
-
-        focus_id = request.query_params.get('focus_id')
-        if focus_id:
-            societies = societies.filter(focus_id=focus_id)
-
-        # Pagination
-        paginator = PageNumberPagination()
-        paginator.page_size = 10
-        paginated = paginator.paginate_queryset(societies, request)
-        serializer = SocietySerializer(paginated, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
+        except SocietyMessage.DoesNotExist:
+            return Response({"error": "Message not found."}, status=status.HTTP_404_NOT_FOUND)

@@ -1,303 +1,419 @@
+from django.forms import ValidationError
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import uuid
-from django.utils.timezone import now
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
-from .serializers import CreateDiscussionSerializer, DiscussionResponseSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer, NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer,ReprintSerializer, ReprintCreateSerializer, TopPostSerializer 
-from .models import Discussions, Notes, Reprints
-from users.models import Follows
-from library.models import Bookmarks
-from django.db.models import Count, Q, F, Value, CharField
-from django.db.models.functions import Left
+from rest_framework.exceptions import NotFound, PermissionDenied
+from django.core.cache import cache
+from django.db.models import Count, Q
+from django.utils.timezone import now
+from django.db import transaction
+from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent
+from .serializers import (
+    CreateDiscussionSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer,
+    NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer, ReprintSerializer,
+    ReprintCreateSerializer, TopPostSerializer, SocietySerializer, CreateSocietySerializer,
+    SocietyMemberSerializer, SocietyEventSerializer, CreateSocietyEventSerializer
+)
+from backend.users.models import Follows
+from backend.library.models import Bookmark
+from backend.swaps.models import Notification
+# Placeholder for WebSocket integration
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
 
-class CreateDiscussionView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = CreateDiscussionSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            discussion = serializer.save()
-            response_serializer = DiscussionResponseSerializer(discussion)
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class PostListView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get(self, request):
-        user = request.user
-        query_params = request.query_params
-        posts = Discussions.objects.select_related('user', 'book')
-
-        # Personalized filtering
-        if query_params.get('followed') == 'true' and user.is_authenticated:
-            followed_ids = Follows.objects.filter(follower=user).values_list('followed_id', flat=True)
-            posts = posts.filter(user__id__in=followed_ids)
-
-        if query_params.get('book_id'):
-            posts = posts.filter(book__id=query_params.get('book_id'))
-
-        if query_params.get('type') in ['Article', 'Synopsis', 'Query']:
-            posts = posts.filter(type=query_params.get('type'))
-
-        if query_params.get('tag'):
-            tag = query_params.get('tag')
-            posts = posts.filter(tags__icontains=tag)
-
-        # Optional: Prioritize bookmarked books (if needed)
-        if user.is_authenticated:
-            bookmarked_book_ids = Bookmarks.objects.filter(user=user).values_list('book_id', flat=True)
-            posts = posts.annotate(priority=Count('id')).order_by(
-                F('book__id').in_(bookmarked_book_ids).desc(nulls_last=True),
-                '-created_at'
-            )
-        else:
-            posts = posts.order_by('-created_at')
-
-        paginator = PageNumberPagination()
-        result_page = paginator.paginate_queryset(posts, request)
-        serializer = DiscussionFeedSerializer(result_page, many=True, context={'request': request})
-
-        return paginator.get_paginated_response(serializer.data)
-    
-class PostDetailView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get(self, request, discussion_id):
-        try:
-            # Fetch the post with the related book and user
-            discussion = Discussions.objects.select_related('user', 'book').get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
-            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Fetch notes and reprints counts
-        note_count = Notes.objects.filter(discussion=discussion).count()
-        reprint_count = Reprints.objects.filter(discussion=discussion).count()
-
-        # Prepare the response data
-        response_data = {
-            'discussion_id': discussion.discussion_id,
-            'type': discussion.type,
-            'title': discussion.title,
-            'user': {
-                'user_id': str(discussion.user.id),
-                'username': discussion.user.username
-            },
-            'book': {
-                'book_id': str(discussion.book.id),
-                'title': discussion.book.title
-            },
-            'content': discussion.content,
-            'tags': discussion.tags.split(",") if discussion.tags else [],
-            'media_urls': discussion.media_urls.split(",") if discussion.media_urls else [],
-            'spoiler_flag': discussion.spoiler_flag,
-            'upvotes': discussion.upvotes,
-            'note_count': note_count,
-            'reprint_count': reprint_count
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-class DeletePostView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, discussion_id):
-        try:
-            # Fetch the post that the current user owns
-            discussion = Discussions.objects.get(discussion_id=discussion_id, user=request.user)
-
-            # Delete the discussion and its associated notes and reprints
-            discussion.delete()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Discussions.DoesNotExist:
-            return Response({"error": "Not your post"}, status=status.HTTP_403_FORBIDDEN)
-        
-class AddNoteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, discussion_id):
-        try:
-            # Fetch the discussion
-            discussion = Discussions.objects.get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
-            return Response({"detail": "Discussion not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Pass the discussion and user to the serializer context
-        serializer = NoteSerializer(data=request.data, context={'discussion': discussion, 'user': request.user})
-
-        if serializer.is_valid():
-            note = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class NotesPagination(PageNumberPagination):
-    page_size = 10  # You can adjust the page size to fit your needs
+class StandardPagination(PageNumberPagination):
+    page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-class NotesListView(generics.ListAPIView):
-    serializer_class = NoteSerializer
-    pagination_class = NotesPagination
+
+class CreateDiscussionView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CreateDiscussionSerializer
+
+    def perform_create(self, serializer):
+        discussion = serializer.save()
+        Notification.objects.create(
+            user=self.request.user,
+            type='discussion_created',
+            message=f"You created a new discussion: {discussion.title}",
+            content_type='discussion',
+            content_id=discussion.discussion_id
+        )
+        # WebSocket placeholder
+        # channel_layer = get_channel_layer()
+        # async_to_sync(channel_layer.group_send)(
+        #     f"discussion_{discussion.discussion_id}",
+        #     {"type": "discussion.created", "data": DiscussionResponseSerializer(discussion).data}
+        # )
+
+
+class PostListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = DiscussionFeedSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self):
-        discussion_id = self.kwargs.get('discussion_id')
-        try:
-            # Validate the discussion exists
-            discussion = Discussions.objects.get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
-            raise NotFound(detail="Discussion not found")
+        user = self.request.user
+        params = self.request.query_params
+        cache_key = f"post_list_{user.id if user.is_authenticated else 'anon'}_{params}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
 
-        # Fetch notes and include their threaded structure based on parent_note_id
-        return Notes.objects.filter(discussion=discussion).order_by('created_at')
+        queryset = Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
+            upvotes=Count('upvotes'),
+            note_count=Count('notes'),
+            reprint_count=Count('reprints')
+        )
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
+        if params.get('followed') == 'true' and user.is_authenticated:
+            followed_ids = Follows.objects.filter(follower=user).values_list('followed_id', flat=True)
+            queryset = queryset.filter(user__id__in=followed_ids)
+
+        if params.get('book_id'):
+            queryset = queryset.filter(book__book_id=params['book_id'])
+
+        if params.get('type') in ['Article', 'Synopsis', 'Query']:
+            queryset = queryset.filter(type=params['type'])
+
+        if params.get('tag'):
+            queryset = queryset.filter(tags__contains=[params['tag']])
+
+        if user.is_authenticated:
+            bookmarked_book_ids = Bookmark.objects.filter(user=user, active=True).values_list('book_id', flat=True)
+            queryset = queryset.order_by(
+                Q(book__book_id__in=bookmarked_book_ids).desc(),
+                '-created_at'
+            )
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
+
+
+class PostDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = DiscussionDetailSerializer
+    lookup_field = 'discussion_id'
+
+    def get_queryset(self):
+        return Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
+            upvotes=Count('upvotes'),
+            note_count=Count('notes'),
+            reprint_count=Count('reprints')
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.views += 1
+        instance.save()
+        serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
-class LikeCommentView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        note_id = self.kwargs.get('note_id')
 
+class DeletePostView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'discussion_id'
+
+    def get_queryset(self):
+        return Discussion.objects.filter(user=self.request.user, status='active')
+
+    def perform_destroy(self, instance):
+        instance.status = 'deleted'
+        instance.save()
+        Notification.objects.create(
+            user=self.request.user,
+            type='discussion_deleted',
+            message=f"You deleted your discussion: {instance.title}",
+            content_type='discussion',
+            content_id=instance.discussion_id
+        )
+
+
+class AddNoteView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = NoteSerializer
+
+    def create(self, request, *args, **kwargs):
+        discussion_id = self.kwargs['discussion_id']
         try:
-            # Fetch the note that the user is trying to like
-            note = Notes.objects.get(note_id=note_id)
-        except Notes.DoesNotExist:
-            raise NotFound(detail="Note not found")
-
-        # Increment the likes count
-        note.likes = (note.likes or 0) + 1
-        note.save()
-
-        # Serialize and return the updated note data
-        serializer = LikeResponseSerializer(note)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-class UpvotePostView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        discussion_id = self.kwargs.get('discussion_id')
-
-        try:
-            # Fetch the discussion that the user is trying to upvote
-            discussion = Discussions.objects.get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
-            raise NotFound(detail="Discussion post not found")
-
-        # Increment the upvotes count
-        discussion.upvotes = (discussion.upvotes or 0) + 1
-        discussion.save()
-
-        # Serialize and return the updated discussion data
-        serializer = UpvoteResponseSerializer(discussion)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class ReprintPostView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, discussion_id):
-        # Validate discussion existence
-        try:
-            discussion = Discussions.objects.get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
             raise NotFound("Discussion not found.")
 
-        # Validate request body
-        serializer = ReprintCreateSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={'discussion': discussion, 'request': request})
         serializer.is_valid(raise_exception=True)
-        comment = serializer.validated_data.get('comment', '')
+        note = serializer.save()
 
-        # Create new Reprint
-        reprint = Reprints.objects.create(
-            reprint_id=uuid.uuid4(),
-            discussion=discussion,
-            user=request.user,
-            comment=comment,
-            created_at=now()
+        Notification.objects.create(
+            user=discussion.user,
+            type='note_added',
+            message=f"{request.user.username} commented on your discussion: {discussion.title}",
+            content_type='note',
+            content_id=note.note_id
         )
+        # WebSocket placeholder
+        # channel_layer = get_channel_layer()
+        # async_to_sync(channel_layer.group_send)(
+        #     f"discussion_{discussion.discussion_id}",
+        #     {"type": "note.added", "data": serializer.data}
+        # )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        response_serializer = ReprintSerializer(reprint)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-    
-class ListTopPostsView(APIView):
-    def get(self, request):
-        book_id = request.query_params.get('book_id')
-        post_type = request.query_params.get('type')
-        limit = request.query_params.get('limit')
 
-        posts = Discussions.objects.all()
+class NotesListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = NoteSerializer
+    pagination_class = StandardPagination
 
-        if book_id:
-            posts = posts.filter(book__book_id=book_id)
-        
-        if post_type:
-            posts = posts.filter(type=post_type)
-
-        posts = posts.order_by('-upvotes')
-
-        if limit and limit.isdigit():
-            posts = posts[:int(limit)]
-        else:
-            posts = posts[:5]  # default limit
-
-        serializer = TopPostSerializer(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class AddNoteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, discussion_id):
-        content = request.data.get("content", "").strip()
-        parent_note_id = request.data.get("parent_note_id", None)
-
-        if not content:
-            return Response({"detail": "Content is required."}, status=status.HTTP_400_BAD_REQUEST)
-        if len(content) > 280:
-            return Response({"detail": "Content exceeds 280 characters."}, status=status.HTTP_400_BAD_REQUEST)
-
+    def get_queryset(self):
+        discussion_id = self.kwargs['discussion_id']
         try:
-            discussion = Discussions.objects.get(discussion_id=discussion_id)
-        except Discussions.DoesNotExist:
-            return Response({"detail": "Discussion not found."}, status=status.HTTP_404_NOT_FOUND)
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found.")
+        return Note.objects.filter(discussion=discussion, status='active').select_related('user', 'parent_note').order_by('created_at')
 
-        parent_note = None
-        if parent_note_id:
-            try:
-                parent_note = Notes.objects.get(note_id=parent_note_id)
-            except Notes.DoesNotExist:
-                return Response({"detail": "Parent note not found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        note = Notes.objects.create(
-            note_id=uuid.uuid4(),
-            discussion=discussion,
-            user=request.user,
-            content=content,
-            parent_note=parent_note,
-            thread=parent_note.thread if parent_note and parent_note.thread else parent_note,
-            depth=(parent_note.depth + 1) if parent_note and parent_note.depth is not None else 0,
-            created_at=now()
+class LikeCommentView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LikeResponseSerializer
+    lookup_field = 'note_id'
+
+    def get_queryset(self):
+        return Note.objects.filter(status='active')
+
+    def update(self, request, *args, **kwargs):
+        note = self.get_object()
+        note.likes += 1
+        note.save()
+        serializer = self.get_serializer(note)
+        Notification.objects.create(
+            user=note.user,
+            type='note_liked',
+            message=f"{request.user.username} liked your comment on {note.discussion.title}",
+            content_type='note',
+            content_id=note.note_id
+        )
+        return Response(serializer.data)
+
+
+class UpvotePostView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UpvoteResponseSerializer
+    lookup_field = 'discussion_id'
+
+    def get_queryset(self):
+        return Discussion.objects.filter(status='active')
+
+    def update(self, request, *args, **kwargs):
+        discussion = self.get_object()
+        discussion.upvotes += 1
+        discussion.save()
+        serializer = self.get_serializer(discussion)
+        Notification.objects.create(
+            user=discussion.user,
+            type='discussion_upvoted',
+            message=f"{request.user.username} upvoted your discussion: {discussion.title}",
+            content_type='discussion',
+            content_id=discussion.discussion_id
+        )
+        return Response(serializer.data)
+
+
+class ReprintPostView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ReprintCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        discussion_id = self.kwargs['discussion_id']
+        try:
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found.")
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            reprint = Reprint.objects.create(
+                reprint_id=uuid.uuid4(),
+                discussion=discussion,
+                user=request.user,
+                comment=serializer.validated_data.get('comment', ''),
+                created_at=now()
+            )
+            Notification.objects.create(
+                user=discussion.user,
+                type='discussion_reprinted',
+                message=f"{request.user.username} reposted your discussion: {discussion.title}",
+                content_type='reprint',
+                content_id=reprint.reprint_id
+            )
+        return Response(ReprintSerializer(reprint).data, status=status.HTTP_201_CREATED)
+
+
+class ListTopPostsView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = TopPostSerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        params = self.request.query_params
+        cache_key = f"top_posts_{params}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            return cached_queryset
+
+        queryset = Discussion.objects.filter(status='active').annotate(
+            upvotes=Count('upvotes'),
+            note_count=Count('notes'),
+            engagement=Count('upvotes') + Count('notes') * 2
         )
 
-        return Response({
-            "note_id": str(note.note_id),
-            "discussion_id": str(discussion.discussion_id),
-            "user": {
-                "user_id": str(request.user.id),
-                "username": request.user.username
-            },
-            "content": note.content,
-            "parent_note_id": str(parent_note.note_id) if parent_note else None
-        }, status=status.HTTP_201_CREATED)
+        if params.get('book_id'):
+            queryset = queryset.filter(book__book_id=params['book_id'])
+        if params.get('type'):
+            queryset = queryset.filter(type=params['type'])
+
+        queryset = queryset.order_by('-engagement', '-upvotes')
+        limit = params.get('limit', '5')
+        if limit.isdigit():
+            queryset = queryset[:int(limit)]
+
+        cache.set(cache_key, queryset, timeout=3600)  # 1 hour
+        return queryset
+
+
+class CreateSocietyView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CreateSocietySerializer
+
+    def perform_create(self, serializer):
+        society = serializer.save(creator=self.request.user)
+        SocietyMember.objects.create(
+            society=society,
+            user=self.request.user,
+            role='admin',
+            joined_at=now()
+        )
+        Notification.objects.create(
+            user=self.request.user,
+            type='society_created',
+            message=f"You created a new society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+
+
+class SocietyDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = SocietySerializer
+    lookup_field = 'society_id'
+
+    def get_queryset(self):
+        return Society.objects.annotate(member_count=Count('members'))
+
+
+class JoinSocietyView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = SocietyMemberSerializer
+
+    def create(self, request, *args, **kwargs):
+        society_id = self.kwargs['society_id']
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        if society.visibility == 'private' and not SocietyMember.objects.filter(
+            society=society, user=request.user, role='admin'
+        ).exists():
+            raise PermissionDenied("Cannot join private society without invitation.")
+
+        if SocietyMember.objects.filter(society=society, user=request.user).exists():
+            raise ValidationError("You are already a member.")
+
+        member = SocietyMember.objects.create(
+            society=society,
+            user=request.user,
+            role='member',
+            joined_at=now()
+        )
+        Notification.objects.create(
+            user=request.user,
+            type='society_joined',
+            message=f"You joined the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+        return Response(SocietyMemberSerializer(member).data, status=status.HTTP_201_CREATED)
+
+
+class LeaveSocietyView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'society_id'
+
+    def get_object(self):
+        society_id = self.kwargs['society_id']
+        try:
+            return SocietyMember.objects.get(society__society_id=society_id, user=self.request.user)
+        except SocietyMember.DoesNotExist:
+            raise NotFound("You are not a member of this society.")
+
+    def perform_destroy(self, instance):
+        society = instance.society
+        if instance.role == 'admin' and SocietyMember.objects.filter(society=society, role='admin').count() == 1:
+            raise PermissionDenied("Cannot leave as the only admin.")
+        instance.delete()
+        Notification.objects.create(
+            user=self.request.user,
+            type='society_left',
+            message=f"You left the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+
+
+class CreateSocietyEventView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CreateSocietyEventSerializer
+
+    def create(self, request, *args, **kwargs):
+        society_id = self.kwargs['society_id']
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        if not SocietyMember.objects.filter(society=society, user=request.user, role='admin').exists():
+            raise PermissionDenied("Only admins can create events.")
+
+        serializer = self.get_serializer(data=request.data, context={'society': society, 'request': request})
+        serializer.is_valid(raise_exception=True)
+        event = serializer.save()
+        Notification.objects.create(
+            user=request.user,
+            type='society_event_created',
+            message=f"New event created in {society.name}: {event.title}",
+            content_type='society_event',
+            content_id=event.event_id
+        )
+        return Response(SocietyEventSerializer(event).data, status=status.HTTP_201_CREATED)
+
+
+class SocietyEventListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = SocietyEventSerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        society_id = self.kwargs['society_id']
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+        return SocietyEvent.objects.filter(society=society).select_related('book').order_by('event_date')

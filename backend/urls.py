@@ -1,9 +1,10 @@
 from django.urls import path, include
 
 urlpatterns = [
-    path('api/users/', include('users.urls')),
-    path('api/library/', include('library.urls')),
-    path('api/discussions/', include('discussions.urls')),
-    path('api/chat/', include('chat.urls')),
-    path('api/swaps/', include('swaps.urls')),
+    path('api/users/', include('backend.users.urls')),
+    path('api/swaps/', include('backend.swaps.urls', namespace='swaps')),
+    path('api/library/', include('backend.library.urls', namespace='library')),
+    path('api/discussions/', include('backend.discussions.urls')),
+    path('api/chat/', include('backend.chat.urls')),
+
 ]

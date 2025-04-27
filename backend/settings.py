@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'channels',
+    'axes',
     'django.contrib.gis',
     
     #apps
@@ -69,7 +70,13 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
+
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # in hours
+AXES_LOCKOUT_CALLABLE = 'axes.handlers.database.AxesDatabaseHandler'
+
 
 ROOT_URLCONF = "backend.urls"
 
