@@ -1,5 +1,4 @@
 version: "3.9"
-
 services:
   db:
     image: postgres:15
@@ -12,19 +11,21 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     volumes:
-      - ./backend:/app/backend  # ✅ Mount backend as a proper module
+      - .:/app
     env_file:
       - .env
     depends_on:
       - db
     ports:
       - "8000:8000"
-
+    command: >
+      sh -c "while ! nc -z db 5432; do sleep 1; done &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
   frontend:
     build:
       context: ./frontend
@@ -32,9 +33,10 @@ services:
       - ./frontend:/app
     ports:
       - "5173:5173"
-    stdin_open: true
-    tty: true
     command: npm run dev -- --host
-
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
 volumes:
   postgres_data:

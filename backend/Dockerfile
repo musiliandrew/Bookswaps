@@ -9,14 +9,19 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 # Install dependencies
-COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY backend/requirements.txt /app/backend/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends netcat-openbsd && \
+    pip install --upgrade pip && \
+    pip install --retries 10 --timeout 60 -r backend/requirements.txt && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the entire backend folder into the container
+# Copy the entire project root into the container
 COPY . /app/
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Start the application using Gunicorn
-CMD ["gunicorn", "wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
