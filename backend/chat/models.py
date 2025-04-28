@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from backend.library.models import Book
 import uuid
+from django.utils import timezone
 
 class Chats(models.Model):
     STATUS_CHOICES = (
@@ -34,7 +35,7 @@ class Chats(models.Model):
     )
     is_deleted_by_sender = models.BooleanField(default=False)
     is_deleted_by_receiver = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, db_comment='Tracks last update')
     edited_at = models.DateTimeField(auto_now=True, db_comment='Tracks last edit')
 

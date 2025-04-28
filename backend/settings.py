@@ -175,3 +175,8 @@ CACHES = {
 }
 
 GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY'  # Replace with your key
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Updated backend for django-axes
+    'django.contrib.auth.backends.ModelBackend',  # Default Django backend
+]

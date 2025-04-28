@@ -406,3 +406,91 @@ class Notification(models.Model):
     def __str__(self):
         username = self.user.username if self.user else 'Anonymous'
         return f"{username}: {self.type} notification"
+    
+    
+class Exchange(models.Model):
+    """
+    Tracks the actual exchange event of books between users after a swap is confirmed.
+    Represents the physical handover or exchange of books.
+    """
+    exchange_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    swap = models.OneToOneField(
+        Swap,
+        on_delete=models.CASCADE,
+        related_name='exchange',
+        db_comment='The swap this exchange is associated with'
+    )
+    exchange_date = models.DateTimeField(
+        db_comment='When the physical exchange occurred'
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_comment='Where the exchange took place'
+    )
+    initiator_confirmed = models.BooleanField(
+        default=False,
+        db_comment='Whether the initiator confirmed the exchange'
+    )
+    receiver_confirmed = models.BooleanField(
+        default=False,
+        db_comment='Whether the receiver confirmed the exchange'
+    )
+    qr_scanned = models.BooleanField(
+        default=False,
+        db_comment='Whether the QR code was scanned during exchange'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        db_comment='Additional notes about the exchange'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_comment='When the exchange record was created'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        db_comment='When the exchange record was last updated'
+    )
+
+    class Meta:
+        db_table = 'exchanges'
+        db_table_comment = 'Records of physical book exchanges between users'
+        indexes = [
+            models.Index(fields=['swap']),
+            models.Index(fields=['exchange_date']),
+        ]
+
+    def __str__(self):
+        return f"Exchange for {self.swap}"
+
+    def is_complete(self):
+        """Check if both users have confirmed the exchange."""
+        return self.initiator_confirmed and self.receiver_confirmed
+
+    def confirm_exchange(self, user, confirmed=True):
+        """Confirm exchange from either initiator or receiver."""
+        if user == self.swap.initiator:
+            self.initiator_confirmed = confirmed
+        elif user == self.swap.receiver:
+            self.receiver_confirmed = confirmed
+        else:
+            raise ValidationError("User is not part of this exchange.")
+        
+        self.save()
+        
+        # If both users confirmed, update the swap status to completed
+        if self.is_complete():
+            self.swap.set_status('Completed')
+            
+            # Update book ownership
+            if self.swap.initiator_book and self.swap.receiver:
+                self.swap.initiator_book.owner = self.swap.receiver
+                self.swap.initiator_book.save()
+                
+            if self.swap.receiver_book and self.swap.initiator:
+                self.swap.receiver_book.owner = self.swap.initiator
+                self.swap.receiver_book.save()
