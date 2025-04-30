@@ -28,7 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('user_id', 'username', 'email', 'password', 'city', 'genres')
+        fields = ('user_id', 'username', 'email', 'password', 'city', 'genres', 'age', 'country', 'profile_public')
         read_only_fields = ('user_id',)
 
     def create(self, validated_data):
@@ -41,7 +41,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             city=validated_data.get('city', None),  # Use None for optional CharField
             genres=genres,
-            chat_preferences=chat_prefs_default
+            chat_preferences=chat_prefs_default,
+            age=validated_data.get('age', None),
+            country=validated_data.get('country', None),
+            profile_public=validated_data.get('profile_public', True)
         )
         return user
 
@@ -49,9 +52,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
-
+    
     def validate(self, data):
-        user = authenticate(username=data['username'], password=data['password'])
+        # Get request from the context, which is passed from the view
+        request = self.context.get('request')
+        if not request:
+            raise serializers.ValidationError("Request is required for authentication")
+            
+        identifier = data.get('username')
+        password = data.get('password')
+
+        # Find user by username or email
+        user = CustomUser.objects.filter(email=identifier).first() or CustomUser.objects.filter(username=identifier).first()
+        
+        if user:
+            # Pass the request object to authenticate for Axes to work
+            user = authenticate(request=request, username=user.username, password=password)
+            
         if not user:
             raise serializers.ValidationError("Invalid credentials")
         if not user.is_active:
@@ -62,7 +79,7 @@ class LoginSerializer(serializers.Serializer):
         user.last_login = timezone.now()
         user.save(update_fields=['last_active', 'last_login'])
 
-        data['user'] = UserSerializer(user).data  # Serialize user
+        data['user'] = user
         return data
 
 

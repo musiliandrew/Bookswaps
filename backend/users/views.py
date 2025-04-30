@@ -48,7 +48,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
@@ -56,7 +56,8 @@ class LoginView(APIView):
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
-            "token": str(refresh.access_token)
+            "access_token": str(refresh.access_token),
+            "refresh_token": str(refresh)
         }, status=status.HTTP_200_OK)
 
 
@@ -77,11 +78,13 @@ class LogoutView(APIView):
 
 
 class PasswordResetRequestView(APIView):
-    """Send password reset email with secure link."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         user = CustomUser.objects.filter(email=email).first()
         if user:
             token_generator = PasswordResetTokenGenerator()
@@ -89,13 +92,16 @@ class PasswordResetRequestView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.user_id))
 
             reset_link = f"{settings.FRONTEND_URL}/reset-password/{uidb64}/{token}/"
-            send_mail(
-                subject="Password Reset",
-                message=f"Use the link to reset your password: {reset_link}",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
+            try:
+                send_mail(
+                    subject="Password Reset",
+                    message=f"Use the link to reset your password: {reset_link}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                return Response({"error": f"Failed to send email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"message": "Reset link sent"}, status=status.HTTP_200_OK)
 
@@ -106,7 +112,7 @@ class PasswordResetConfirmView(APIView):
 
     def post(self, request):
         uidb64 = request.data.get("uid")
-        token = request.data.get("password")
+        token = request.data.get("token")
         new_password = request.data.get("password")
 
         try:
@@ -133,6 +139,12 @@ class UserProfileView(APIView):
             user = CustomUser.objects.get(user_id=identifier)
         except (CustomUser.DoesNotExist, ValueError):
             user = get_object_or_404(CustomUser, username=identifier)
+
+        try:
+            # Explicitly call clean() to catch validation issues
+            user.clean()
+        except ValidationError as e:
+            return Response({"error": f"Invalid user data: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not user.profile_public and (not request.user.is_authenticated or request.user != user):
             return Response({"detail": "Profile is private"}, status=status.HTTP_403_FORBIDDEN)
