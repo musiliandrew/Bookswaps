@@ -1,2 +1,22 @@
 @import "tailwindcss";
-/* Tailwind Directives */
+
+
+:root {
+    --primary: #456A76; /* Deep Teal Blue */
+    --secondary: #F0EAD0; /* Cream */
+    --background: #B8C1B0; /* Pastel Sage */
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background);
+    color: #333;
+  }
+  
+  .bookish-border {
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%);
+  }

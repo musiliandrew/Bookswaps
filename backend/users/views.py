@@ -2,6 +2,7 @@ from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
 from rest_framework.views import APIView
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserProfileSerializer,
@@ -22,7 +23,7 @@ from django.db.models import Q
 from django_redis import get_redis_connection
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-
+import json
 
 class RegisterView(generics.CreateAPIView):
     """Register a new user and return JWT token."""
@@ -131,17 +132,20 @@ class PasswordResetConfirmView(APIView):
 
 
 class UserProfileView(APIView):
-    """Retrieve user profile, respecting profile_public."""
     permission_classes = [AllowAny]
 
     def get(self, request, identifier):
         try:
-            user = CustomUser.objects.get(user_id=identifier)
-        except (CustomUser.DoesNotExist, ValueError):
-            user = get_object_or_404(CustomUser, username=identifier)
+            # Try username first
+            user = CustomUser.objects.get(username=identifier)
+        except CustomUser.DoesNotExist:
+            try:
+                # Fallback to user_id
+                user = CustomUser.objects.get(user_id=identifier)
+            except (CustomUser.DoesNotExist, ValueError):
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            # Explicitly call clean() to catch validation issues
             user.clean()
         except ValidationError as e:
             return Response({"error": f"Invalid user data: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -190,7 +194,6 @@ class DeleteAccountView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
 class FollowUserView(APIView):
     """Follow a user and send WebSocket notification."""
     permission_classes = [IsAuthenticated]
@@ -205,14 +208,17 @@ class FollowUserView(APIView):
 
         # Send WebSocket notification
         channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"user_{follow.followed.user_id}",
-            {
-                'type': 'notification',
-                'message': f"{request.user.username} started following you",
-                'follow_id': str(follow.follow_id)
-            }
-        )
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{follow.followed.user_id}",
+                {
+                    'type': 'notification',
+                    'message': f"{request.user.username} started following you",
+                    'follow_id': str(follow.follow_id)
+                }
+            )
+        else:
+            print("Warning: Channel layer not available, skipping WebSocket notification")
 
         return Response({
             "follow_id": str(follow.follow_id),
@@ -220,7 +226,6 @@ class FollowUserView(APIView):
             "followed": follow.followed.username,
             "is_mutual": follow.is_mutual
         }, status=status.HTTP_201_CREATED)
-
 
 class UnfollowUserView(APIView):
     """Soft unfollow a user."""
@@ -375,7 +380,7 @@ class SearchUsersView(APIView):
         cache_key = f"search_users:{query.lower()}"
         cached = redis.get(cache_key)
         if cached:
-            return Response(cached, status=status.HTTP_200_OK)
+            return Response(json.loads(cached), status=status.HTTP_200_OK)
 
         users = CustomUser.objects.filter(
             Q(username__icontains=query) | Q(city__icontains=query) | Q(genres__contains=query),
@@ -383,7 +388,7 @@ class SearchUsersView(APIView):
         ).exclude(user_id=request.user.user_id)[:10]
 
         serializer = UserSearchSerializer(users, many=True)
-        redis.setex(cache_key, 300, serializer.data)
+        redis.setex(cache_key, 300, json.dumps(serializer.data))
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

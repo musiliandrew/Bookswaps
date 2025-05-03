@@ -101,7 +101,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'genres', 'profile_picture', 'profile_public', 'email_notifications',
             'followers_count', 'following_count', 'created_at', 'last_active'
         ]
-        extra_kwargs = {'user_id': {'source': 'user_id'}}
+        extra_kwargs = {}
 
     def get_followers_count(self, obj):
         # Cache count in Redis for performance
@@ -198,4 +198,3 @@ class UserSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['user_id', 'username', 'profile_picture', 'city']
-        extra_kwargs = {'user_id': {'source': 'user_id'}}
