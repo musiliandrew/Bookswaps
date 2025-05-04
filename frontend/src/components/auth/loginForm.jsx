@@ -22,7 +22,7 @@ function LoginForm({ onSubmit, error, isLoading }) {
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
       <div className="space-y-4">
         <Input
-          label="Username"
+          label="Username or Email"
           name="username"
           type="text"
           value={credentials.username}

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import LoginForm from '../../components/auth/LoginForm';
+import LoginForm from '../../components/auth/loginForm';
 import AuthLink from '../../components/auth/AuthLink';
 
 function LoginPage() {
@@ -8,9 +8,9 @@ function LoginPage() {
   const { login, error, isLoading } = useAuth();
 
   const handleLogin = async (credentials) => {
-    await login(credentials);
-    if (!error) {
-      navigate('/profile');
+    const result = await login(credentials); // Capture login result
+    if (result && !error) { // Check if login succeeded
+      navigate('/me/profile');
     }
   };
 
