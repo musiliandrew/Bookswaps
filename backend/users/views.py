@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, serializers
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserProfileSerializer,
     UpdateProfileSerializer, DeleteAccountSerializer, FollowSerializer,
-    UserSearchSerializer
+    UserSearchSerializer, TokenRefreshSerializer
 )
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth import password_validation
@@ -19,11 +19,15 @@ from .models import CustomUser, Follows
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from django.db.models import Q
 from django_redis import get_redis_connection
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RegisterView(generics.CreateAPIView):
     """Register a new user and return JWT token."""
@@ -44,23 +48,71 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class CustomTokenRefreshView(APIView):
+    """Refresh an access token using a valid refresh token."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        if settings.DEBUG:  # Log headers only in DEBUG mode
+            logger.debug(f"Refresh request headers: {request.headers}")
+            logger.debug(f"Refresh request data: {request.data}")
+        
+        serializer = TokenRefreshSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except InvalidToken as e:
+            logger.error(f"Token refresh failed: {str(e)}")
+            return Response({'detail': str(e), 'code': 'token_not_valid'}, status=status.HTTP_401_UNAUTHORIZED)
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return Response({'detail': str(e), 'code': 'validation_error'}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh_token = serializer.validated_data['refresh_token']
+        try:
+            new_access_token = str(refresh_token.access_token)
+            response_data = {'access': new_access_token}
+
+            if getattr(settings, 'SIMPLE_JWT', {}).get('ROTATE_REFRESH_TOKENS', False):
+                refresh_token.set_jti()
+                refresh_token.set_exp()
+                response_data['refresh'] = str(refresh_token)
+
+            logger.info("Successfully issued new access token")
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error generating new token: {str(e)}")
+            return Response(
+                {'detail': 'Error processing token', 'code': 'token_error'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 class LoginView(APIView):
     """Authenticate user and return JWT token."""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        # Log headers only in DEBUG mode
+        if settings.DEBUG:
+            logger.debug(f"Login request headers: {request.headers}")
+        
+        # Log request data without password
+        safe_data = request.data.copy()
+        safe_data.pop('password', None)  # Remove password if present
+        logger.info(f"Login request data: {safe_data}")
+        
         serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
-
+        
+        # Log token details without full token for security
+        logger.info(f"Generated tokens for user {user.username}: user_id={user.user_id}")
+        
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
             "access_token": str(refresh.access_token),
             "refresh_token": str(refresh)
         }, status=status.HTTP_200_OK)
-
 
 class LogoutView(APIView):
     """Blacklist refresh token to log out user."""
@@ -160,7 +212,17 @@ class UserProfileView(APIView):
 class UpdateProfileView(APIView):
     """Update authenticated user's profile."""
     permission_classes = [IsAuthenticated]
-
+    
+    def get(self, request):
+        if settings.DEBUG:  # Log headers only in DEBUG mode
+            logger.debug(f"Profile request headers: {request.headers}")
+        try:
+            user = request.user
+            serializer = UserProfileSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Profile request failed: {str(e)}")
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     def patch(self, request):
         user = request.user
         serializer = UpdateProfileSerializer(user, data=request.data, partial=True)
@@ -174,9 +236,19 @@ class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
+        if settings.DEBUG:
+            logger.debug(f"Delete account request headers: {request.headers}")
+            logger.debug(f"Delete account request data: {request.data}")
+        
         serializer = DeleteAccountSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError as e:
+            logger.error(f"Delete account validation failed: {str(e)}")
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         user = serializer.validated_data['user']
+        logger.info(f"Soft deleting account for user_id={user.user_id}")
 
         # Soft deletion for GDPR compliance
         user.is_active = False
@@ -184,16 +256,19 @@ class DeleteAccountView(APIView):
         user.username = f"deleted_{user.user_id}"
         user.save()
 
-        send_mail(
-            'Account Deletion Confirmation',
-            'Your account has been successfully deleted.',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=True,
-        )
+        try:
+            send_mail(
+                'Account Deletion Confirmation',
+                'Your BookSwap account has been successfully deleted. Thank you for using our platform!',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,
+            )
+            logger.info(f"Deletion confirmation email sent to deleted_{user.user_id}@bookswap.com")
+        except Exception as e:
+            logger.error(f"Failed to send deletion confirmation email: {str(e)}")
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 class FollowUserView(APIView):
     """Follow a user and send WebSocket notification."""
     permission_classes = [IsAuthenticated]

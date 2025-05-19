@@ -15,9 +15,11 @@ function HomePage() {
   const userCarouselRef = useRef(null);
 
   useEffect(() => {
-    getBooks(filters);
-    getRecommendedUsers();
-  }, [filters, getBooks, getRecommendedUsers]);
+    if (isAuthenticated) {
+      getBooks(filters); 
+      getRecommendedUsers();
+    }
+  }, [isAuthenticated, filters, getBooks, getRecommendedUsers]);
 
   const handleSearch = debounce((value) => {
     setFilters((prev) => ({ ...prev, search: value }));

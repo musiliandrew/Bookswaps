@@ -45,6 +45,8 @@ class SwapCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Not your book.")
             if book.locked_until and book.locked_until > timezone.now():
                 raise serializers.ValidationError("Book is locked.")
+            if not book.available_for_exchange:
+                raise serializers.ValidationError("This book is not available for exchange.")
             return value
         except Book.DoesNotExist:
             raise serializers.ValidationError("Invalid book ID.")
@@ -73,11 +75,13 @@ class SwapCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError("Receiver book must belong to receiver.")
                 if book.locked_until and book.locked_until > timezone.now():
                     raise serializers.ValidationError("Receiver book is locked.")
+                if not book.available_for_exchange:
+                    raise serializers.ValidationError("This book is not available for exchange.")
                 return value
             except Book.DoesNotExist:
                 raise serializers.ValidationError("Invalid receiver book ID.")
         return value
-
+    
     def validate(self, data):
         initiator = self.context['request'].user
         receiver = CustomUser.objects.get(user_id=data['receiver_id'])

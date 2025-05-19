@@ -8,9 +8,10 @@ function LoginPage() {
   const { login, error, isLoading } = useAuth();
 
   const handleLogin = async (credentials) => {
-    const result = await login(credentials); // Capture login result
-    if (result && !error) { // Check if login succeeded
-      navigate('/me/profile');
+    const success = await login(credentials);
+    if (success) {
+      console.log('Navigating to /me/profile'); // Debug
+      navigate('/me/profile', { replace: true }); // Prevent back navigation
     }
   };
 

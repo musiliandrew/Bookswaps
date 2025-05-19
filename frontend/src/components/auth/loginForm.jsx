@@ -13,6 +13,7 @@ function LoginForm({ onSubmit, error, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Submitting credentials:', credentials); // Debug
     onSubmit(credentials);
   };
 

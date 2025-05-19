@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import debounce from 'lodash/debounce';
 
 export function useAuth() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState(null);
+
   const [searchResults, setSearchResults] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [books, setBooks] = useState(null);
@@ -21,14 +23,20 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Sending login request with credentials:', credentials); // Debug
       const response = await api.post('/users/login/', credentials);
-      const { access, refresh } = response.data;
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
+      const { access_token, refresh_token } = response.data;
+      console.log('Login response:', response.data); // Debug
+      console.log('Storing tokens:', { access_token, refresh_token }); // Debug
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      // Verify storage
+      console.log('Stored access_token:', localStorage.getItem('access_token'));
       toast.success('Welcome back!');
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Invalid credentials';
+      console.error('Login error:', err.response?.data); // Debug
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -104,20 +112,29 @@ export function useAuth() {
     }
   };
 
-  const getProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/users/me/profile/'); // Changed from '/users/profile/' to '/users/me/profile/'
-      setProfile(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const getProfile = useCallback(
+    debounce(async () => {
+      if (!isAuthenticated) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('access_token');
+        console.log('Fetching profile with token:', token);
+        const response = await api.get('/users/me/profile/');
+        console.log('Profile response:', response.data);
+        setProfile(response.data);
+      } catch (err) {
+        const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+        console.error('Profile error:', err.response?.data);
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500), // Debounce for 500ms
+    [isAuthenticated]
+  );
 
   const updateProfile = async (data) => {
     setIsLoading(true);
@@ -170,22 +187,26 @@ export function useAuth() {
     }
   };
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (navigateFn) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.delete('/users/me/delete/');
-      logout();
+      await api.delete('/users/me/delete/', {
+        data: { confirm: true }
+      });
+      logout(true, navigateFn);
       toast.success('Account deleted successfully!');
+      return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to delete account';
+      console.error('Delete account error:', err.response?.data);
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
-
   const searchUsers = async (data) => {
     setIsLoading(true);
     setError(null);

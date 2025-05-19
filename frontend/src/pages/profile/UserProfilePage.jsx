@@ -7,19 +7,21 @@ import AuthLink from '../../components/auth/AuthLink';
 import Button from '../../components/common/Button';
 
 function UserProfilePage() {
+  console.log('UserProfilePage rendered');
   const navigate = useNavigate();
-  const { getProfile, updateProfile, updateAccountSettings, updateChatPreferences, deleteAccount, profile, error, isLoading } = useAuth();
+  const { getProfile, updateProfile, updateAccountSettings, updateChatPreferences, deleteAccount, profile, error, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem('access_token')) {
-      navigate('/login');
-    } else {
+    if (isAuthenticated && !profile) {
+      console.log('Calling getProfile in ProfilePage'); // Debug
       getProfile();
+    } else if (!isAuthenticated) {
+      navigate('/login');
     }
-  }, [navigate, getProfile]);
+  }, [isAuthenticated, profile, getProfile, navigate]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -55,11 +57,8 @@ function UserProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    await deleteAccount();
-    if (!error) {
-      navigate('/login');
-    }
-  };
+  await deleteAccount(); // Navigation handled in useAuth
+};
 
   if (!profile) {
     return (

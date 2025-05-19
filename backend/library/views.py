@@ -113,7 +113,7 @@ class UserLibraryListView(generics.ListAPIView):
     pagination_class = StandardPagination
 
     def get_queryset(self):
-        cache_key = f"user_library_{self.request.user.id}"
+        cache_key = f"user_library_{self.request.user.user_id}"
         cached_queryset = cache.get(cache_key)
         if cached_queryset:
             return cached_queryset
@@ -215,7 +215,7 @@ class BookHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         book_id = self.request.query_params.get('book_id')
-        cache_key = f"book_history_{book_id or self.request.user.id}"
+        cache_key = f"book_history_{book_id or self.request.user.user_id}"
         cached_queryset = cache.get(cache_key)
         if cached_queryset:
             return cached_queryset

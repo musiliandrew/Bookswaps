@@ -202,9 +202,9 @@ class Swap(models.Model):
         """Validate swap constraints."""
         if self.initiator == self.receiver:
             raise ValidationError("Initiator and receiver cannot be the same user.")
-        if self.initiator_book and self.initiator and self.initiator_book.owner != self.initiator:
+        if self.initiator_book and self.initiator and self.initiator_book.user != self.initiator:
             raise ValidationError("Initiator book must belong to initiator.")
-        if self.receiver_book and self.receiver and self.receiver_book.owner != self.receiver:
+        if self.receiver_book and self.receiver and self.receiver_book.user != self.receiver:
             raise ValidationError("Receiver book must belong to receiver.")
 
     def set_status(self, new_status):

@@ -5,7 +5,11 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 from .models import CustomUser, Follows
 from django_redis import get_redis_connection
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+import logging
 
+logger = logging.getLogger(__name__)
 
 class UserMiniSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,6 +52,24 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
+class TokenRefreshSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        refresh_token = attrs.get('refresh')
+        if not refresh_token:
+            raise serializers.ValidationError('Refresh token is required', code='missing_refresh')
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.check_blacklist()
+            token.verify()
+        except TokenError as e:
+            logger.error(f"Token validation failed: {str(e)}")
+            raise InvalidToken('Token is invalid or expired')
+        
+        attrs['refresh_token'] = token
+        return attrs
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -149,13 +171,20 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
 
 class DeleteAccountSerializer(serializers.Serializer):
-    confirm = serializers.BooleanField(required=True)
+    confirm = serializers.BooleanField(
+        required=True,
+        error_messages={
+            'required': 'Confirmation is required to delete your account.',
+            'invalid': 'Confirmation must be a boolean value (true).'
+        }
+    )
 
     def validate(self, data):
-        # Ensure user is deleting their own account
         user = self.context['request'].user
         if not user.is_authenticated:
-            raise serializers.ValidationError("Authentication required.")
+            raise serializers.ValidationError("Authentication required to delete account.")
+        if not data.get('confirm'):
+            raise serializers.ValidationError("You must confirm account deletion by setting 'confirm' to true.")
         data['user'] = user
         return data
 

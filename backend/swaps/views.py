@@ -112,13 +112,13 @@ class ConfirmSwapView(APIView):
         serializer = SwapConfirmSerializer(data=request.data)
         if serializer.is_valid():
             with transaction.atomic():
-                swap_confirm_key = f"swap_confirm_{swap_id}_{request.user.id}"
+                swap_confirm_key = f"swap_confirm_{swap_id}_{request.user.user_id}"
                 if cache.get(swap_confirm_key):
                     return Response({"error": "User already confirmed"}, status=status.HTTP_400_BAD_REQUEST)
                 cache.set(swap_confirm_key, True, timeout=3600)
 
                 other_user = swap.receiver if request.user == swap.initiator else swap.initiator
-                other_confirm_key = f"swap_confirm_{swap_id}_{other_user.id}"
+                other_confirm_key = f"swap_confirm_{swap_id}_{other_user.user_id}"
                 if cache.get(other_confirm_key):
                     swap.set_status('Completed')
 
@@ -197,7 +197,7 @@ class SwapListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cache_key = f"swaps_user_{request.user.id}_{request.query_params.get('status', 'all')}"
+        cache_key = f"swaps_user_{request.user.user_id}_{request.query_params.get('status', 'all')}"
         cached_swaps = cache.get(cache_key)
         if cached_swaps:
             return Response(cached_swaps, status=status.HTTP_200_OK)
