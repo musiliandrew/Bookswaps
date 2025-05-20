@@ -468,17 +468,21 @@ class SearchUsersView(APIView):
 
 
 class RecommendedUsersView(APIView):
-    """Recommend users based on shared genres or city."""
+    """Recommend users based on shared genres, city, or public profiles."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
         recommended = CustomUser.objects.filter(
-            Q(genres__overlap=user.genres) | Q(city=user.city),
-            profile_public=True, is_active=True
-        ).exclude(user_id=user.user_id).exclude(
-            user_id__in=Follows.objects.filter(follower=user, active=True).values('followed__user_id')
-        )[:5]
+            Q(genres__overlap=user.genres) | Q(city=user.city) | Q(profile_public=True),
+            is_active=True
+        ).exclude(user_id=user.user_id).distinct()[:5]
+
+        if not recommended:
+            # Fallback to any public, active users
+            recommended = CustomUser.objects.filter(
+                profile_public=True, is_active=True
+            ).exclude(user_id=user.user_id).distinct()[:5]
 
         serializer = UserSearchSerializer(recommended, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

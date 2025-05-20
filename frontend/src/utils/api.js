@@ -1,5 +1,7 @@
-// api.js
 import axios from 'axios';
+
+// For Vite or similar, use import.meta.env; adjust as needed for your build tool
+const isDev = import.meta.env.MODE === 'development';
 
 const api = axios.create({
   baseURL: 'http://localhost:8000/api/',
@@ -12,17 +14,20 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token && !config.url.includes('/users/login/')) {
-      console.log('Adding Authorization header with token:', token); // Debug
+      if (isDev) console.log('Adding Authorization header with token:', token);
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Request config:', config);
+    if (isDev) console.log('Request config:', config);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (isDev) console.log('Response:', response.data);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     if (
@@ -34,13 +39,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        console.log('Attempting token refresh with:', refreshToken); // Debug
+        if (isDev) console.log('Attempting token refresh with:', refreshToken);
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
         const response = await api.post('/users/token/refresh/', { refresh: refreshToken });
         const { access, refresh } = response.data;
-        console.log('Refresh response:', response.data); // Debug
+        if (isDev) console.log('Refresh response:', response.data);
         localStorage.setItem('access_token', access);
         if (refresh) {
           localStorage.setItem('refresh_token', refresh);
@@ -48,13 +53,14 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${access}`;
         return api(originalRequest);
       } catch (refreshError) {
-        console.error('Refresh error:', refreshError.response?.data); // Debug
+        if (isDev) console.error('Refresh error:', refreshError.response?.data);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
+    if (isDev) console.error('API error:', error.response?.data);
     return Promise.reject(error);
   }
 );

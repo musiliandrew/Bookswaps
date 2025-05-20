@@ -315,5 +315,13 @@ class RecommendedBooksView(generics.ListAPIView):
             return cached_queryset
 
         queryset = PopularBook.objects.select_related('book', 'book__user').order_by('-swap_count')[:50]
+        if not queryset:
+            # Fallback to all books if PopularBook is empty
+            books = Book.objects.select_related('user').filter(available_for_exchange=True)[:50]
+            queryset = [
+                PopularBook(book=book, swap_count=0, last_updated=book.updated_at)
+                for book in books
+            ]
+
         cache.set(cache_key, queryset, timeout=3600)  # 1 hour
         return queryset

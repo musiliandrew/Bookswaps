@@ -1,18 +1,16 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
-import debounce from 'lodash/debounce';
+// import debounce from 'lodash/debounce';
 
 export function useAuth() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState(null);
-
   const [searchResults, setSearchResults] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [books, setBooks] = useState(null);
-  const [topBooks, setTopBooks] = useState(null);
   const [recommendedUsers, setRecommendedUsers] = useState(null);
   const [followers, setFollowers] = useState(null);
   const [following, setFollowing] = useState(null);
@@ -23,20 +21,14 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Sending login request with credentials:', credentials); // Debug
       const response = await api.post('/users/login/', credentials);
       const { access_token, refresh_token } = response.data;
-      console.log('Login response:', response.data); // Debug
-      console.log('Storing tokens:', { access_token, refresh_token }); // Debug
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
-      // Verify storage
-      console.log('Stored access_token:', localStorage.getItem('access_token'));
       toast.success('Welcome back!');
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Invalid credentials';
-      console.error('Login error:', err.response?.data); // Debug
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -50,9 +42,9 @@ export function useAuth() {
     setError(null);
     try {
       const response = await api.post('/users/register/', data);
-      const { access, refresh } = response.data;
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
+      const { access_token, refresh_token } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       toast.success('Welcome to BookSwap!');
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Registration failed';
@@ -70,7 +62,6 @@ export function useAuth() {
     setSearchResults(null);
     setPublicProfile(null);
     setBooks(null);
-    setTopBooks(null);
     setRecommendedUsers(null);
     setFollowers(null);
     setFollowing(null);
@@ -112,29 +103,21 @@ export function useAuth() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const getProfile = useCallback(
-    debounce(async () => {
-      if (!isAuthenticated) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('access_token');
-        console.log('Fetching profile with token:', token);
-        const response = await api.get('/users/me/profile/');
-        console.log('Profile response:', response.data);
-        setProfile(response.data);
-      } catch (err) {
-        const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
-        console.error('Profile error:', err.response?.data);
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 500), // Debounce for 500ms
-    [isAuthenticated]
-  );
+  const getProfile = async () => {
+    if (!isAuthenticated) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/users/me/profile/');
+      setProfile(response.data);
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateProfile = async (data) => {
     setIsLoading(true);
@@ -192,14 +175,14 @@ export function useAuth() {
     setError(null);
     try {
       await api.delete('/users/me/delete/', {
-        data: { confirm: true }
+        data: { confirm: true },
       });
-      logout(true, navigateFn);
+      logout();
+      navigateFn('/login');
       toast.success('Account deleted successfully!');
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to delete account';
-      console.error('Delete account error:', err.response?.data);
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -207,14 +190,15 @@ export function useAuth() {
       setIsLoading(false);
     }
   };
+
   const searchUsers = async (data) => {
     setIsLoading(true);
     setError(null);
     setSearchResults(null);
     try {
       const params = new URLSearchParams();
-      if (data.username) params.append('username', data.username);
-      if (data.genres.length) params.append('genres', data.genres.join(','));
+      if (data.username) params.append('q', data.username);
+      if (data.genres?.length) params.append('genres', data.genres.join(','));
       const response = await api.get(`/users/search/?${params.toString()}`);
       setSearchResults(response.data);
       toast.success(`Found ${response.data.length} users!`);
@@ -250,13 +234,9 @@ export function useAuth() {
     try {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
-      if (filters.genres.length) params.append('genres', filters.genres.join(','));
-      const [booksResponse, topBooksResponse] = await Promise.all([
-        api.get(`/library/posts/?${params.toString()}`),
-        api.get('/library/top-posts/')
-      ]);
-      setBooks(booksResponse.data);
-      setTopBooks(topBooksResponse.data);
+      if (filters.genres?.length) params.append('genre', filters.genres.join(','));
+      const response = await api.get(`/library/recommended/?${params.toString()}`);
+      setBooks(response.data);
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch books';
       setError(errorMessage);
@@ -266,7 +246,7 @@ export function useAuth() {
     }
   };
 
-  const bookmarkBook = async (discussionId, bookmark) => {
+  const bookmarkBook = async (bookId, bookmark) => {
     if (!isAuthenticated) {
       toast.error('Please sign in to bookmark books');
       return;
@@ -274,9 +254,10 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post(`/discussions/posts/${discussionId}/notes/`, { content: bookmark ? 'bookmark' : 'unbookmark' });
+      const endpoint = bookmark ? `/library/books/${bookId}/bookmark/` : `/library/books/${bookId}/bookmark/remove/`;
+      await api.post(endpoint);
       toast.success(bookmark ? 'Book bookmarked!' : 'Bookmark removed!');
-      getBooks({}); // Refresh books to update bookmark status
+      getBooks({}); // Refresh books
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to bookmark book';
       setError(errorMessage);
@@ -384,14 +365,13 @@ export function useAuth() {
     }
   };
 
-  const getRecommendedUsers = async () => {
+  const getRecommendedUsers = useCallback(async () => {
+    if (!isAuthenticated || recommendedUsers) return;
     setIsLoading(true);
     setError(null);
-    setRecommendedUsers(null);
     try {
       const response = await api.get('/users/recommended/');
       setRecommendedUsers(response.data);
-      toast.success('Recommended users loaded!');
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch recommended users';
       setError(errorMessage);
@@ -399,7 +379,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, recommendedUsers]);
 
   return {
     login,
@@ -426,7 +406,6 @@ export function useAuth() {
     searchResults,
     publicProfile,
     books,
-    topBooks,
     recommendedUsers,
     followers,
     following,
