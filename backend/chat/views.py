@@ -36,12 +36,6 @@ class SendMessageView(APIView):
         serializer = ChatSerializer(data=request.data, context={'sender': request.user})
         if serializer.is_valid():
             chat = serializer.save()
-            # WebSocket placeholder
-            # channel_layer = get_channel_layer()
-            # async_to_sync(channel_layer.group_send)(
-            #     f"chat_{receiver.user_id}",
-            #     {"type": "message.received", "data": ChatSerializer(chat).data}
-            # )
             return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,7 +58,7 @@ class EditMessageView(APIView):
                 content_type='chat',
                 content_id=chat.chat_id
             )
-            return Response(ChatSerializer(chat).data)
+            return Response(ChatSerializer(chat).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteMessageView(APIView):
@@ -90,11 +84,15 @@ class MessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        print(f"MessageListView GET: user={request.user.username}, query_params={request.query_params}")
         user = request.user
-        cache_key = f"chat_list_{user.user_id}_{request.query_params}"
-        cached_chats = cache.get(cache_key)
-        if cached_chats:
-            return cached_chats
+        cache_key = f"chat_list_{user.user_id}_{str(request.query_params)}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            print(f"Cache hit: {cache_key}")
+            # Reconstruct paginated response from cached data
+            paginator = PageNumberPagination()
+            return paginator.get_paginated_response(cached_data)
 
         chats = Chats.objects.filter(
             Q(sender=user) | Q(receiver=user),
@@ -114,12 +112,13 @@ class MessageListView(APIView):
             chats = chats.filter(status='UNREAD', receiver=user)
 
         chats = chats.order_by('-created_at')
+        print(f"Found {chats.count()} chats")
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(chats, request)
         serializer = ChatSerializer(result_page, many=True)
-        response = paginator.get_paginated_response(serializer.data)
-        cache.set(cache_key, response, timeout=300)
-        return response
+        # Cache the serialized data, not the Response object
+        cache.set(cache_key, serializer.data, timeout=300)
+        return paginator.get_paginated_response(serializer.data)
 
 class MarkReadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -140,7 +139,7 @@ class MarkReadView(APIView):
             content_type='chat',
             content_id=chat.chat_id
         )
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AddReactionView(APIView):
     permission_classes = [IsAuthenticated]

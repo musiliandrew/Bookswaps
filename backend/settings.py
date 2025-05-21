@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django_filters',
     'channels',
     'axes',
+    'django_extensions',
 
     
     #apps

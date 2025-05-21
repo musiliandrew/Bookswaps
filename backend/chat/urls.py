@@ -9,7 +9,7 @@ from .views import (
 app_name = 'chat'
 
 urlpatterns = [
-    path('messages/', SendMessageView.as_view(), name='send_message'),
+    path('messages/send/', SendMessageView.as_view(), name='send_message'),
     path('messages/<uuid:chat_id>/edit/', EditMessageView.as_view(), name='edit_message'),
     path('messages/<uuid:chat_id>/delete/', DeleteMessageView.as_view(), name='delete_message'),
     path('messages/<uuid:chat_id>/read/', MarkReadView.as_view(), name='mark_read'),

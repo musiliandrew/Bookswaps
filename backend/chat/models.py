@@ -57,10 +57,15 @@ class MessageReaction(models.Model):
         ('HAHA', 'Haha'),
         ('WOW', 'Wow'),
         ('SAD', 'Sad'),
+        ('ANGRY', 'Angry'),
     )
 
     reaction_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reactions'
+    )
     chat = models.ForeignKey(
         Chats,
         on_delete=models.CASCADE,
@@ -84,6 +89,14 @@ class MessageReaction(models.Model):
         indexes = [
             models.Index(fields=['chat']),
             models.Index(fields=['society_message']),
+            models.Index(fields=['user']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(chat__isnull=False, society_message__isnull=True) |
+                      models.Q(chat__isnull=True, society_message__isnull=False),
+                name='one_message_type'
+            ),
         ]
 
     def __str__(self):

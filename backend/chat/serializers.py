@@ -46,7 +46,6 @@ class MessageReactionSerializer(serializers.ModelSerializer):
             content_id=chat.chat_id if chat else society_message.message_id
         )
         return reaction
-
 class ChatSerializer(serializers.ModelSerializer):
     sender = UserMiniSerializer(read_only=True)
     receiver = UserMiniSerializer(read_only=True)
@@ -91,11 +90,19 @@ class ChatSerializer(serializers.ModelSerializer):
             if not Book.objects.filter(book_id=value).exists():
                 raise serializers.ValidationError("Invalid book ID.")
             receiver_id = self.initial_data.get('receiver_id')
-            if receiver_id and not Exchange.objects.filter(
-                book__book_id=value,
-                user__in=[self.context['sender'], CustomUser.objects.get(user_id=receiver_id)]
-            ).exists():
-                raise serializers.ValidationError("Book must be part of an exchange with sender or receiver.")
+            if receiver_id:
+                sender = self.context['sender']
+                receiver = CustomUser.objects.get(user_id=receiver_id)
+                if not Exchange.objects.filter(
+                    swap__initiator_book__book_id=value,
+                    swap__initiator__in=[sender, receiver]
+                ).exists() and not Exchange.objects.filter(
+                    swap__receiver_book__book_id=value,
+                    swap__receiver__in=[sender, receiver]
+                ).exists():
+                    raise serializers.ValidationError(
+                        "Book must be part of a swap involving sender or receiver."
+                    )
         return value
 
     def create(self, validated_data):
@@ -120,12 +127,11 @@ class ChatSerializer(serializers.ModelSerializer):
         )
         return chat
 
-    def update(self, validated_data):
-        chat = self.instance
-        chat.content = validated_data.get('content', chat.content)
-        chat.save()
-        return chat
-
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get('content', instance.content)
+        instance.save()
+        return instance
+    
 class ChatReadStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chats

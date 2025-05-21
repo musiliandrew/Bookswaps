@@ -335,14 +335,17 @@ class Share(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
-
 class Notification(models.Model):
     TYPE_CHOICES = [
         ('swap_proposed', 'Swap Proposed'),
         ('swap_accepted', 'Swap Accepted'),
         ('swap_confirmed', 'Swap Confirmed'),
         ('swap_completed', 'Swap Completed'),
-        ('swap_cancelled', 'Swap Cancelled')
+        ('swap_cancelled', 'Swap Cancelled'),
+        ('message_received', 'Message Received'),
+        ('message_edited', 'Message Edited'), 
+        ('message_read', 'Message Read'),
+        ('message_reaction', 'Message Reaction'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -376,6 +379,17 @@ class Notification(models.Model):
         db_comment='Notification message',
         validators=[MaxValueValidator(500, message="Message must be 500 characters or less")]
     )
+    content_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        db_comment='Type of content (e.g., chat, society_message)'
+    )
+    content_id = models.UUIDField(
+        blank=True,
+        null=True,
+        db_comment='ID of the related content (e.g., chat_id)'
+    )
     is_read = models.BooleanField(
         default=False,
         db_comment='Tracks read/unread state'
@@ -396,11 +410,12 @@ class Notification(models.Model):
 
     class Meta:
         db_table = 'notifications'
-        db_table_comment = 'Sends alerts for swaps and other events'
+        db_table_comment = 'Sends alerts for swaps, messages, and other events'
         indexes = [
             models.Index(fields=['user', 'is_read']),
             models.Index(fields=['created_at']),
             models.Index(fields=['swap']),
+            models.Index(fields=['content_type', 'content_id']),
         ]
 
     def __str__(self):
