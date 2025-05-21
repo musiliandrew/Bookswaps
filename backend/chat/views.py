@@ -269,9 +269,10 @@ class SocietyListView(APIView):
         my_societies = request.query_params.get('my_societies') == 'true'
 
         cache_key = f"society_list_{user.user_id if user else 'anon'}_{request.query_params}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
-            return cached_response
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            paginator = PageNumberPagination()
+            return paginator.get_paginated_response(cached_data)
 
         societies = Society.objects.all()
         if my_societies and user:
@@ -288,9 +289,8 @@ class SocietyListView(APIView):
         paginator = PageNumberPagination()
         paginated = paginator.paginate_queryset(societies, request)
         serializer = SocietySerializer(paginated, many=True)
-        response = paginator.get_paginated_response(serializer.data)
-        cache.set(cache_key, response, timeout=3600)
-        return response
+        cache.set(cache_key, serializer.data, timeout=3600)
+        return paginator.get_paginated_response(serializer.data)
 
 class SendSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
