@@ -144,21 +144,25 @@ class MarkReadView(APIView):
 class AddReactionView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, chat_id=None, message_id=None):
+    def post(self, request, society_id=None, message_id=None, chat_id=None):
         if chat_id:
             try:
                 chat = Chats.objects.get(chat_id=chat_id)
             except Chats.DoesNotExist:
                 return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
             context = {'chat': chat, 'user': request.user}
-        elif message_id:
+        elif society_id and message_id:
             try:
-                society_message = SocietyMessage.objects.get(message_id=message_id)
+                society_message = SocietyMessage.objects.get(
+                    message_id=message_id,
+                    society__society_id=society_id,
+                    status='ACTIVE'
+                )
             except SocietyMessage.DoesNotExist:
                 return Response({"error": "Society message not found."}, status=status.HTTP_404_NOT_FOUND)
             context = {'society_message': society_message, 'user': request.user}
         else:
-            return Response({"error": "Chat or message ID required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Chat or society message ID required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = MessageReactionSerializer(data=request.data, context=context)
         if serializer.is_valid():
@@ -169,25 +173,35 @@ class AddReactionView(APIView):
 class ListReactionsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, chat_id=None, message_id=None):
+    def get(self, request, society_id=None, message_id=None, chat_id=None):
         if chat_id:
             try:
                 Chats.objects.get(chat_id=chat_id)
             except Chats.DoesNotExist:
                 return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
             reactions = MessageReaction.objects.filter(chat__chat_id=chat_id)
-        elif message_id:
+        elif society_id and message_id:
+            # Verify user is a society member
+            if not SocietyMember.objects.filter(
+                society__society_id=society_id,
+                user=request.user,
+                status='ACTIVE'
+            ).exists():
+                return Response({"error": "Not a society member."}, status=status.HTTP_403_FORBIDDEN)
             try:
-                SocietyMessage.objects.get(message_id=message_id)
+                SocietyMessage.objects.get(
+                    message_id=message_id,
+                    society__society_id=society_id,
+                    status='ACTIVE'
+                )
             except SocietyMessage.DoesNotExist:
                 return Response({"error": "Society message not found."}, status=status.HTTP_404_NOT_FOUND)
             reactions = MessageReaction.objects.filter(society_message__message_id=message_id)
         else:
-            return Response({"error": "Chat or message ID required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Chat or society message ID required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = MessageReactionSerializer(reactions, many=True)
-        return Response(serializer.data)
-
+        return Response(serializer.data, status=status.HTTP_200_OK)
 class CreateSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -361,9 +375,10 @@ class SocietyMessageListView(APIView):
             return Response({"error": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
 
         cache_key = f"society_messages_{society_id}_{request.query_params}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
-            return cached_response
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            paginator = PageNumberPagination()
+            return paginator.get_paginated_response(cached_data)
 
         messages = SocietyMessage.objects.filter(
             society__society_id=society_id, status='ACTIVE'
@@ -372,9 +387,8 @@ class SocietyMessageListView(APIView):
         paginator = PageNumberPagination()
         paginated_messages = paginator.paginate_queryset(messages, request)
         serializer = SocietyMessageSerializer(paginated_messages, many=True)
-        response = paginator.get_paginated_response(serializer.data)
-        cache.set(cache_key, response, timeout=300)
-        return response
+        cache.set(cache_key, serializer.data, timeout=300)
+        return paginator.get_paginated_response(serializer.data)
 
 class PinMessageView(APIView):
     permission_classes = [IsAuthenticated]

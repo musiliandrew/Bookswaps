@@ -189,6 +189,7 @@ class SocietySerializer(serializers.ModelSerializer):
 class SocietyMessageSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
+    society = serializers.UUIDField(source='society.society_id', read_only=True)
     book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     can_note = serializers.SerializerMethodField()
     reactions = MessageReactionSerializer(many=True, read_only=True)
@@ -241,9 +242,8 @@ class SocietyMessageSerializer(serializers.ModelSerializer):
             )
         return message
 
-    def update(self, validated_data):
-        message = self.instance
-        message.content = validated_data.get('content', message.content)
-        message.status = 'EDITED'
-        message.save()
-        return message
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get('content', instance.content)
+        instance.status = 'EDITED'
+        instance.save()
+        return instance

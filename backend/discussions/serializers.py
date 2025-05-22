@@ -69,7 +69,7 @@ class CreateDiscussionSerializer(serializers.ModelSerializer):
 class DiscussionFeedSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True)
+    upvote_count = serializers.IntegerField(read_only=True)  # Changed from upvotes
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     content = serializers.SerializerMethodField()
@@ -78,7 +78,7 @@ class DiscussionFeedSerializer(serializers.ModelSerializer):
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book',
-            'content', 'upvotes', 'note_count', 'reprint_count'
+            'content', 'upvote_count', 'note_count', 'reprint_count'
         ]
 
     def get_content(self, obj):
@@ -88,7 +88,7 @@ class DiscussionFeedSerializer(serializers.ModelSerializer):
 class DiscussionDetailSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True)
+    upvote_count = serializers.IntegerField(read_only=True)  # Changed from upvotes
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     tags = serializers.ListField(child=serializers.CharField(), read_only=True)
@@ -98,15 +98,15 @@ class DiscussionDetailSerializer(serializers.ModelSerializer):
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book', 'content',
-            'tags', 'media_urls', 'spoiler_flag', 'upvotes', 'note_count',
+            'tags', 'media_urls', 'spoiler_flag', 'upvote_count', 'note_count',
             'reprint_count', 'created_at', 'last_edited_at'
         ]
-
 
 class NoteSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     parent_note_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     replies = serializers.SerializerMethodField()
+    likes = serializers.IntegerField(read_only=True, source='likes_count')
 
     class Meta:
         model = Note
@@ -147,20 +147,26 @@ class NoteSerializer(serializers.ModelSerializer):
         )
 
     def get_replies(self, obj):
-        replies = Note.objects.filter(parent_note=obj).order_by('created_at')
+        replies = Note.objects.filter(parent_note=obj, status='active').order_by('created_at')
         return NoteSerializer(replies, many=True, context=self.context).data
 
-
 class LikeResponseSerializer(serializers.ModelSerializer):
+    user = UserMiniSerializer(read_only=True)
+    discussion_title = serializers.CharField(source='discussion.title', read_only=True)
+    likes = serializers.IntegerField(read_only=True, source='likes_count')  # Use annotated field
+
     class Meta:
         model = Note
-        fields = ['note_id', 'likes']
+        fields = ['note_id', 'user', 'content', 'likes', 'discussion_title']
 
 
 class UpvoteResponseSerializer(serializers.ModelSerializer):
+    user = UserMiniSerializer(read_only=True)
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
+
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'upvotes']
+        fields = ['discussion_id', 'user', 'title', 'upvotes']
 
 
 class ReprintSerializer(serializers.ModelSerializer):

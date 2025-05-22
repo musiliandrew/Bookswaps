@@ -5,10 +5,11 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import NotFound, PermissionDenied
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Case, When, IntegerField
 from django.utils.timezone import now
+from django.utils import timezone
 from django.db import transaction
-from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent
+from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent, Like, Upvote
 from .serializers import (
     CreateDiscussionSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer,
     NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer, ReprintSerializer,
@@ -58,43 +59,58 @@ class PostListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         params = self.request.query_params
-        cache_key = f"post_list_{user.id if user.is_authenticated else 'anon'}_{params}"
+        cache_key = f"post_list_{user.user_id if user.is_authenticated else 'anon'}_{params}"
         cached_queryset = cache.get(cache_key)
         if cached_queryset:
+            print(f"Cache hit for key: {cache_key}")
             return cached_queryset
 
-        queryset = Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
-            upvotes=Count('upvotes'),
-            note_count=Count('notes'),
-            reprint_count=Count('reprints')
-        )
+        queryset = Discussion.objects.select_related('user', 'book').filter(status='active')
+        
+        try:
+            queryset = queryset.annotate(
+                upvote_count=Count('upvotes'),
+                note_count=Count('notes'),
+                reprint_count=Count('reprints')
+            )
+        except Exception as e:
+            print(f"Annotation error: {str(e)}")
+            raise
 
         if params.get('followed') == 'true' and user.is_authenticated:
             followed_ids = Follows.objects.filter(follower=user).values_list('followed_id', flat=True)
+            print(f"Followed IDs: {list(followed_ids)}")
             queryset = queryset.filter(user__id__in=followed_ids)
 
         if params.get('book_id'):
+            print(f"Filtering by book_id: {params['book_id']}")
             queryset = queryset.filter(book__book_id=params['book_id'])
 
         if params.get('type') in ['Article', 'Synopsis', 'Query']:
+            print(f"Filtering by type: {params['type']}")
             queryset = queryset.filter(type=params['type'])
 
         if params.get('tag'):
+            print(f"Filtering by tag: {params['tag']}")
             queryset = queryset.filter(tags__contains=[params['tag']])
 
         if user.is_authenticated:
             bookmarked_book_ids = Bookmark.objects.filter(user=user, active=True).values_list('book_id', flat=True)
-            queryset = queryset.order_by(
-                Q(book__book_id__in=bookmarked_book_ids).desc(),
-                '-created_at'
-            )
+            print(f"Bookmarked book IDs: {list(bookmarked_book_ids)}")
+            queryset = queryset.annotate(
+                is_bookmarked=Case(
+                    When(book__book_id__in=bookmarked_book_ids, then=1),
+                    default=0,
+                    output_field=IntegerField()
+                )
+            ).order_by('-is_bookmarked', '-created_at')
         else:
             queryset = queryset.order_by('-created_at')
 
+        print(f"Queryset count: {queryset.count()}")
         cache.set(cache_key, queryset, timeout=300)  # 5 minutes
         return queryset
-
-
+    
 class PostDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = DiscussionDetailSerializer
@@ -102,7 +118,7 @@ class PostDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
-            upvotes=Count('upvotes'),
+            upvote_count=Count('upvotes'),  # Changed from upvotes to upvote_count
             note_count=Count('notes'),
             reprint_count=Count('reprints')
         )
@@ -110,10 +126,9 @@ class PostDetailView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.views += 1
-        instance.save()
+        instance.save(update_fields=['views'])  # Optimize save
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-
 
 class DeletePostView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -124,15 +139,18 @@ class DeletePostView(generics.DestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.status = 'deleted'
-        instance.save()
-        Notification.objects.create(
-            user=self.request.user,
-            type='discussion_deleted',
-            message=f"You deleted your discussion: {instance.title}",
-            content_type='discussion',
-            content_id=instance.discussion_id
-        )
-
+        instance.save(update_fields=['status'])  # Optimize save
+        try:
+            Notification.objects.create(
+                user=self.request.user,
+                type='discussion_deleted',
+                message=f"You deleted your discussion: {instance.title}"[:500],  # Ensure within limit
+                content_type='discussion',
+                content_id=instance.discussion_id
+            )
+        except Exception as e:
+            print(f"Notification creation failed: {str(e)}")
+            # Continue despite notification failure
 
 class AddNoteView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -149,13 +167,18 @@ class AddNoteView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         note = serializer.save()
 
-        Notification.objects.create(
-            user=discussion.user,
-            type='note_added',
-            message=f"{request.user.username} commented on your discussion: {discussion.title}",
-            content_type='note',
-            content_id=note.note_id
-        )
+        try:
+            Notification.objects.create(
+                user=discussion.user,
+                type='note_added',
+                message=f"{request.user.username} commented on your discussion: {discussion.title}"[:500],
+                content_type='note',
+                content_id=note.note_id
+            )
+        except Exception as e:
+            print(f"Notification creation failed: {str(e)}")
+            # Continue despite notification failure
+
         # WebSocket placeholder
         # channel_layer = get_channel_layer()
         # async_to_sync(channel_layer.group_send)(
@@ -172,12 +195,20 @@ class NotesListView(generics.ListAPIView):
 
     def get_queryset(self):
         discussion_id = self.kwargs['discussion_id']
+        cache_key = f"notes_list_{discussion_id}"
+        cached_queryset = cache.get(cache_key)
+        if cached_queryset:
+            print(f"Cache hit for key: {cache_key}")
+            return cached_queryset
+
         try:
             discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
         except Discussion.DoesNotExist:
             raise NotFound("Discussion not found.")
-        return Note.objects.filter(discussion=discussion, status='active').select_related('user', 'parent_note').order_by('created_at')
-
+        
+        queryset = Note.objects.filter(discussion=discussion, status='active').select_related('user', 'parent_note').order_by('created_at')
+        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        return queryset
 
 class LikeCommentView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -185,43 +216,79 @@ class LikeCommentView(generics.UpdateAPIView):
     lookup_field = 'note_id'
 
     def get_queryset(self):
-        return Note.objects.filter(status='active')
+        return Note.objects.filter(status='active').annotate(likes_count=Count('likes'))
 
     def update(self, request, *args, **kwargs):
         note = self.get_object()
-        note.likes += 1
-        note.save()
+        user = request.user
+
+        with transaction.atomic():
+            like, created = Like.objects.get_or_create(
+                note=note,
+                user=user,
+                defaults={'created_at': timezone.now()}
+            )
+            if not created:
+                like.delete()
+                action = 'unliked'
+            else:
+                action = 'liked'
+
+        if action == 'liked' and note.user != user:
+            try:
+                Notification.objects.create(
+                    user=note.user,
+                    type='note_liked',
+                    message=f"{user.username} liked your comment on {note.discussion.title}"[:500],
+                    content_type='note',
+                    content_id=note.note_id
+                )
+            except Exception as e:
+                print(f"Notification creation failed: {str(e)}")
+
+        note = Note.objects.filter(note_id=note.note_id).annotate(likes_count=Count('likes')).first()
         serializer = self.get_serializer(note)
-        Notification.objects.create(
-            user=note.user,
-            type='note_liked',
-            message=f"{request.user.username} liked your comment on {note.discussion.title}",
-            content_type='note',
-            content_id=note.note_id
-        )
         return Response(serializer.data)
-
-
+    
 class UpvotePostView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UpvoteResponseSerializer
     lookup_field = 'discussion_id'
 
     def get_queryset(self):
-        return Discussion.objects.filter(status='active')
+        return Discussion.objects.filter(status='active').annotate(upvotes_count=Count('upvotes'))
 
     def update(self, request, *args, **kwargs):
         discussion = self.get_object()
-        discussion.upvotes += 1
-        discussion.save()
+        user = request.user
+
+        with transaction.atomic():
+            upvote, created = Upvote.objects.get_or_create(
+                discussion=discussion,
+                user=user,
+                defaults={'created_at': timezone.now()}
+            )
+            if not created:
+                upvote.delete()
+                action = 'unupvoted'
+            else:
+                action = 'upvoted'
+
+        if action == 'upvoted' and discussion.user != user:
+            try:
+                Notification.objects.create(
+                    user=discussion.user,
+                    type='discussion_upvoted',
+                    message=f"{user.username} upvoted your discussion: {discussion.title}"[:500],
+                    content_type='discussion',
+                    content_id=discussion.discussion_id
+                )
+            except Exception as e:
+                print(f"Notification creation failed: {str(e)}")
+
+        # Refresh discussion with updated upvotes_count
+        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(upvotes_count=Count('upvotes')).first()
         serializer = self.get_serializer(discussion)
-        Notification.objects.create(
-            user=discussion.user,
-            type='discussion_upvoted',
-            message=f"{request.user.username} upvoted your discussion: {discussion.title}",
-            content_type='discussion',
-            content_id=discussion.discussion_id
-        )
         return Response(serializer.data)
 
 

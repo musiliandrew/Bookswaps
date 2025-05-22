@@ -343,14 +343,18 @@ class Notification(models.Model):
         ('swap_completed', 'Swap Completed'),
         ('swap_cancelled', 'Swap Cancelled'),
         ('message_received', 'Message Received'),
-        ('message_edited', 'Message Edited'), 
+        ('message_edited', 'Message Edited'),
         ('message_read', 'Message Read'),
         ('message_reaction', 'Message Reaction'),
+        ('discussion_deleted', 'Discussion Deleted'),
+        ('note_added', 'Note Added'),
+        ('note_liked', 'Note Liked'),
+        ('discussion_upvoted', 'Discussion Upvoted'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        CustomUser,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -364,7 +368,7 @@ class Notification(models.Model):
         db_comment='Book related to the notification (optional)'
     )
     swap = models.ForeignKey(
-        Swap,
+        'swaps.Swap',
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -421,7 +425,6 @@ class Notification(models.Model):
     def __str__(self):
         username = self.user.username if self.user else 'Anonymous'
         return f"{username}: {self.type} notification"
-    
     
 class Exchange(models.Model):
     """

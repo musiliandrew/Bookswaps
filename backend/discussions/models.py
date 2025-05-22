@@ -29,7 +29,6 @@ class Note(models.Model):
     content = models.TextField()
     parent_note = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     depth = models.PositiveIntegerField(default=0)
-    likes = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=20, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -37,6 +36,29 @@ class Note(models.Model):
         db_table = 'notes'
         db_table_comment = 'Stores comments on discussions'
 
+class Like(models.Model):
+    like_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'likes'
+        db_table_comment = 'Stores note likes'
+        unique_together = (('note', 'user'),)
+        indexes = [models.Index(fields=['note', 'user'])]
+
+class Upvote(models.Model):
+    upvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='upvotes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'upvotes'
+        db_table_comment = 'Stores discussion upvotes'
+        unique_together = (('discussion', 'user'),)
+        indexes = [models.Index(fields=['discussion', 'user'])]
 class Reprint(models.Model):
     reprint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='reprints')
@@ -167,3 +189,18 @@ class SocietyMessage(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.society.name}: {self.content[:50]}..."
+    
+class Upvote(models.Model):
+    upvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='upvotes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'upvotes'
+        db_table_comment = 'Stores discussion upvotes'
+        unique_together = (('discussion', 'user'),)  # Prevent duplicate upvotes
+        indexes = [models.Index(fields=['discussion', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} upvoted {self.discussion.title}"
