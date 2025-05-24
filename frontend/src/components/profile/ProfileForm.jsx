@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import ErrorMessage from '../auth/ErrorMessage';
 
-function ProfileForm({ profile, onSubmit, error, isLoading }) {
+function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
   const [formData, setFormData] = useState({
     username: profile.username || '',
     email: profile.email || '',
@@ -72,48 +73,96 @@ function ProfileForm({ profile, onSubmit, error, isLoading }) {
   const isDisabled = !formData.username || !formData.email;
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    <motion.form
+      onSubmit={handleSubmit}
+      className={`frosted-glass bookish-border p-6 rounded-lg space-y-6 ${className}`}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="space-y-4">
-        <Input
-          label="Username"
-          name="username"
-          type="text"
-          value={formData.username}
-          onChange={handleChange}
-          placeholder="Enter your username"
-          required
-          aria-describedby={formErrors.username ? 'error-username' : ''}
-        />
-        {formErrors.username && (
-          <p id="error-username" className="text-red-500 text-sm">
-            {formErrors.username}
-          </p>
-        )}
-        <Input
-          label="Email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter your email"
-          required
-          aria-describedby={formErrors.email ? 'error-email' : ''}
-        />
-        {formErrors.email && (
-          <p id="error-email" className="text-red-500 text-sm">
-            {formErrors.email}
-          </p>
-        )}
-        <Input
-          label="City (Optional)"
-          name="city"
-          type="text"
-          value={formData.city}
-          onChange={handleChange}
-          placeholder="Enter your city"
-        />
-        <div>
-          <label className="block text-sm font-medium text-[var(--primary)]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+        >
+          <Input
+            label="Username"
+            name="username"
+            type="text"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Enter your username"
+            required
+            className="bookish-border"
+            labelClassName="font-['Lora'] text-[var(--primary)]"
+            aria-describedby={formErrors.username ? 'error-username' : ''}
+          />
+          {formErrors.username && (
+            <motion.p
+              id="error-username"
+              className="text-[var(--error)] text-sm"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.2 }}
+            >
+              {formErrors.username}
+            </motion.p>
+          )}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+        >
+          <Input
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            required
+            className="bookish-border"
+            labelClassName="font-['Lora'] text-[var(--primary)]"
+            aria-describedby={formErrors.email ? 'error-email' : ''}
+          />
+          {formErrors.email && (
+            <motion.p
+              id="error-email"
+              className="text-[var(--error)] text-sm"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.2 }}
+            >
+              {formErrors.email}
+            </motion.p>
+          )}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+        >
+          <Input
+            label="City (Optional)"
+            name="city"
+            type="text"
+            value={formData.city}
+            onChange={handleChange}
+            placeholder="Enter your city"
+            className="bookish-border"
+            labelClassName="font-['Lora'] text-[var(--primary)]"
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+        >
+          <label
+            className="block text-sm font-['Lora'] text-[var(--primary)]"
+          >
             Favorite Genres (Optional)
           </label>
           <input
@@ -122,43 +171,57 @@ function ProfileForm({ profile, onSubmit, error, isLoading }) {
             onChange={(e) => setGenreInput(e.target.value)}
             onKeyDown={handleGenreAdd}
             placeholder="Type a genre and press Enter"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+            className="mt-1 block w-full px-3 py-2 bookish-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
           />
           <div className="mt-2 flex flex-wrap gap-2">
             {formData.genres.map((genre) => (
-              <span
+              <motion.span
                 key={genre}
-                className="bg-[var(--primary)] text-[var(--secondary)] px-2 py-1 rounded-full text-sm flex items-center"
+                className="frosted-glass bookish-border px-2 py-1 rounded-full text-sm text-[var(--primary)] font-['Caveat'] flex items-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
               >
                 {genre}
                 <button
                   type="button"
                   onClick={() => handleGenreRemove(genre)}
-                  className="ml-2 text-[var(--secondary)]"
+                  className="ml-2 text-[var(--primary)] hover:text-[var(--accent)]"
                 >
                   ×
                 </button>
-              </span>
+              </motion.span>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
-      <ErrorMessage message={error} />
-      <div className="flex space-x-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.3 }}
+      >
+        <ErrorMessage message={error} />
+      </motion.div>
+      <motion.div
+        className="flex space-x-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.3 }}
+      >
         <Button
           type="submit"
           text={isLoading ? 'Saving...' : 'Save'}
           disabled={isDisabled || isLoading}
-          className="w-full"
+          className="w-full bookish-button bookish-button--primary"
         />
         <Button
           type="button"
           text="Cancel"
           onClick={() => onSubmit(null)}
-          className="w-full bg-gray-500 hover:bg-gray-600"
+          className="w-full bookish-button bookish-button--secondary"
         />
-      </div>
-    </form>
+      </motion.div>
+    </motion.form>
   );
 }
 

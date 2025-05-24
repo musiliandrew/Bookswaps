@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 
 function Navbar() {
@@ -11,36 +12,94 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-[var(--primary)] text-[var(--secondary)] p-4">
+    <motion.nav
+      className="bg-[var(--primary)] text-[var(--secondary)] p-4 frosted-glass bookish-border"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold flex items-center">
-          <img src="/frontend/src/assets/logo.png" alt="BookSwap Logo" className="w-6 h-6 mr-2" />
-          BookSwap
-        </Link>
-        <div className="space-x-4">
-          <Link to="/" className="hover:underline">Home</Link>
-          <Link to="/about" className="hover:underline">About</Link>
-          <Link to="/contact" className="hover:underline">Contact</Link>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+        >
+          <Link to="/" className="text-2xl font-['Lora'] flex items-center text-shadow">
+            <img
+              src="/src/assets/book.svg"
+              alt="BookSwap Logo"
+              className="w-6 h-6 mr-2"
+            />
+            BookSwap
+          </Link>
+        </motion.div>
+        <motion.div
+          className="flex space-x-4 font-['Caveat'] text-sm items-center"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+        >
+          <Link
+            to="/"
+            className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+          >
+            Home
+          </Link>
+          <Link
+            to="/about"
+            className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            to="/contact"
+            className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+          >
+            Contact
+          </Link>
           {isAuthenticated ? (
             <>
-              <Link to="/me/profile" className="hover:underline">Profile</Link>
-              <Link to="/users/search" className="hover:underline">Search Users</Link>
-              <button
+              <Link
+                to="/me/profile"
+                className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+              >
+                Profile
+              </Link>
+              <Link
+                to="/users/search"
+                className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+              >
+                Search Users
+              </Link>
+              <motion.button
                 onClick={handleLogout}
-                className="hover:underline focus:outline-none"
+                className="bookish-button bookish-button--secondary text-sm px-3 py-1"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
                 Sign Out
-              </button>
+              </motion.button>
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:underline">Sign In</Link>
-              <Link to="/signup" className="hover:underline">Sign Up</Link>
+              <Link
+                to="/login"
+                className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="text-[var(--secondary)] hover:text-[var(--accent)] transition-colors"
+              >
+                Sign Up
+              </Link>
             </>
           )}
-        </div>
+        </motion.div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 
