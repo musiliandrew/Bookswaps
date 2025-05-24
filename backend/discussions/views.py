@@ -1,14 +1,16 @@
 from django.forms import ValidationError
-from rest_framework import status, generics, permissions
+from rest_framework import status, generics, permissions, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from .pagination import StandardPagination
 from rest_framework.exceptions import NotFound, PermissionDenied
 from django.core.cache import cache
 from django.db.models import Count, Q, Case, When, IntegerField
 from django.utils.timezone import now
 from django.utils import timezone
 from django.db import transaction
+import uuid
 from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent, Like, Upvote
 from .serializers import (
     CreateDiscussionSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer,
@@ -306,22 +308,31 @@ class ReprintPostView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
-            reprint = Reprint.objects.create(
-                reprint_id=uuid.uuid4(),
+            reprint, created = Reprint.objects.get_or_create(
                 discussion=discussion,
                 user=request.user,
-                comment=serializer.validated_data.get('comment', ''),
-                created_at=now()
+                defaults={
+                    'reprint_id': uuid.uuid4(),
+                    'comment': serializer.validated_data.get('comment', ''),
+                    'created_at': timezone.now()
+                }
             )
-            Notification.objects.create(
-                user=discussion.user,
-                type='discussion_reprinted',
-                message=f"{request.user.username} reposted your discussion: {discussion.title}",
-                content_type='reprint',
-                content_id=reprint.reprint_id
-            )
-        return Response(ReprintSerializer(reprint).data, status=status.HTTP_201_CREATED)
+            if not created:
+                raise serializers.ValidationError("You have already reprinted this discussion.")
 
+            if discussion.user != request.user:
+                try:
+                    Notification.objects.create(
+                        user=discussion.user,
+                        type='discussion_reprinted',
+                        message=f"{request.user.username} reposted your discussion: {discussion.title}"[:500],
+                        content_type='reprint',
+                        content_id=reprint.reprint_id
+                    )
+                except Exception as e:
+                    print(f"Notification creation failed: {str(e)}")
+
+        return Response(ReprintSerializer(reprint).data, status=status.HTTP_201_CREATED)
 
 class ListTopPostsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -330,26 +341,38 @@ class ListTopPostsView(generics.ListAPIView):
 
     def get_queryset(self):
         params = self.request.query_params
-        cache_key = f"top_posts_{params}"
+        cache_key = "top_posts_" + "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         cached_queryset = cache.get(cache_key)
-        if cached_queryset:
+        if cached_queryset is not None:
             return cached_queryset
 
         queryset = Discussion.objects.filter(status='active').annotate(
-            upvotes=Count('upvotes'),
-            note_count=Count('notes'),
-            engagement=Count('upvotes') + Count('notes') * 2
-        )
+            upvotes_count=Count('upvotes', distinct=True),
+            note_count=Count('notes', distinct=True),
+            engagement=Count('upvotes', distinct=True) + Count('notes', distinct=True) * 2
+        ).distinct()
 
         if params.get('book_id'):
-            queryset = queryset.filter(book__book_id=params['book_id'])
+            try:
+                uuid.UUID(params['book_id'])
+                queryset = queryset.filter(book__book_id=params['book_id'])
+            except ValueError:
+                raise serializers.ValidationError("Invalid book_id format.")
         if params.get('type'):
-            queryset = queryset.filter(type=params['type'])
+            if params['type'] in ['Article', 'Synopsis', 'Query']:
+                queryset = queryset.filter(type=params['type'])
+            else:
+                raise serializers.ValidationError("Invalid type. Must be Article, Synopsis, or Query.")
 
-        queryset = queryset.order_by('-engagement', '-upvotes')
+        queryset = queryset.order_by('-engagement', '-upvotes_count')
         limit = params.get('limit', '5')
-        if limit.isdigit():
-            queryset = queryset[:int(limit)]
+        try:
+            limit = int(limit)
+            if limit <= 0:
+                raise ValueError
+            queryset = queryset[:limit]
+        except ValueError:
+            raise serializers.ValidationError("Limit must be a positive integer.")
 
         cache.set(cache_key, queryset, timeout=3600)  # 1 hour
         return queryset

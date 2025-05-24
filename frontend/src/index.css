@@ -1,22 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Open+Sans:wght@400;500&family=Caveat&display=swap');
 @import "tailwindcss";
 
-
 :root {
-    --primary: #456A76; /* Deep Teal Blue */
-    --secondary: #F0EAD0; /* Cream */
-    --background: #B8C1B0; /* Pastel Sage */
+  --primary: #456A76; /* Deep Teal Blue */
+  --secondary: #F0EAD0; /* Cream */
+  --background: #B8C1B0; /* Pastel Sage */
+  --accent: #D4A017; /* Golden Sand */
+  --text: #6B7280; /* Slate Gray */
+  --error: #9B2D30; /* Brick Red */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Lora', serif;
+  color: var(--primary);
+}
+
+.accent-text {
+  font-family: 'Caveat', cursive;
+  font-size: 0.875rem;
+}
+
+.bookish-card {
+  background-color: var(--secondary);
+  border-width: 2px;
+  border-style: solid;
+}
+
+.bookish-button {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 200ms;
+  outline: none;
+}
+.bookish-button:hover {
+  transform: scale(1.05);
+}
+.bookish-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary), 0 0 0 4px rgba(69, 106, 118, 0.5);
+}
+
+.bookish-button--primary {
+  background-color: var(--primary);
+  color: var(--secondary);
+}
+
+.bookish-button--secondary {
+  background-color: var(--accent);
+  color: var(--text);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 200ms;
+  outline: none;
+}
+
+.unread-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--primary);
+  border-radius: 9999px;
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+.bookish-button--error {
+  background-color: var(--error);
+  color: var(--secondary);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 200ms;
+  outline: none;
+}
+
+.bookish-border {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--primary);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+.bookish-button--secondary {
+  background-color: var(--accent);
+  color: var(--text);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 200ms;
+  outline: none;
+}
+
+.bookish-button--error {
+  background-color: var(--error);
+  color: var(--secondary);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 200ms;
+  outline: none;
+}
+
+.bookish-border {
+  border-width: 2px;
+  border-color: var(--primary);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.unread-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--primary);
+  border-radius: 9999px;
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   }
-  
-  body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background-color: var(--background);
-    color: #333;
-  }
-  
-  .bookish-border {
-    border: 2px solid var(--primary);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%);
-  }
+}

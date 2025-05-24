@@ -63,12 +63,14 @@ class Reprint(models.Model):
     reprint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='reprints')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    comment = models.TextField(blank=True)
+    comment = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'reprints'
-        db_table_comment = 'Stores discussion shares'
+        db_table_comment = 'Stores discussion reprints'
+        unique_together = (('discussion', 'user'),)
+        indexes = [models.Index(fields=['discussion', 'user'])]
 
 class Society(models.Model):
     STATUS_CHOICES = (

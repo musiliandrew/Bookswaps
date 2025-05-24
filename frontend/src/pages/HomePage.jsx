@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import BookCard from '../components/home/BookCard';
@@ -7,27 +7,6 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import { useMemo } from 'react';
-import readingNook from '../assets/reading-nook.jpg';
-
-// Mock data for discussions only
-const mockTopPosts = [
-  {
-    discussion_id: "123e4567-e89b-12d3-a456-426614174000",
-    title: "Why 'Dune' is a Sci-Fi Masterpiece",
-    content: "Let's discuss the themes and world-building in Frank Herbert's classic!",
-    user: { username: "booklover1", user_id: "uuid1" },
-    created_at: "2025-05-18T10:00:00Z",
-    upvote_count: 25,
-  },
-  {
-    discussion_id: "223e4567-e89b-12d3-a456-426614174001",
-    title: "Favorite Fantasy Novels of 2025",
-    content: "Share your top picks for fantasy this year!",
-    user: { username: "reader2", user_id: "uuid2" },
-    created_at: "2025-05-17T15:30:00Z",
-    upvote_count: 18,
-  },
-];
 
 function HomePage() {
   const navigate = useNavigate();
@@ -37,6 +16,59 @@ function HomePage() {
   const bookCarouselRef = useRef(null);
   const userCarouselRef = useRef(null);
   const postCarouselRef = useRef(null);
+
+  // Dynamic hero images
+  const heroImages = [
+    {
+      src: '/src/assets/hero-bg.jpg',
+      alt: 'Modern library with reference desk and bookshelves',
+      objectPosition: '50% 50%',
+      text: {
+        heading: 'Explore a World of Books',
+        subheading: 'Swap and discover new stories with our community.',
+        ctaText: 'Browse Books',
+        ctaLink: '/books',
+      },
+    },
+    {
+      src: '/src/assets/reading-nook.jpg',
+      alt: 'Cozy reading nook with person reading',
+      objectPosition: '40% 50%',
+      text: {
+        heading: 'Your Reading Journey Starts Here',
+        subheading: 'Join BookSwap to share and find your next read.',
+        ctaText: 'Sign Up',
+        ctaLink: '/signup',
+      },
+    },
+    {
+      src: '/src/assets/warm-library.jpg',
+      alt: 'Warm library reading room with clock',
+      objectPosition: '50% 40%',
+      text: {
+        heading: 'Connect Through Books',
+        subheading: 'Discuss, swap, and build a bookish community.',
+        ctaText: 'Join Discussions',
+        ctaLink: '/discussions',
+      },
+    },
+  ];
+
+  // Hero state
+  const [currentImage, setCurrentImage] = useState(Math.floor(Math.random() * heroImages.length));
+
+  // Rotate images every 7 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % heroImages.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
+
+  // Handle dot click
+  const handleDotClick = (index) => {
+    setCurrentImage(index);
+  };
 
   // Use API data directly
   const books = apiBooks || [];
@@ -56,7 +88,6 @@ function HomePage() {
     debouncedGetBooks(filters);
     return () => debouncedGetBooks.cancel();
   }, [filters, debouncedGetBooks]);
-
 
   // Fetch recommended users once
   useEffect(() => {
@@ -105,61 +136,65 @@ function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)]">
       {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="h-[100vh] bg-cover bg-center flex items-center justify-center text-center relative"
-        style={{ backgroundImage: `url(${readingNook})` }}
-      >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="relative z-10 p-8 rounded-lg"
-        >
+      <section className="relative bg-cover bg-center h-[70vh] sm:h-[60vh] flex items-center justify-center text-center">
+        <AnimatePresence>
+          <motion.img
+            key={heroImages[currentImage].src}
+            src={heroImages[currentImage].src}
+            alt={heroImages[currentImage].alt}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: heroImages[currentImage].objectPosition }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          />
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-text bg-opacity-40 backdrop-blur-sm" />
+        <div className="relative z-10 container mx-auto px-4">
           <motion.h1
-            className="text-5xl md:text-6xl font-extrabold text-[var(--secondary)] font-serif"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
+            key={`heading-${currentImage}`}
+            className="text-3xl sm:text-4xl md:text-5xl font-['Lora'] text-[var(--secondary)] text-shadow mb-4"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            Swap, Read, Connect
+            {heroImages[currentImage].text.heading}
           </motion.h1>
           <motion.p
-            className="mt-4 text-xl text-[var(--secondary)]"
+            key={`subheading-${currentImage}`}
+            className="text-lg sm:text-xl text-[var(--secondary)] mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            {heroImages[currentImage].text.subheading}
+          </motion.p>
+          <motion.a
+            key={`cta-${currentImage}`}
+            href={heroImages[currentImage].text.ctaLink}
+            className="bookish-button bookish-button--primary"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            Join a community of book lovers to swap books and share stories.
-          </motion.p>
-          <motion.div
-            className="mt-8 space-x-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            <motion.button
-              onClick={() => navigate(isAuthenticated ? '/users/search' : '/signup')}
-              className="bg-[var(--primary)] text-[var(--secondary)] font-medium py-3 px-8 rounded-full hover:bg-opacity-90 shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isAuthenticated ? 'Explore Now' : 'Join BookSwap'}
-            </motion.button>
-            <motion.button
-              onClick={() => navigate('/library/books')}
-              className="border border-[var(--secondary)] text-[var(--secondary)] py-3 px-8 rounded-full hover:bg-[var(--secondary)] hover:text-[var(--primary)] shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Browse Books
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      </motion.section>
+            {heroImages[currentImage].text.ctaText}
+          </motion.a>
+        </div>
+        {/* Dot Indicators */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+          {heroImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => handleDotClick(index)}
+              className={`w-2 h-2 rounded-full ${
+                index === currentImage ? 'bg-[var(--primary)]' : 'bg-[var(--secondary)] opacity-50'
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* How It Works Section */}
       <motion.section
@@ -169,7 +204,7 @@ function HomePage() {
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-serif">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-['Lora']">
           How BookSwap Works
         </h2>
         <div className="max-w-6xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -180,15 +215,15 @@ function HomePage() {
           ].map((step, index) => (
             <motion.div
               key={step.title}
-              className="bg-white p-6 rounded-xl shadow-lg text-center"
+              className="bookish-card text-center"
               initial={{ y: 50, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.2, duration: 0.5 }}
             >
               <div className="text-4xl mb-4">{step.icon}</div>
-              <h3 className="text-xl font-semibold text-[var(--primary)]">{step.title}</h3>
-              <p className="mt-2 text-gray-600">{step.desc}</p>
+              <h3 className="text-xl font-semibold text-[var(--primary)] font-['Lora']">{step.title}</h3>
+              <p className="mt-2 text-[var(--text)]">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -202,7 +237,7 @@ function HomePage() {
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-serif">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-['Lora']">
           Trending Books
         </h2>
         {isLoading ? (
@@ -249,7 +284,7 @@ function HomePage() {
           </div>
         ) : (
           <motion.p
-            className="text-center text-gray-600 mt-8"
+            className="text-center text-[var(--text)] mt-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -267,7 +302,7 @@ function HomePage() {
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-serif">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-['Lora']">
           Meet Book Lovers
         </h2>
         {isLoading ? (
@@ -314,7 +349,7 @@ function HomePage() {
           </div>
         ) : (
           <motion.p
-            className="text-center text-gray-600 mt-8"
+            className="text-center text-[var(--text)] mt-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -332,7 +367,7 @@ function HomePage() {
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-serif">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-['Lora']">
           Hot Discussions
         </h2>
         <div className="relative max-w-6xl mx-auto">
@@ -350,14 +385,14 @@ function HomePage() {
             {mockTopPosts.map((post, index) => (
               <motion.div
                 key={post.discussion_id}
-                className="min-w-[300px] bg-white p-4 rounded-xl shadow-lg"
+                className="min-w-[300px] bookish-card"
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: index * 0.2, duration: 0.5 }}
               >
-                <h3 className="text-lg font-semibold text-[var(--primary)]">{post.title}</h3>
-                <p className="text-gray-600 truncate">{post.content}</p>
-                <p className="text-sm text-gray-500 mt-2">
+                <h3 className="text-lg font-semibold text-[var(--primary)] font-['Lora']">{post.title}</h3>
+                <p className="text-[var(--text)] truncate">{post.content}</p>
+                <p className="text-sm text-[var(--text)] mt-2 font-['Caveat']">
                   By {post.user.username} • {new Date(post.created_at).toLocaleDateString()}
                 </p>
                 <motion.button
@@ -374,7 +409,7 @@ function HomePage() {
             onClick={() => scrollCarousel(postCarouselRef, 'right')}
             className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-[var(--primary)] text-[var(--secondary)] p-2 rounded-full z-10 shadow-md"
             aria-label="Scroll right"
-          >
+            >
             <ChevronRightIcon className="h-6 w-6" />
           </button>
         </div>
@@ -388,7 +423,7 @@ function HomePage() {
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-serif">
+        <h2 className="text-3xl md:text-4xl font-bold text-[var(--primary)] text-center font-['Lora']">
           Find Books & Readers
         </h2>
         <motion.div
@@ -401,7 +436,7 @@ function HomePage() {
             type="text"
             placeholder="Search by title, author, or username..."
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full sm:w-1/2 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm"
+            className="w-full sm:w-1/2 px-4 py-3 border border-[var(--text)] rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bookish-border"
             aria-label="Search books or users"
           />
           <div className="w-full sm:w-1/2">
@@ -411,7 +446,7 @@ function HomePage() {
               onChange={(e) => setGenreInput(e.target.value)}
               onKeyDown={handleGenreAdd}
               placeholder="Type a genre and press Enter (e.g., Sci-Fi)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm"
+              className="w-full px-4 py-3 border border-[var(--text)] rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bookish-border"
               aria-label="Add genre filter"
             />
             <AnimatePresence>
@@ -442,7 +477,7 @@ function HomePage() {
         </motion.div>
         {error && (
           <motion.p
-            className="text-red-500 text-center mt-4"
+            className="text-[var(--error)] text-center mt-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -479,7 +514,7 @@ function HomePage() {
               ))
             ) : (
               <motion.p
-                className="text-center text-gray-600 col-span-full"
+                className="text-center text-[var(--text)] col-span-full"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
@@ -493,5 +528,30 @@ function HomePage() {
     </div>
   );
 }
+
+// Mock data for discussions (to be replaced with API)
+const mockTopPosts = [
+  {
+    discussion_id: 1,
+    title: 'Best Sci-Fi Reads of 2023',
+    content: 'What are your favorite sci-fi books this year? I loved Project Hail Mary!',
+    user: { username: 'SciFiFan' },
+    created_at: '2023-10-01',
+  },
+  {
+    discussion_id: 2,
+    title: 'Classic Literature Recommendations',
+    content: 'Looking for timeless classics to read. Any suggestions?',
+    user: { username: 'BookWorm' },
+    created_at: '2023-10-02',
+  },
+  {
+    discussion_id: 3,
+    title: 'Fantasy Worlds to Get Lost In',
+    content: 'Let’s discuss epic fantasy series like LOTR or Stormlight Archive.',
+    user: { username: 'FantasyReader' },
+    created_at: '2023-10-03',
+  },
+];
 
 export default HomePage;

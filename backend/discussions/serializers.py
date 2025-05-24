@@ -11,11 +11,11 @@ from markdown import markdown
 class DiscussionResponseSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'type', 'title', 'user', 'book']
-
+        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes']
 
 class CreateDiscussionSerializer(serializers.ModelSerializer):
     book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
@@ -195,11 +195,13 @@ class ReprintCreateSerializer(serializers.Serializer):
 class TopPostSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True)
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
+    note_count = serializers.IntegerField(read_only=True)
+    engagement = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes']
+        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes', 'note_count', 'engagement']
 
 
 class SocietySerializer(serializers.ModelSerializer):

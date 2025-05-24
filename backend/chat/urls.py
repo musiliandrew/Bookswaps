@@ -5,6 +5,9 @@ from .views import (
     SocietyListView, SendSocietyMessageView, EditSocietyMessageView, DeleteSocietyMessageView,
     SocietyMessageListView, PinMessageView
 )
+from backend.discussions.views import (
+    CreateSocietyEventView, SocietyEventListView
+)
 
 app_name = 'chat'
 
@@ -26,5 +29,7 @@ urlpatterns = [
     path('societies/<uuid:society_id>/messages/<uuid:message_id>/delete/', DeleteSocietyMessageView.as_view(), name='delete_society_message'),
     path('societies/<uuid:society_id>/messages/<uuid:message_id>/pin/', PinMessageView.as_view(), name='pin_society_message'),
     path('societies/<uuid:society_id>/messages/<uuid:message_id>/react/', AddReactionView.as_view(), name='add_society_reaction'),
-    path('societies/<uuid:society_id>/messages/<uuid:message_id>/reactions/', ListReactionsView.as_view(), name='list_society_reactions'), #not tested
+    path('societies/<uuid:society_id>/messages/<uuid:message_id>/reactions/', ListReactionsView.as_view(), name='list_society_reactions'),
+    path('societies/<uuid:society_id>/events/create/', CreateSocietyEventView.as_view(), name='create_society_event'),
+    path('societies/<uuid:society_id>/events/', SocietyEventListView.as_view(), name='list_society_events'),
 ]

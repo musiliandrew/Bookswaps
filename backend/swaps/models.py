@@ -350,6 +350,7 @@ class Notification(models.Model):
         ('note_added', 'Note Added'),
         ('note_liked', 'Note Liked'),
         ('discussion_upvoted', 'Discussion Upvoted'),
+        ('discussion_reprinted', 'Discussion Reprinted'), 
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
