@@ -1,18 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import ErrorMessage from '../auth/ErrorMessage';
 
-function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
+function ProfileForm({ profile, onSubmit, onCancel, error, isLoading, className = '' }) {
   const [formData, setFormData] = useState({
     username: profile.username || '',
     email: profile.email || '',
+    bio: profile.bio || '',
     city: profile.city || '',
     genres: profile.genres || [],
+    avatar: null,
   });
-  const [genreInput, setGenreInput] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState(profile.avatar || null);
   const [formErrors, setFormErrors] = useState({});
+  const [serverError, setServerError] = useState(error);
+
+  // Predefined genres
+  const availableGenres = [
+    'Fiction', 'Non-Fiction', 'Sci-Fi', 'Fantasy', 'Mystery', 'Thriller',
+    'Romance', 'Historical', 'Biography', 'Self-Help', 'Young Adult', 'Horror'
+  ];
 
   const validateForm = () => {
     const newErrors = {};
@@ -28,6 +37,9 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
+    if (formData.bio && formData.bio.length > 500) {
+      newErrors.bio = 'Bio cannot exceed 500 characters';
+    }
     setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -39,52 +51,87 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
     }));
   };
 
-  const handleGenreAdd = (e) => {
-    if (e.key === 'Enter' && genreInput.trim()) {
-      e.preventDefault();
-      setFormData((prev) => ({
-        ...prev,
-        genres: [...prev.genres, genreInput.trim()],
-      }));
-      setGenreInput('');
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, avatar: file }));
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
-  const handleGenreRemove = (genre) => {
+  const handleGenreToggle = (genre) => {
     setFormData((prev) => ({
       ...prev,
-      genres: prev.genres.filter((g) => g !== genre),
+      genres: prev.genres.includes(genre)
+        ? prev.genres.filter((g) => g !== genre)
+        : [...prev.genres, genre],
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
       return;
     }
-    onSubmit({
-      username: formData.username,
-      email: formData.email,
-      city: formData.city || null,
-      genres: formData.genres,
-    });
+    try {
+      await onSubmit(formData);
+    } catch {
+      setServerError('Failed to update profile. Please try again.');
+    }
   };
 
-  const isDisabled = !formData.username || !formData.email;
+  useEffect(() => {
+    setServerError(error);
+  }, [error]);
+
+  const isDisabled = !formData.username || !formData.email || isLoading;
 
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className={`frosted-glass bookish-border p-6 rounded-lg space-y-6 ${className}`}
+      className={`bookish-glass bookish-shadow p-8 rounded-2xl space-y-6 ${className}`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
     >
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Avatar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
+        >
+          <label className="block text-sm font-['Poppins'] text-[#333] mb-2">
+            Profile Picture (Optional)
+          </label>
+          <div className="flex items-center space-x-4">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#FF6F61]">
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#F5E8C7] flex items-center justify-center text-[#333] font-['Poppins']">
+                  No Image
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="bookish-input text-sm text-[#333] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-['Poppins'] file:bg-[#FF6F61] file:text-white hover:file:bg-[#E65A50]"
+              aria-label="Upload profile picture"
+            />
+          </div>
+        </motion.div>
+        {/* Username */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
           <Input
             label="Username"
@@ -95,13 +142,13 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
             placeholder="Enter your username"
             required
             className="bookish-border"
-            labelClassName="font-['Lora'] text-[var(--primary)]"
+            labelClassName="font-['Poppins'] text-[#333]"
             aria-describedby={formErrors.username ? 'error-username' : ''}
           />
           {formErrors.username && (
             <motion.p
               id="error-username"
-              className="text-[var(--error)] text-sm"
+              className="text-[#D32F2F] text-sm"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               transition={{ duration: 0.2 }}
@@ -110,10 +157,11 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
             </motion.p>
           )}
         </motion.div>
+        {/* Email */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
         >
           <Input
             label="Email"
@@ -124,13 +172,13 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
             placeholder="Enter your email"
             required
             className="bookish-border"
-            labelClassName="font-['Lora'] text-[var(--primary)]"
+            labelClassName="font-['Poppins'] text-[#333]"
             aria-describedby={formErrors.email ? 'error-email' : ''}
           />
           {formErrors.email && (
             <motion.p
               id="error-email"
-              className="text-[var(--error)] text-sm"
+              className="text-[#D32F2F] text-sm"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               transition={{ duration: 0.2 }}
@@ -139,10 +187,42 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
             </motion.p>
           )}
         </motion.div>
+        {/* Bio */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+        >
+          <label className="block text-sm font-['Poppins'] text-[#333] mb-2">
+            Bio (Optional)
+          </label>
+          <textarea
+            name="bio"
+            value={formData.bio}
+            onChange={handleChange}
+            placeholder="Tell us about yourself (max 500 characters)"
+            className="bookish-border w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#FF6F61] focus:border-[#FF6F61] font-['Poppins'] text-[#333] resize-none"
+            rows="4"
+            maxLength="500"
+            aria-describedby={formErrors.bio ? 'error-bio' : ''}
+          />
+          {formErrors.bio && (
+            <motion.p
+              id="error-bio"
+              className="text-[#D32F2F] text-sm"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.2 }}
+            >
+              {formErrors.bio}
+            </motion.p>
+          )}
+        </motion.div>
+        {/* City */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
         >
           <Input
             label="City (Optional)"
@@ -152,73 +232,64 @@ function ProfileForm({ profile, onSubmit, error, isLoading, className = '' }) {
             onChange={handleChange}
             placeholder="Enter your city"
             className="bookish-border"
-            labelClassName="font-['Lora'] text-[var(--primary)]"
+            labelClassName="font-['Poppins'] text-[#333]"
           />
         </motion.div>
+        {/* Genres */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.3 }}
+          transition={{ delay: 0.6, duration: 0.3 }}
         >
-          <label
-            className="block text-sm font-['Lora'] text-[var(--primary)]"
-          >
+          <label className="block text-sm font-['Poppins'] text-[#333] mb-2">
             Favorite Genres (Optional)
           </label>
-          <input
-            type="text"
-            value={genreInput}
-            onChange={(e) => setGenreInput(e.target.value)}
-            onKeyDown={handleGenreAdd}
-            placeholder="Type a genre and press Enter"
-            className="mt-1 block w-full px-3 py-2 bookish-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-          />
           <div className="mt-2 flex flex-wrap gap-2">
-            {formData.genres.map((genre) => (
-              <motion.span
+            {availableGenres.map((genre) => (
+              <motion.button
                 key={genre}
-                className="frosted-glass bookish-border px-2 py-1 rounded-full text-sm text-[var(--primary)] font-['Caveat'] flex items-center"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
+                type="button"
+                className={`genre-tag px-3 py-1 rounded-full text-sm font-['Caveat'] ${
+                  formData.genres.includes(genre)
+                    ? 'bg-[#FF6F61] text-white'
+                    : 'bg-[#F5E8C7] text-[#333]'
+                }`}
+                onClick={() => handleGenreToggle(genre)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {genre}
-                <button
-                  type="button"
-                  onClick={() => handleGenreRemove(genre)}
-                  className="ml-2 text-[var(--primary)] hover:text-[var(--accent)]"
-                >
-                  ×
-                </button>
-              </motion.span>
+              </motion.button>
             ))}
           </div>
         </motion.div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.3 }}
-      >
-        <ErrorMessage message={error} />
-      </motion.div>
+      {serverError && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.3 }}
+        >
+          <ErrorMessage message={serverError} />
+        </motion.div>
+      )}
       <motion.div
         className="flex space-x-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.3 }}
+        transition={{ delay: 0.8, duration: 0.3 }}
       >
         <Button
           type="submit"
           text={isLoading ? 'Saving...' : 'Save'}
-          disabled={isDisabled || isLoading}
-          className="w-full bookish-button bookish-button--primary"
+          disabled={isDisabled}
+          className="w-full bookish-button-enhanced bg-[#FF6F61] text-white"
         />
         <Button
           type="button"
           text="Cancel"
-          onClick={() => onSubmit(null)}
-          className="w-full bookish-button bookish-button--secondary"
+          onClick={onCancel}
+          className="w-full bookish-button-enhanced bg-[#B0B0B0] text-white"
         />
       </motion.div>
     </motion.form>

@@ -1,158 +1,140 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Open+Sans:wght@400;500&family=Caveat&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Open+Sans:wght@400;600&family=Caveat:wght@400&display=swap');
 @import "tailwindcss";
 
 :root {
-  --primary: #456A76; /* Deep Teal Blue */
-  --secondary: #F0EAD0; /* Cream */
-  --background: #B8C1B0; /* Pastel Sage */
-  --accent: #D4A017; /* Golden Sand */
-  --text: #6B7280; /* Slate Gray */
-  --error: #9B2D30; /* Brick Red */
+  --primary: #456A76;
+  --secondary: #F0EAD0;
+  --accent: #D4A017;
+  --text: #2F2F2F;
+  --background: #F5F5F5;
+  --error: #E57373;
+  --success: #81C784;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+
+
+/* Gradient Background */
+.bookish-gradient {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--background) 100%);
 }
 
-body {
-  font-family: 'Open Sans', sans-serif;
-  background-color: var(--background);
-  color: var(--text);
-  line-height: 1.6;
+/* Glassmorphism Effect */
+.bookish-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Lora', serif;
-  color: var(--primary);
+/* Shadow */
+.bookish-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.accent-text {
-  font-family: 'Caveat', cursive;
-  font-size: 0.875rem;
+/* Input Styling */
+.bookish-input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--text);
+  transition: all 0.3s ease;
+}
+.bookish-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(69, 106, 118, 0.2);
 }
 
-.bookish-card {
-  background-color: var(--secondary);
-  border-width: 2px;
-  border-style: solid;
+/* Enhanced Button */
+.bookish-button-enhanced {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bookish-button-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.bookish-button {
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 200ms;
-  outline: none;
+/* Text Gradient */
+.text-gradient {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.bookish-button:hover {
+
+/* Genre Tag */
+.genre-tag {
+  background: var(--primary);
+  transition: transform 0.2s ease;
+}
+.genre-tag:hover {
   transform: scale(1.05);
 }
-.bookish-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--primary), 0 0 0 4px rgba(69, 106, 118, 0.5);
-}
 
-.bookish-button--primary {
-  background-color: var(--primary);
+/* Checkbox Enhanced */
+.checkbox-enhanced {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.checkbox-enhanced:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.checkbox-enhanced:checked::after {
+  content: '✔';
   color: var(--secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.bookish-button--secondary {
-  background-color: var(--accent);
-  color: var(--text);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 200ms;
-  outline: none;
+/* Progress Bar */
+.progress-bar {
+  background: var(--background);
+  height: 4px;
+  border-radius: 2px;
+}
+.progress-bar div {
+  background: var(--accent);
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
-.unread-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  background-color: var(--primary);
+/* Navbar Custom Styles */
+.navbar-full {
+  width: 100vw;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 1rem;
+}
+
+.navbar-link-hover {
+  position: relative;
+}
+.navbar-link-hover::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.navbar-link-hover:hover::after {
+  width: 100%;
+}
+
+.navbar-button {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  padding: 0.5rem 1.5rem;
   border-radius: 9999px;
-  display: inline-block;
-  animation: pulse 1.5s infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
-.bookish-button--error {
-  background-color: var(--error);
-  color: var(--secondary);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 200ms;
-  outline: none;
-}
-
-.bookish-border {
-  border-width: 2px;
-  border-style: solid;
-  border-color: var(--primary);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-}
-.bookish-button--secondary {
-  background-color: var(--accent);
-  color: var(--text);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 200ms;
-  outline: none;
-}
-
-.bookish-button--error {
-  background-color: var(--error);
-  color: var(--secondary);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 200ms;
-  outline: none;
-}
-
-.bookish-border {
-  border-width: 2px;
-  border-color: var(--primary);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.unread-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  background-color: var(--primary);
-  border-radius: 9999px;
-  display: inline-block;
-  animation: pulse 1.5s infinite;
-}
-
-@layer utilities {
-  .text-shadow {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-  }
+.navbar-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

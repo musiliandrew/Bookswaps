@@ -8,31 +8,33 @@ import AuthLink from '../../components/auth/AuthLink';
 
 function SearchUsersPage() {
   const navigate = useNavigate();
-  const { searchUsers, searchResults, error, isLoading } = useAuth();
-  const [hasSearched, setHasSearched] = useState(false);
+  const { searchUsers, searchResults, error, isLoading, isAuthenticated } = useAuth();
+  const [globalError, setGlobalError] = useState('');
 
   useEffect(() => {
-    if (!localStorage.getItem('access_token')) {
+    if (!isAuthenticated) {
       navigate('/login');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (data) => {
-    await searchUsers(data);
-    setHasSearched(true);
+    try {
+      await searchUsers(data);
+    } catch {
+      setGlobalError('Failed to perform search.');
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--sage)] py-12 px-4 sm:px-6 lg:px-8">
-      {/* Main Content */}
+    <div className="min-h-screen bg-[#F5E8C7] py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        className="max-w-4xl mx-auto w-full"
+        className="max-w-2xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
       >
         <motion.h2
-          className="text-center text-2xl sm:text-3xl font-['Lora'] text-[var(--primary)] text-shadow"
+          className="text-center text-3xl font-['Playfair_Display'] text-[#FF6F61] mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -40,7 +42,7 @@ function SearchUsersPage() {
           Find Book Lovers
         </motion.h2>
         <motion.p
-          className="mt-2 text-center text-sm text-[var(--text)] font-['Open_Sans']"
+          className="text-center text-sm text-[#333] font-['Poppins'] mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
@@ -48,9 +50,24 @@ function SearchUsersPage() {
           Search for users by username or favorite genres.
         </motion.p>
 
+        {/* Global Error */}
+        <AnimatePresence>
+          {(error || globalError) && (
+            <motion.p
+              className="text-[#D32F2F] text-sm text-center mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {globalError || error}
+            </motion.p>
+          )}
+        </AnimatePresence>
+
         {/* Search Form */}
         <motion.div
-          className="mt-8 frosted-glass p-6"
+          className="mb-8"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
@@ -59,53 +76,54 @@ function SearchUsersPage() {
             onSubmit={handleSubmit}
             error={error}
             isLoading={isLoading}
-            className="space-y-4"
           />
         </motion.div>
 
         {/* Search Results */}
         <motion.div
-          className="mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          {hasSearched && !isLoading && (
-            <>
-              {searchResults?.length ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <AnimatePresence>
-                    {searchResults.map((user, index) => (
-                      <motion.div
-                        key={user.username}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ delay: index * 0.1, duration: 0.3 }}
-                      >
-                        <UserCard user={user} />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <p className="text-center text-[var(--text)]">No users found.</p>
-              )}
-            </>
+          {isLoading ? (
+            <div className="text-center">
+              <div className="bookish-spinner mx-auto"></div>
+              <p className="text-[#333] font-['Poppins'] mt-2">Searching...</p>
+            </div>
+          ) : searchResults?.length ? (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <AnimatePresence>
+                {searchResults.map((user, index) => (
+                  <motion.li
+                    key={user.id || user.username}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                  >
+                    <UserCard user={user} />
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </ul>
+          ) : (
+            <p className="text-center text-[#333] font-['Poppins']">
+              No users found. Try different search criteria.
+            </p>
           )}
         </motion.div>
 
         {/* Back Link */}
         <motion.div
-          className="mt-6 text-center"
+          className="mt-8 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <AuthLink
-            to="/me/profile"
+            to="/profile/me"
             text="Back to Profile"
-            className="text-[var(--primary)] hover:text-[var(--accent)] transition-colors"
+            className="text-[#333] hover:text-[#FFA726] font-['Poppins'] transition-colors"
           />
         </motion.div>
       </motion.div>

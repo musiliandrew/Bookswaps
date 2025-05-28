@@ -5,12 +5,10 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-// 3D User Card Component
 function UserCard3D({ username, city, genres, isHovered }) {
   const meshRef = useRef();
   const [time, setTime] = useState(0);
 
-  // Generate texture with user info
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 512;
@@ -28,9 +26,8 @@ function UserCard3D({ username, city, genres, isHovered }) {
   ctx.fillText(genresText, canvas.width / 2, 200);
   const texture = new THREE.CanvasTexture(canvas);
 
-  // Rotate and float
   useFrame((state, delta) => {
-    setTime(time + delta);
+    setTime((prev) => prev + delta);
     meshRef.current.rotation.y += isHovered ? 0.05 : 0.01;
     meshRef.current.position.y = 1 + Math.sin(time) * 0.2;
   });
@@ -49,7 +46,6 @@ function UserCard3D({ username, city, genres, isHovered }) {
   );
 }
 
-// Glowing Platform Component
 function Platform() {
   return (
     <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -72,14 +68,13 @@ function UserCard({ user }) {
 
   return (
     <motion.div
-      className="frosted-glass bookish-border p-4 rounded-lg shadow-lg max-w-xs mx-auto"
+      className="bookish-glass bookish-shadow p-4 rounded-lg max-w-xs mx-auto"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 3D Canvas */}
       <div className="w-full h-64">
         <Canvas camera={{ position: [0, 2, 3], fov: 50 }}>
           <ambientLight intensity={0.5} />
@@ -100,14 +95,13 @@ function UserCard({ user }) {
         </Canvas>
       </div>
 
-      {/* User Details */}
       <motion.div
         className="mt-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
-        <h3 className="text-lg font-['Lora'] text-[var(--primary)] text-shadow">
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">
           {user.username}
         </h3>
         <p className="mt-2 text-sm text-[var(--text)] font-['Open_Sans']">
@@ -122,7 +116,7 @@ function UserCard({ user }) {
               user.genres.map((genre) => (
                 <motion.span
                   key={genre}
-                  className="frosted-glass bookish-border px-2 py-1 rounded-full text-xs text-[var(--primary)] font-['Caveat']"
+                  className="genre-tag px-2 py-1 rounded-full text-xs text-[var(--primary)] font-['Caveat']"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3, duration: 0.2 }}
@@ -144,10 +138,7 @@ function UserCard({ user }) {
         >
           <Link
             to={`/users/${user.username}`}
-            className="mt-4 block text-center bookish-button bookish-button--primary font-['Open_Sans'] font-medium py-2 px-4 rounded"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            className="mt-4 block text-center bookish-button-enhanced font-['Open_Sans'] font-medium py-2 px-4 rounded"
           >
             View Profile
           </Link>

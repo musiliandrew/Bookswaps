@@ -7,41 +7,16 @@ import AuthLink from '../../components/auth/AuthLink';
 
 function PasswordResetConfirmPage() {
   const navigate = useNavigate();
-  const { token } = useParams();
+  const { uid, token } = useParams();
   const { confirmPasswordReset, error, isLoading, success } = useAuth();
-
-  // Dynamic background images
-  const heroImages = [
-    {
-      src: '/src/assets/hero-bg.jpg',
-      alt: 'Modern library with reference desk and bookshelves',
-      objectPosition: '50% 50%',
-    },
-    {
-      src: '/src/assets/reading-nook.jpg',
-      alt: 'Cozy reading nook with person reading',
-      objectPosition: '40% 50%',
-    },
-    {
-      src: '/src/assets/warm-library.jpg',
-      alt: 'Warm library reading room with clock',
-      objectPosition: '50% 40%',
-    },
-  ];
-
-  // Hero state
-  const [currentImage, setCurrentImage] = useState(Math.floor(Math.random() * heroImages.length));
-
-  // Rotate images every 7 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % heroImages.length);
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [heroImages.length]);
+  const [formError, setFormError] = useState('');
 
   const handleSubmit = async (data) => {
-    await confirmPasswordReset({ ...data, token });
+    try {
+      await confirmPasswordReset({ uid, token, new_password: data.new_password });
+    } catch {
+      setFormError('Failed to reset password. Please try again or request a new link.');
+    }
   };
 
   useEffect(() => {
@@ -51,32 +26,15 @@ function PasswordResetConfirmPage() {
   }, [success, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Dynamic Background */}
-      <AnimatePresence>
-        <motion.img
-          key={heroImages[currentImage].src}
-          src={heroImages[currentImage].src}
-          alt={heroImages[currentImage].alt}
-          className="absolute inset-0 w-full h-full object-cover hero-image"
-          style={{ objectPosition: heroImages[currentImage].objectPosition }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-        />
-      </AnimatePresence>
-      <div className="absolute inset-0 bg-text bg-opacity-20" />
-
-      {/* Frosted-Glass Container */}
+    <div className="min-h-screen bg-[#F5E8C7] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        className="max-w-md w-full frosted-glass p-8"
+        className="max-w-md w-full bookish-glass bookish-shadow p-10 rounded-2xl"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
       >
         <motion.h2
-          className="text-center text-2xl sm:text-3xl font-['Lora'] text-[var(--primary)] text-shadow"
+          className="text-center text-3xl font-['Playfair_Display'] text-[#FF6F61] mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -84,13 +42,26 @@ function PasswordResetConfirmPage() {
           Set New Password
         </motion.h2>
         <motion.p
-          className="mt-2 text-center text-sm text-[var(--text)] font-['Open_Sans']"
+          className="text-center text-sm text-[#333] font-['Poppins'] mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
           Enter your new password to complete the reset.
         </motion.p>
+        <AnimatePresence>
+          {(error || formError) && (
+            <motion.p
+              className="text-[#D32F2F] text-sm text-center mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {formError || error}
+            </motion.p>
+          )}
+        </AnimatePresence>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -98,23 +69,26 @@ function PasswordResetConfirmPage() {
         >
           <PasswordResetConfirmForm
             onSubmit={handleSubmit}
-            error={error}
+            error={error || formError}
             isLoading={isLoading}
             className="mt-6"
           />
         </motion.div>
-        {success && (
-          <motion.p
-            className="text-[var(--primary)] text-sm text-center mt-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            Password reset successful! Redirecting to login...
-          </motion.p>
-        )}
+        <AnimatePresence>
+          {success && (
+            <motion.p
+              className="text-[#4CAF50] text-sm text-center mt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              Password reset successful! Redirecting to login...
+            </motion.p>
+          )}
+        </AnimatePresence>
         <motion.div
-          className="mt-4 text-center"
+          className="mt-6 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
@@ -122,7 +96,7 @@ function PasswordResetConfirmPage() {
           <AuthLink
             to="/login"
             text="Back to Sign In"
-            className="text-[var(--primary)] hover:text-[var(--accent)] transition-colors"
+            className="text-[#333] hover:text-[#FFA726] font-['Poppins'] transition-colors"
           />
         </motion.div>
       </motion.div>

@@ -7,24 +7,23 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
-// 3D Book Component
 function Book({ image, isHovered }) {
   const meshRef = useRef();
   const [time, setTime] = useState(0);
 
-  // Load book cover texture
-  const texture = useTexture(image || 'https://images.unsplash.com/photo-1693435017815-6396d8ba08b6?q=80&w=2080&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+  const texture = useTexture(
+    image || '/assets/placeholder-book.jpg'
+  );
 
-  // Rotate and float
   useFrame((state, delta) => {
-    setTime(time + delta);
-    meshRef.current.rotation.y += isHovered ? 0.05 : 0.01; // Faster rotation on hover
-    meshRef.current.position.y = 1 + Math.sin(time) * 0.2; // Floating effect
+    setTime((prev) => prev + delta);
+    meshRef.current.rotation.y += isHovered ? 0.05 : 0.01;
+    meshRef.current.position.y = 1 + Math.sin(time) * 0.2;
   });
 
   return (
     <mesh ref={meshRef} position={[0, 1, 0]} scale={isHovered ? 1.1 : 1}>
-      <boxGeometry args={[1, 1.5, 0.2]} /> {/* Book shape: width, height, depth */}
+      <boxGeometry args={[1, 1.5, 0.2]} />
       <meshStandardMaterial
         map={texture}
         emissive={new THREE.Color('#456A76')}
@@ -36,11 +35,10 @@ function Book({ image, isHovered }) {
   );
 }
 
-// Glowing Platform Component
 function Platform() {
   return (
     <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <cylinderGeometry args={[1.2, 1.2, 0.1, 32]} /> {/* Radius top, radius bottom, height */}
+      <cylinderGeometry args={[1.2, 1.2, 0.1, 32]} />
       <meshStandardMaterial
         color="#F0EAD0"
         opacity={0.2}
@@ -56,44 +54,47 @@ function Platform() {
 
 function BookCard({ book }) {
   const { bookmarkBook, isAuthenticated } = useAuth();
-  const isBookmarked = book.notes?.some(note => note.content === 'bookmark');
+  const isBookmarked = book.notes?.some((note) => note.content === 'bookmark');
   const [isHovered, setIsHovered] = useState(false);
 
   const handleBookmark = () => {
     if (!isAuthenticated) {
       return;
     }
-    bookmarkBook(book.discussion_id, !isBookmarked);
+    bookmarkBook(book.book_id, !isBookmarked);
   };
 
   return (
     <motion.div
-      className="frosted-glass bookish-border p-4 rounded-lg shadow-lg max-w-xs mx-auto"
+      className="bookish-glass bookish-shadow p-4 rounded-lg max-w-xs mx-auto"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 3D Canvas */}
       <div className="w-full h-64">
         <Canvas camera={{ position: [0, 2, 3], fov: 50 }}>
           <ambientLight intensity={0.5} />
           <pointLight position={[5, 5, 5]} intensity={1} />
           <Book image={book.book_image} isHovered={isHovered} />
           <Platform />
-          <OrbitControls enablePan={false} enableZoom={false} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} />
+          <OrbitControls
+            enablePan={false}
+            enableZoom={false}
+            minPolarAngle={Math.PI / 2}
+            maxPolarAngle={Math.PI / 2}
+          />
         </Canvas>
       </div>
 
-      {/* Book Details */}
       <motion.div
         className="mt-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
-        <h3 className="text-lg font-['Lora'] text-[var(--primary)] text-shadow">
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">
           {book.title}
         </h3>
         <p className="text-sm text-[var(--text)] font-['Open_Sans']">
@@ -113,7 +114,7 @@ function BookCard({ book }) {
             book.genres.map((genre) => (
               <motion.span
                 key={genre}
-                className="frosted-glass bookish-border px-2 py-1 rounded-full text-xs text-[var(--primary)] font-['Caveat']"
+                className="genre-tag px-2 py-1 rounded-full text-xs text-[var(--primary)] font-['Caveat']"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3, duration: 0.2 }}
@@ -130,9 +131,9 @@ function BookCard({ book }) {
         <motion.button
           onClick={handleBookmark}
           disabled={!isAuthenticated}
-          className={`mt-4 flex items-center space-x-1 bookish-button bookish-button--secondary text-sm ${
+          className={`mt-4 flex items-center space-x-1 bookish-button-enhanced text-sm ${
             isBookmarked ? 'text-[var(--error)]' : 'text-[var(--text)]'
-          } hover:text-[var(--error)] focus:outline-none`}
+          } hover:text-[var(--error)]`}
           whileHover={{ scale: isAuthenticated ? 1.05 : 1 }}
           whileTap={{ scale: isAuthenticated ? 0.95 : 1 }}
           transition={{ duration: 0.2 }}
