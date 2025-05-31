@@ -2,28 +2,26 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
+import { useChat } from '../../hooks/useChat';
 import ChatWindow from '../../components/chats/ChatWindow';
 import ErrorMessage from '../../components/auth/ErrorMessage';
 
 function ChatPage() {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const { isAuthenticated, getUserProfile, publicProfile } = useAuth();
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const { getRecipientProfile, recipientProfile, isLoading, error } = useChat();
+  const [globalError, setGlobalError] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     } else {
-      getUserProfile(userId)
-        .then(() => setIsLoading(false))
-        .catch(() => {
-          setError('Failed to load user profile.');
-          setIsLoading(false);
-        });
+      getRecipientProfile(userId).catch(() => {
+        setGlobalError('Failed to load user profile.');
+      });
     }
-  }, [isAuthenticated, navigate, userId, getUserProfile]);
+  }, [isAuthenticated, navigate, userId, getRecipientProfile]);
 
   if (isLoading) {
     return (
@@ -55,15 +53,15 @@ function ChatPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          Chat with {publicProfile?.username || 'User'}
+          Chat with {recipientProfile?.username || 'User'}
         </motion.h2>
-        {error && (
+        {(error || globalError) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ErrorMessage message={error} />
+            <ErrorMessage message={error || globalError} />
           </motion.div>
         )}
         <motion.div

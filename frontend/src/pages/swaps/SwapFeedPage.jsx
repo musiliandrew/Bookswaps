@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSwaps } from '../../hooks/useSwaps';
 import { useAuth } from '../../hooks/useAuth';
 import SwapCard from '../../components/swaps/SwapCard';
 import ErrorMessage from '../../components/auth/ErrorMessage';
+import { Button } from '../../components/common';
 
 function SwapFeedPage() {
   const navigate = useNavigate();
-  const { getSwaps, swaps, error, isLoading, isAuthenticated } = useAuth();
+  const { getSwaps, swaps, error, isLoading } = useSwaps();
+  const { user, isAuthenticated } = useAuth();
   const [globalError, setGlobalError] = useState('');
   const [activeTab, setActiveTab] = useState('received');
 
@@ -20,7 +23,9 @@ function SwapFeedPage() {
   }, [isAuthenticated, navigate, getSwaps]);
 
   const filteredSwaps = swaps?.filter((swap) =>
-    activeTab === 'received' ? swap.responder.id === isAuthenticated.id : swap.requester.id === isAuthenticated.id
+    activeTab === 'received'
+      ? swap.recipient?.id === user?.id
+      : swap.initiator?.id === user?.id
   );
 
   return (
@@ -71,6 +76,12 @@ function SwapFeedPage() {
           >
             Sent
           </button>
+          <Link
+            to="/swaps/history"
+            className="px-4 py-2 font-['Poppins'] text-sm rounded-full bg-[#F5E8C7] text-[#333] hover:bg-[#FF6F61] hover:text-white"
+          >
+            History
+          </Link>
         </motion.div>
 
         {/* Global Error */}
@@ -109,7 +120,12 @@ function SwapFeedPage() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.1, duration: 0.3 }}
                   >
-                    <SwapCard swap={swap} isReceived={activeTab === 'received'} />
+                    <div className="flex justify-between items-center">
+                      <SwapCard swap={swap} isReceived={activeTab === 'received'} />
+                      <Link to={`/swaps/${swap.id}`}>
+                        <Button className="bookish-button-enhanced">View Details</Button>
+                      </Link>
+                    </div>
                   </motion.li>
                 ))}
               </AnimatePresence>

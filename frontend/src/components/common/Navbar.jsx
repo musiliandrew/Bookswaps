@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import AuthLink from '../../components/auth/AuthLink';
-import { useAuth } from '../../hooks/useAuth';
+import AuthLink from '../components/auth/AuthLink';
+import { useAuth } from '../hooks/useAuth';
 
 function Navbar() {
   const { isAuthenticated, logout } = useAuth();
@@ -23,7 +23,8 @@ function Navbar() {
     { to: '/', text: 'Home' },
     { to: '/books', text: 'Books' },
     { to: '/swaps', text: 'Swaps' },
-    { to: '/chat', text: 'Chat' },
+    { to: '/swaps/history', text: 'Swap History' },
+    { to: '/societies', text: 'Societies' }, // Replaced /chat
     { to: '/discussions', text: 'Discussions' },
   ];
 

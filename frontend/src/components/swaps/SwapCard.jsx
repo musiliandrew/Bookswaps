@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
+import { useSwaps } from '../../hooks/useSwaps';
 import Button from '../common/Button';
 import ErrorMessage from '../auth/ErrorMessage';
 import { Link } from 'react-router-dom';
 
 function SwapCard({ swap, isReceived }) {
-  const { acceptSwap, rejectSwap, cancelSwap } = useAuth();
+  const { profile } = useAuth();
+  const { acceptSwap, rejectSwap, cancelSwap, rateSwap } = useSwaps();
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [rating, setRating] = useState(swap.rating || 0);
+  const [isRating, setIsRating] = useState(false);
 
   const handleAccept = async () => {
     setIsProcessing(true);
@@ -42,6 +46,24 @@ function SwapCard({ swap, isReceived }) {
       setIsProcessing(false);
     }
   };
+
+  const handleRating = async (value) => {
+    if (!profile) {
+      setError('Please sign in to rate swaps.');
+      return;
+    }
+    setIsRating(true);
+    try {
+      await rateSwap(swap.id, value);
+      setRating(value);
+    } catch {
+      setError('Failed to submit rating.');
+    } finally {
+      setIsRating(false);
+    }
+  };
+
+  const isOwnSwap = profile?.id === (isReceived ? swap.requester.id : swap.responder.id);
 
   return (
     <motion.div
@@ -91,6 +113,38 @@ function SwapCard({ swap, isReceived }) {
             </p>
           </div>
         </div>
+
+        {/* Rating Display */}
+        {swap.status === 'completed' && (
+          <motion.div
+            className="mt-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
+            <p className="text-sm font-['Poppins'] text-[#333]">
+              <strong>Your Rating:</strong>
+            </p>
+            <div className="flex space-x-1 mt-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => !isOwnSwap && !rating && handleRating(star)}
+                  disabled={isRating || rating > 0 || isOwnSwap}
+                  className={`text-2xl ${rating >= star ? 'text-yellow-400' : 'text-gray-300'} ${
+                    !isOwnSwap && !rating ? 'hover:text-yellow-500 cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            {isOwnSwap && (
+              <p className="text-xs text-gray-500 mt-1">You cannot rate your own swap.</p>
+            )}
+          </motion.div>
+        )}
 
         {/* Error */}
         {error && (

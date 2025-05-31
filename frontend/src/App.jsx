@@ -13,7 +13,19 @@ import UserProfilePage from './pages/profile/UserProfilePage';
 import SearchUsersPage from './pages/users/SearchUsersPage';
 import UserPublicProfilePage from './pages/users/UserPublicProfilePage';
 import BookFeedPage from './pages/books/BookFeedPage';
+import BookDetailsPage from './pages/books/BookDetailsPage';
 import SwapFeedPage from './pages/swaps/SwapFeedPage';
+import SwapDetailsPage from './pages/swaps/SwapDetailsPage';
+import SwapHistoryPage from './pages/swaps/SwapHistoryPage';
+import NotificationsPage from './pages/Notifications/NotificationsPage';
+import AddLocationPage from './pages/location/AddLocationPage';
+import SocietiesPage from './pages/chats/SocietiesPage';
+import SocietyPage from './pages/chats/SocietyPage';
+import CreateSocietyPage from './pages/chats/CreateSocietyPage';
+import ChatPage from './pages/chats/ChatPage'; // Added
+import DiscussionsPage from './pages/Discussion/DiscussionsPage';
+import CreateDiscussionPage from './pages/Discussion/CreateDiscussionPage';
+import DiscussionDetailPage from './pages/Discussion/DiscussionDetailPage';
 import StaticPage from './components/static/StaticPage';
 
 function App() {
@@ -32,9 +44,19 @@ function App() {
             <Route path="/profile/:id" element={<UserPublicProfilePage />} />
             <Route path="/users/search" element={<SearchUsersPage />} />
             <Route path="/books" element={<BookFeedPage />} />
+            <Route path="/books/:bookId" element={<BookDetailsPage />} />
             <Route path="/swaps" element={<SwapFeedPage />} />
-            <Route path="/chats/:userId" element={<div>Chat Page (TBD)</div>} />
-            <Route path="/notifications" element={<div>Notifications Page (TBD)</div>} />
+            <Route path="/swaps/:swapId" element={<SwapDetailsPage />} />
+            <Route path="/swaps/history" element={<SwapHistoryPage />} />
+            <Route path="/chats/:userId" element={<ChatPage />} /> {/* Updated */}
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/locations/add" element={<AddLocationPage />} />
+            <Route path="/discussions" element={<DiscussionsPage />} />
+            <Route path="/discussions/:discussionId" element={<DiscussionDetailPage />} />
+            <Route path="/discussions/new" element={<CreateDiscussionPage />} />
+            <Route path="/societies" element={<SocietiesPage />} />
+            <Route path="/societies/:societyId" element={<SocietyPage />} />
+            <Route path="/societies/new" element={<CreateSocietyPage />} />
             <Route path="/terms" element={<StaticPage title="Terms of Service" contentKey="terms" />} />
             <Route path="/privacy" element={<StaticPage title="Privacy Policy" contentKey="privacy" />} />
             <Route path="/contact" element={<StaticPage title="Contact Us" contentKey="contact" />} />

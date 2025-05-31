@@ -4,55 +4,57 @@ import Button from '../common/Button';
 import Input from '../common/Input';
 import ErrorMessage from '../auth/ErrorMessage';
 import { useAuth } from '../../hooks/useAuth';
+import { useChat } from '../../hooks/useChat';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 function ChatWindow({ recipientId }) {
-  const { isAuthenticated } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const { user, isAuthenticated } = useAuth();
+  const { sendMessage: sendApiMessage, messages: initialMessages, getMessages } = useChat();
+  const { messages: wsMessages, sendMessage: sendWsMessage } = useWebSocket(`dm-${recipientId}`);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState('');
-  const [socket, setSocket] = useState(null);
+  const [combinedMessages, setCombinedMessages] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // Mock WebSocket connection (replace with ws/chats/:userId)
-    const ws = new WebSocket(`ws://localhost:8000/chats/${recipientId}`);
-    ws.onopen = () => console.log('WebSocket connected');
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prev) => [...prev, message]);
-    };
-    ws.onerror = () => setError('Failed to connect to chat.');
-    ws.onclose = () => console.log('WebSocket disconnected');
-    setSocket(ws);
+    if (isAuthenticated) {
+      getMessages(recipientId);
+    }
+  }, [isAuthenticated, recipientId, getMessages]);
 
-    // Mock initial messages
-    setMessages([
-      { id: 1, sender: { id: isAuthenticated.id, username: 'You' }, content: 'Hi, interested in swapping?', timestamp: new Date().toISOString() },
-      { id: 2, sender: { id: recipientId, username: 'Other' }, content: 'Sure, what do you have?', timestamp: new Date().toISOString() },
-    ]);
-
-    return () => ws.close();
-  }, [recipientId, isAuthenticated.id]);
+  useEffect(() => {
+    const allMessages = [
+      ...initialMessages,
+      ...wsMessages
+    ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    const uniqueMessages = Array.from(
+      new Map(allMessages.map(msg => [msg.id, msg])).values()
+    );
+    
+    setCombinedMessages(uniqueMessages);
+  }, [initialMessages, wsMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [combinedMessages]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      setError('Not connected to chat.');
+    if (!isAuthenticated) {
+      setError('Please sign in to send messages.');
       return;
     }
-    const message = {
-      content: newMessage,
-      sender: { id: isAuthenticated.id, username: 'You' },
-      timestamp: new Date().toISOString(),
-    };
-    socket.send(JSON.stringify(message));
-    setMessages((prev) => [...prev, message]);
-    setNewMessage('');
+    try {
+      const message = await sendApiMessage(recipientId, newMessage);
+      if (message) {
+        sendWsMessage(newMessage);
+        setNewMessage('');
+      }
+    } catch {
+      setError('Failed to send message.');
+    }
   };
 
   return (
@@ -65,18 +67,18 @@ function ChatWindow({ recipientId }) {
       <div className="space-y-4">
         {/* Message History */}
         <div className="max-h-96 overflow-y-auto space-y-2 p-4 bg-[var(--secondary)] rounded-lg">
-          {messages.length ? (
-            messages.map((message) => (
+          {combinedMessages.length ? (
+            combinedMessages.map((message) => (
               <motion.div
                 key={message.id}
-                className={`flex ${message.sender.id === isAuthenticated.id ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.sender.id === user?.id ? 'justify-end' : 'justify-start'}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
                 <div
                   className={`max-w-xs p-3 rounded-lg ${
-                    message.sender.id === isAuthenticated.id
+                    message.sender.id === user?.id
                       ? 'bg-[var(--primary)] text-[var(--secondary)]'
                       : 'bg-[var(--light-accent)] text-[var(--dark-primary)]'
                   }`}
@@ -118,7 +120,7 @@ function ChatWindow({ recipientId }) {
           <Button
             type="submit"
             text="Send"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !isAuthenticated}
             className="bookish-button-enhanced text-[var(--secondary)]"
             aria-label="Send message"
           />

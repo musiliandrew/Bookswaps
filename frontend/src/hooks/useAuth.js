@@ -1,14 +1,12 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
-// import debounce from 'lodash/debounce';
 
 export function useAuth() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [searchResults, setSearchResults] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [books, setBooks] = useState(null);
   const [recommendedUsers, setRecommendedUsers] = useState(null);
@@ -59,7 +57,6 @@ export function useAuth() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setProfile(null);
-    setSearchResults(null);
     setPublicProfile(null);
     setBooks(null);
     setRecommendedUsers(null);
@@ -186,26 +183,6 @@ export function useAuth() {
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const searchUsers = async (data) => {
-    setIsLoading(true);
-    setError(null);
-    setSearchResults(null);
-    try {
-      const params = new URLSearchParams();
-      if (data.username) params.append('q', data.username);
-      if (data.genres?.length) params.append('genres', data.genres.join(','));
-      const response = await api.get(`/users/search/?${params.toString()}`);
-      setSearchResults(response.data);
-      toast.success(`Found ${response.data.length} users!`);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to search users';
-      setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -392,7 +369,6 @@ export function useAuth() {
     updateAccountSettings,
     updateChatPreferences,
     deleteAccount,
-    searchUsers,
     getUserProfile,
     getBooks,
     bookmarkBook,
@@ -403,7 +379,6 @@ export function useAuth() {
     getFollowing,
     getRecommendedUsers,
     profile,
-    searchResults,
     publicProfile,
     books,
     recommendedUsers,

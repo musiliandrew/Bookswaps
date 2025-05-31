@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
+import { useUsers } from '../../hooks/useUsers';
 import UserSearchForm from '../../components/users/UserSearchForm';
 import UserCard from '../../components/users/UserCard';
 import AuthLink from '../../components/auth/AuthLink';
 
 function SearchUsersPage() {
   const navigate = useNavigate();
-  const { searchUsers, searchResults, error, isLoading, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { searchUsers, searchResults, error, isLoading } = useUsers();
   const [globalError, setGlobalError] = useState('');
 
   useEffect(() => {

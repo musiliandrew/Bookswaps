@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { useAuth } from '../../hooks/useAuth';
+import { toast } from 'react-toastify';
 import * as THREE from 'three';
 
-function UserCard3D({ username, city, genres, isHovered }) {
+function UserCard3D({ username, city, genres, isHovered, followersCount }) {
   const meshRef = useRef();
   const [time, setTime] = useState(0);
 
@@ -21,9 +23,10 @@ function UserCard3D({ username, city, genres, isHovered }) {
   ctx.fillText(username || 'User', canvas.width / 2, 100);
   ctx.font = '24px Open Sans';
   ctx.fillText(city || 'Not set', canvas.width / 2, 150);
+  ctx.fillText(`Followers: ${followersCount || 0}`, canvas.width / 2, 180);
   ctx.font = '20px Caveat';
   const genresText = genres?.length ? genres.join(', ') : 'No genres';
-  ctx.fillText(genresText, canvas.width / 2, 200);
+  ctx.fillText(genresText, canvas.width / 2, 230);
   const texture = new THREE.CanvasTexture(canvas);
 
   useFrame((state, delta) => {
@@ -65,6 +68,43 @@ function Platform() {
 
 function UserCard({ user }) {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated, profile, followUser, unfollowUser, getFollowStatus, followStatus } = useAuth();
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && user.id !== profile?.id) {
+      getFollowStatus(user.id);
+    }
+  }, [isAuthenticated, user.id, profile?.id, getFollowStatus]);
+
+  const handleStartChat = () => {
+    navigate(`/chats/${user.id}`);
+  };
+
+  const handleFollowToggle = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to follow/unfollow');
+      return;
+    }
+    if (user.id === profile?.id) {
+      toast.warning('You cannot follow yourself');
+      return;
+    }
+
+    setIsFollowLoading(true);
+    try {
+      if (followStatus?.is_following) {
+        await unfollowUser(user.id);
+      } else {
+        await followUser(user.id);
+      }
+    } catch {
+      toast.error('Failed to update follow status');
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -84,6 +124,7 @@ function UserCard({ user }) {
             city={user.city}
             genres={user.genres}
             isHovered={isHovered}
+            followersCount={user.followers_count}
           />
           <Platform />
           <OrbitControls
@@ -106,6 +147,9 @@ function UserCard({ user }) {
         </h3>
         <p className="mt-2 text-sm text-[var(--text)] font-['Open_Sans']">
           City: {user.city || 'Not set'}
+        </p>
+        <p className="mt-1 text-sm text-[var(--text)] font-['Open_Sans']">
+          Followers: {user.followers_count || 0}
         </p>
         <div className="mt-2">
           <label className="block text-sm font-['Lora'] text-[var(--primary)]">
@@ -132,16 +176,36 @@ function UserCard({ user }) {
           </div>
         </div>
         <motion.div
+          className="mt-4 flex space-x-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.3 }}
         >
           <Link
-            to={`/users/${user.username}`}
-            className="mt-4 block text-center bookish-button-enhanced font-['Open_Sans'] font-medium py-2 px-4 rounded"
+            to={`/profile/${user.id}`}
+            className="flex-grow text-center bookish-button-enhanced font-semibold py-2 px-3 rounded"
           >
             View Profile
           </Link>
+          <button
+            onClick={handleStartChat}
+            className="flex-grow text-center bookish-button-enhanced font-semibold py-2 px-3 rounded bg-blue-500 hover:bg-blue-600"
+          >
+            Send Message
+          </button>
+          {user.id !== profile?.id && (
+            <button
+              onClick={handleFollowToggle}
+              className={`flex-grow text-center bookish-button-enhanced font-semibold py-2 px-3 rounded ${
+                followStatus?.is_following
+                  ? 'bg-gray-500 hover:bg-gray-600'
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+              disabled={isFollowLoading || !isAuthenticated}
+            >
+              {isFollowLoading ? 'Loading...' : followStatus?.is_following ? 'Unfollow' : 'Follow'}
+            </button>
+          )}
         </motion.div>
       </motion.div>
     </motion.div>
