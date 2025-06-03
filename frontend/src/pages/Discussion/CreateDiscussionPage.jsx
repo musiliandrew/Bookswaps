@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useDiscussions } from '../hooks/useDiscussions';
-import { DiscussionForm } from '../components/discussions/DiscussionForm';
+import { useDiscussions } from '../../hooks/useDiscussions.js';
+import { DiscussionForm } from '../../components/discussions/DiscussionForm';
 
 const CreateDiscussionPage = () => {
   const navigate = useNavigate();

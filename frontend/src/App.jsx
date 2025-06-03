@@ -22,7 +22,7 @@ import AddLocationPage from './pages/location/AddLocationPage';
 import SocietiesPage from './pages/chats/SocietiesPage';
 import SocietyPage from './pages/chats/SocietyPage';
 import CreateSocietyPage from './pages/chats/CreateSocietyPage';
-import ChatPage from './pages/chats/ChatPage'; // Added
+import ChatPage from './pages/chats/ChatPage'; 
 import DiscussionsPage from './pages/Discussion/DiscussionsPage';
 import CreateDiscussionPage from './pages/Discussion/CreateDiscussionPage';
 import DiscussionDetailPage from './pages/Discussion/DiscussionDetailPage';

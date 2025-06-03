@@ -15,9 +15,8 @@ from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
-# WebSocket placeholder
-# from channels.layers import get_channel_layer
-# from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -36,6 +35,17 @@ class SendMessageView(APIView):
         serializer = ChatSerializer(data=request.data, context={'sender': request.user})
         if serializer.is_valid():
             chat = serializer.save()
+            # Send WebSocket notification
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"chat_{chat.chat_id}",
+                {
+                    "type": "chat_message",
+                    "message": ChatSerializer(chat).data
+                }
+            )
             return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -145,12 +155,17 @@ class AddReactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, society_id=None, message_id=None, chat_id=None):
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+
         if chat_id:
             try:
                 chat = Chats.objects.get(chat_id=chat_id)
             except Chats.DoesNotExist:
                 return Response({"error": "Chat not found."}, status=status.HTTP_404_NOT_FOUND)
             context = {'chat': chat, 'user': request.user}
+            group_name = f"chat_{chat_id}"
         elif society_id and message_id:
             try:
                 society_message = SocietyMessage.objects.get(
@@ -161,12 +176,20 @@ class AddReactionView(APIView):
             except SocietyMessage.DoesNotExist:
                 return Response({"error": "Society message not found."}, status=status.HTTP_404_NOT_FOUND)
             context = {'society_message': society_message, 'user': request.user}
+            group_name = f"society_{society_id}"
         else:
             return Response({"error": "Chat or society message ID required."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = MessageReactionSerializer(data=request.data, context=context)
         if serializer.is_valid():
             reaction = serializer.save()
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    "type": "reaction_added",
+                    "reaction": MessageReactionSerializer(reaction).data
+                }
+            )
             return Response(MessageReactionSerializer(reaction).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -322,15 +345,16 @@ class SendSocietyMessageView(APIView):
         )
         if serializer.is_valid():
             message = serializer.save()
-            # WebSocket placeholder
-            # channel_layer = get_channel_layer()
-            # async_to_sync(channel_layer.group_send)(
-            #     f"society_{society_id}",
-            #     {"type": "message.sent", "data": SocietyMessageSerializer(message).data}
-            # )
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"society_{society_id}",
+                {
+                    "type": "society_message",
+                    "message": SocietyMessageSerializer(message).data
+                }
+            )
             return Response(SocietyMessageSerializer(message).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class EditSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 

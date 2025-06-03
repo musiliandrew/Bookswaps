@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDiscussions } from '../hooks/useDiscussions';
-import { useWebSocket } from '../hooks/useWebSocket.js';
-import { NoteForm } from '../components/discussions/NoteForm';
-import { Button } from '../components/common/Button';
-import { useAuth } from '../hooks/useAuth.js';
+import { useDiscussions } from '../../hooks/useDiscussions.js';
+import { useWebSocket } from '../../hooks/useWebSocket.js';
+import { NoteForm } from '../../components/discussions/NoteForm.jsx';
+import { Button } from '../../components/common/Button';
+import { useAuth } from '../../hooks/useAuth.js';
 import { toast } from 'react-toastify';
 
 const DiscussionDetailPage = () => {

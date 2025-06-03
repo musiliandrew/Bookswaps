@@ -21,9 +21,8 @@ from .serializers import (
 from backend.users.models import Follows
 from backend.library.models import Bookmark
 from backend.swaps.models import Notification
-# Placeholder for WebSocket integration
-# from channels.layers import get_channel_layer
-# from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class StandardPagination(PageNumberPagination):
@@ -45,12 +44,17 @@ class CreateDiscussionView(generics.CreateAPIView):
             content_type='discussion',
             content_id=discussion.discussion_id
         )
-        # WebSocket placeholder
-        # channel_layer = get_channel_layer()
-        # async_to_sync(channel_layer.group_send)(
-        #     f"discussion_{discussion.discussion_id}",
-        #     {"type": "discussion.created", "data": DiscussionResponseSerializer(discussion).data}
-        # )
+        # Send WebSocket notification
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{discussion.discussion_id}",
+            {
+                "type": "discussion_created",
+                "discussion": DiscussionDetailSerializer(discussion).data
+            }
+        )
 
 
 class PostListView(generics.ListAPIView):
@@ -179,16 +183,16 @@ class AddNoteView(generics.CreateAPIView):
             )
         except Exception as e:
             print(f"Notification creation failed: {str(e)}")
-            # Continue despite notification failure
 
-        # WebSocket placeholder
-        # channel_layer = get_channel_layer()
-        # async_to_sync(channel_layer.group_send)(
-        #     f"discussion_{discussion.discussion_id}",
-        #     {"type": "note.added", "data": serializer.data}
-        # )
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{discussion.discussion_id}",
+            {
+                "type": "note_added",
+                "note": serializer.data
+            }
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class NotesListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -250,6 +254,15 @@ class LikeCommentView(generics.UpdateAPIView):
 
         note = Note.objects.filter(note_id=note.note_id).annotate(likes_count=Count('likes')).first()
         serializer = self.get_serializer(note)
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{note.discussion.discussion_id}",
+            {
+                "type": "note_liked",
+                "note": serializer.data
+            }
+        )
         return Response(serializer.data)
     
 class UpvotePostView(generics.UpdateAPIView):
@@ -288,9 +301,17 @@ class UpvotePostView(generics.UpdateAPIView):
             except Exception as e:
                 print(f"Notification creation failed: {str(e)}")
 
-        # Refresh discussion with updated upvotes_count
         discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(upvotes_count=Count('upvotes')).first()
         serializer = self.get_serializer(discussion)
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{discussion.discussion_id}",
+            {
+                "type": "post_upvoted",
+                "discussion": serializer.data
+            }
+        )
         return Response(serializer.data)
 
 
@@ -332,8 +353,15 @@ class ReprintPostView(generics.CreateAPIView):
                 except Exception as e:
                     print(f"Notification creation failed: {str(e)}")
 
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{discussion.discussion_id}",
+            {
+                "type": "post_reprinted",
+                "reprint": ReprintSerializer(reprint).data
+            }
+        )
         return Response(ReprintSerializer(reprint).data, status=status.HTTP_201_CREATED)
-
 class ListTopPostsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = TopPostSerializer

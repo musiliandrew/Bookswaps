@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Button } from '../components/common';
-import { useDiscussions } from '../hooks/useDiscussions';
+import { Button } from '../../components/common/Button';
+import { useDiscussions } from '../../hooks/useDiscussions';
 
 const DiscussionCard = ({ post }) => {
   const { id, title, content, author, timestamp, reactions } = post;

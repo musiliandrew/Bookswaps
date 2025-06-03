@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Input, Button } from '../components/common';
-import { useAuth } from '../hooks/useAuth';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 
 const NoteForm = ({ onSubmit, isLoading }) => {

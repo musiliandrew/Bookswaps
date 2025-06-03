@@ -1,35 +1,109 @@
 import { useState } from 'react';
-import { Input, Button } from '../components/common';
-import { useAuth } from '../hooks/useAuth';
+import { motion } from 'framer-motion';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Text } from '@react-three/drei';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../hooks/useAuth';
+import { useDiscussions } from '../../hooks/useDiscussions';
+import Input from '../../components/common/Input';
+import Button from '../../components/common/Button'; // Fixed import
 
 const SocietyForm = ({ onSubmit, isLoading }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
+  const { createPost } = useDiscussions();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     visibility: 'public',
     focus: '',
   });
+  const [errors, setErrors] = useState({});
+  const [showShareCard, setShowShareCard] = useState(false);
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) {
+      newErrors.name = 'Society name is required';
+    }
+    if (formData.description.length > 500) {
+      newErrors.description = 'Description cannot exceed 500 characters';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear errors on change
+    setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
       toast.error('Please sign in to create a society');
       return;
     }
-    if (formData.name.trim()) {
-      onSubmit(formData);
+    if (!validateForm()) {
+      return;
+    }
+    try {
+      await onSubmit(formData);
+      toast.success('Society created!');
+      setShowShareCard(true);
+      if (profile?.societies_created >= 1) {
+        toast.success('🎉 Badge Earned: Society Founder!');
+      }
+      setFormData({ name: '', description: '', visibility: 'public', focus: '' });
+    } catch (err) {
+      console.error('Submit error:', err);
+      toast.error('Failed to create society');
+    }
+  };
+
+  const handleDiscuss = async () => {
+    if (!isAuthenticated) {
+      toast.warning('Please sign in to discuss');
+      return;
+    }
+    if (!formData.focus) {
+      toast.info('Please specify a focus to start a discussion');
+      return;
+    }
+    try {
+      await createPost({
+        content: `Just created ${formData.name}, focused on ${formData.focus}! What books should we explore?`,
+        society_id: 'new', // Placeholder; actual ID set by backend
+      });
+      toast.success('Discussion posted!');
+    } catch (err) {
+      console.error('Discuss error:', err);
+      toast.error('Failed to post discussion');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4 max-w-lg mx-auto bg-white p-6 rounded-lg bookish-shadow"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      role="form"
+      aria-labelledby="society-form-title"
+    >
+      <motion.h2
+        id="society-form-title"
+        className="text-2xl font-['Playfair_Display'] text-[#FF6F61] mb-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Create a Book Society
+      </motion.h2>
+
       <Input
         label="Society Name"
         name="name"
@@ -38,6 +112,9 @@ const SocietyForm = ({ onSubmit, isLoading }) => {
         placeholder="e.g., Mystery Book Club"
         className="bookish-input"
         required
+        error={errors.name}
+        aria-required="true"
+        aria-describedby={errors.name ? 'name-error' : undefined}
       />
       <Input
         label="Description"
@@ -47,14 +124,20 @@ const SocietyForm = ({ onSubmit, isLoading }) => {
         placeholder="Describe your society"
         className="bookish-input"
         type="textarea"
+        error={errors.description}
+        aria-describedby={errors.description ? 'description-error' : undefined}
       />
       <div>
-        <label className="block text-sm font-medium text-gray-700">Visibility</label>
+        <label htmlFor="visibility" className="block text-sm font-medium text-gray-700">
+          Visibility
+        </label>
         <select
+          id="visibility"
           name="visibility"
           value={formData.visibility}
           onChange={handleChange}
           className="bookish-input mt-1 block w-full"
+          aria-label="Select society visibility"
         >
           <option value="public">Public</option>
           <option value="private">Private</option>
@@ -68,14 +151,55 @@ const SocietyForm = ({ onSubmit, isLoading }) => {
         placeholder="e.g., Science Fiction, Non-Fiction"
         className="bookish-input"
       />
-      <Button
-        type="submit"
-        className="bookish-button-enhanced w-full"
-        disabled={isLoading || !formData.name.trim() || !isAuthenticated}
-      >
-        {isLoading ? 'Creating...' : 'Create Society'}
-      </Button>
-    </form>
+      <div className="flex gap-2">
+        <Button
+          type="submit"
+          text={isLoading ? 'Creating...' : 'Create Society'}
+          className="bookish-button-enhanced bg-[#FF6F61] hover:bg-[#e65a50] flex-1"
+          disabled={isLoading || !formData.name.trim() || !isAuthenticated}
+          aria-disabled={isLoading || !formData.name.trim() || !isAuthenticated}
+        />
+        <Button
+          text="Start Discussion"
+          onClick={handleDiscuss}
+          className="bookish-button-enhanced bg-orange-600 hover:bg-orange-700 flex-1"
+          disabled={!formData.focus || !isAuthenticated}
+          aria-label="Start a discussion for the new society"
+        />
+      </div>
+
+      {showShareCard && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="h-64 w-full bookish-shadow">
+            <Canvas>
+              <ambientLight />
+              <OrbitControls />
+              <mesh>
+                <boxGeometry args={[3, 2, 0.1]} />
+                <meshStandardMaterial color="#FF6F61" />
+                <Text position={[0, 0.5, 0.1]} fontSize={0.2} color="white">
+                  {formData.name || 'New Society'}
+                </Text>
+                <Text position={[0, 0, 0.1]} fontSize={0.15} color="white">
+                  {formData.focus || 'BookSwaps.io'}
+                </Text>
+              </mesh>
+            </Canvas>
+            <Button
+              text="Share on X"
+              onClick={() => console.log('Share to X')}
+              className="mt-2 bg-blue-600 hover:bg-blue-700"
+              aria-label="Share new society on X"
+            />
+          </div>
+        </motion.div>
+      )}
+    </motion.form>
   );
 };
 

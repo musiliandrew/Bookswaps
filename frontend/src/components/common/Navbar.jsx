@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import AuthLink from '../components/auth/AuthLink';
-import { useAuth } from '../hooks/useAuth';
+import AuthLink from '../../components/auth/AuthLink';
+import { useAuth } from '../../hooks/useAuth';
 
 function Navbar() {
   const { isAuthenticated, logout } = useAuth();

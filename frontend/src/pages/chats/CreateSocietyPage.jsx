@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useChat } from '../hooks/useChat';
-import { SocietyForm } from '../components/chats/SocietyForm';
+import { useChat } from '../../hooks/useChat';
+import { SocietyForm } from '../../components/chats/SocietyForm';
 
 const CreateSocietyPage = () => {
   const navigate = useNavigate();

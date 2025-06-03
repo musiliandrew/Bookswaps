@@ -255,7 +255,9 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [os.getenv("REDIS_URL", "redis://redis:6379/1")],
+            "capacity": 1500,  # Maximum number of channels per worker
+            "expiry": 10,  # Time before a message is dropped (seconds)
         },
     },
 }

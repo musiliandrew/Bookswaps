@@ -53,17 +53,45 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setProfile(null);
-    setPublicProfile(null);
-    setBooks(null);
-    setRecommendedUsers(null);
-    setFollowers(null);
-    setFollowing(null);
-    setFollowStatus(null);
-    toast.success('Signed out successfully!');
+  const refreshToken = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      const response = await api.post('/users/token/refresh/', { refresh: refreshToken });
+      const { access } = response.data;
+      localStorage.setItem('access_token', access);
+      return access;
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to refresh token';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      await api.post('/users/logout/', { refresh: refreshToken });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      setProfile(null);
+      setPublicProfile(null);
+      setBooks(null);
+      setRecommendedUsers(null);
+      setFollowers(null);
+      setFollowing(null);
+      setFollowStatus(null);
+      toast.success('Signed out successfully!');
+      setIsLoading(false);
+    }
   };
 
   const requestPasswordReset = async (data) => {
@@ -292,14 +320,12 @@ export function useAuth() {
     }
   };
 
-  const getFollowStatus = async (userId) => {
-    if (!isAuthenticated) {
-      return;
-    }
+  const getFollowStatus = async (userId, otherUserId) => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/users/follow-status/${userId}/`);
+      const response = await api.get(`/users/follow-status/${userId}/?other_user_id=${otherUserId}`);
       setFollowStatus(response.data);
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch follow status';
@@ -309,7 +335,6 @@ export function useAuth() {
       setIsLoading(false);
     }
   };
-
   const getFollowers = async (userId) => {
     setIsLoading(true);
     setError(null);
@@ -361,6 +386,7 @@ export function useAuth() {
   return {
     login,
     register,
+    refreshToken,
     logout,
     requestPasswordReset,
     confirmPasswordReset,

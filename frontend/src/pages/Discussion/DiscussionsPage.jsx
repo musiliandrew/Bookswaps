@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDiscussions } from '../hooks/useDiscussions';
-import { DiscussionCard } from '../components/discussions/DiscussionCard';
+import { useDiscussions } from '../../hooks/useDiscussions';
+import { DiscussionCard } from '../../components/discussions/DiscussionCard';
 
 const DiscussionsPage = () => {
   const { getPosts, posts, isLoading, error } = useDiscussions();

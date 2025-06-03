@@ -1,115 +1,233 @@
-import { useState, useEffect } from 'react';
+// frontend/src/hooks/useWebSocket.js
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
-export function useWebSocket(societyId) {
-  const [messages, setMessages] = useState([]);
-  const [events, setEvents] = useState([]);
+export function useWebSocket(id, type = 'society') {
+  const [messages, setMessages] = useState([]); // For chat and society messages
+  const [discussionData, setDiscussionData] = useState({
+    notes: [],
+    likes: [],
+    upvotes: [],
+    reprints: [],
+  }); // For discussion-related data
   const [ws, setWs] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  useEffect(() => {
-    const isDirectMessage = societyId.startsWith('dm-');
-    const wsPath = isDirectMessage
-      ? `dm/${societyId.replace(/^dm-/, '')}/`
-      : `societies/${societyId}/`;
-    const websocket = new WebSocket(`ws://api.example.com/chats/${wsPath}`);
+  const connectWebSocket = useCallback(() => {
+    let wsPath, wsGroup;
+    if (type === 'direct') {
+      wsPath = `chat/${id}/`;
+      wsGroup = 'chat';
+    } else if (type === 'society') {
+      wsPath = `society/${id}/`;
+      wsGroup = 'society';
+    } else if (type === 'discussion') {
+      wsPath = `discussions/${id}/`;
+      wsGroup = 'discussion';
+    } else {
+      toast.error('Invalid WebSocket type');
+      return;
+    }
+
+    // Use environment variable or fallback to local development URL
+    // Use Vite's import.meta.env or fallback to local development URL
+    const wsUrl = `${
+      import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+    }/ws/${wsPath}`;
+    const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
-      console.log('WebSocket connected');
-      toast.success('Connected to WebSocket');
+      console.log(`${wsGroup} WebSocket connected`);
+      toast.success(`Connected to ${wsGroup} WebSocket`);
+      setIsConnected(true);
     };
 
     websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'message' && data?.data?.id && data?.data?.content) {
-          setMessages((prev) => [...prev, data.data]);
-        } else if (data.type === 'event' && data?.event_id) {
-          if (data.action === 'delete') {
-            setEvents((prev) => prev.filter((e) => e.id !== data.event_id));
-          } else if (data.action === 'update') {
-            setEvents((prev) =>
-              prev.map((e) =>
-                e.id === data.event_id ? { ...e, ...data.data } : e
+        if (data.error) {
+          toast.error(data.error);
+          return;
+        }
+
+        if (wsGroup === 'chat' || wsGroup === 'society') {
+          if (data.type === 'chat_message' || data.type === 'society_message') {
+            setMessages((prev) => {
+              if (!prev.find((m) => m.message_id === data.message.message_id)) {
+                return [...prev, data.message];
+              }
+              return prev;
+            });
+          } else if (data.type === 'reaction_added') {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.message_id === data.reaction.message_id
+                  ? { ...msg, reactions: [...(msg.reactions || []), data.reaction] }
+                  : msg
               )
             );
-          } else {
-            setEvents((prev) => {
-              const exists = prev.find((e) => e.id === data.event_id);
-              if (exists) {
-                return prev.map((e) =>
-                  e.id === data.event_id ? { ...e, ...data.data } : e
-                );
-              }
-              return [...prev, { id: data.event_id, ...data.data }];
-            });
+          }
+        } else if (wsGroup === 'discussion') {
+          if (data.type === 'discussion_created') {
+            toast.info(`New discussion: ${data.discussion.title}`);
+            // Optionally update discussion list if needed
+          } else if (data.type === 'note_added') {
+            setDiscussionData((prev) => ({
+              ...prev,
+              notes: [...prev.notes, data.note],
+            }));
+          } else if (data.type === 'note_liked') {
+            setDiscussionData((prev) => ({
+              ...prev,
+              likes: prev.likes.some((l) => l.note_id === data.note.note_id)
+                ? prev.likes.map((l) =>
+                    l.note_id === data.note.note_id ? data.note : l
+                  )
+                : [...prev.likes, data.note],
+            }));
+          } else if (data.type === 'post_upvoted') {
+            setDiscussionData((prev) => ({
+              ...prev,
+              upvotes: prev.upvotes.some(
+                (u) => u.discussion_id === data.discussion.discussion_id
+              )
+                ? prev.upvotes.map((u) =>
+                    u.discussion_id === data.discussion.discussion_id
+                      ? data.discussion
+                      : u
+                  )
+                : [...prev.upvotes, data.discussion],
+            }));
+          } else if (data.type === 'post_reprinted') {
+            setDiscussionData((prev) => ({
+              ...prev,
+              reprints: [...prev.reprints, data.reprint],
+            }));
           }
         }
-      } catch {
-        toast.error('Error parsing WebSocket message');
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+        toast.error('Error processing WebSocket message');
       }
     };
 
-    websocket.onerror = () => {
-      toast.error('WebSocket connection error');
+    websocket.onerror = (error) => {
+      console.error(`${wsGroup} WebSocket error:`, error);
+      toast.error(`${wsGroup} WebSocket connection error`);
+      setIsConnected(false);
     };
 
-    websocket.onclose = () => {
-      console.log('WebSocket closed');
+    websocket.onclose = (event) => {
+      console.log(`${wsGroup} WebSocket closed with code:`, event.code);
+      toast.warn(`${wsGroup} WebSocket disconnected`);
+      setIsConnected(false);
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => connectWebSocket(), 5000);
     };
 
     setWs(websocket);
 
     return () => {
-      if (websocket) {
-        websocket.close();
+      if (websocket.readyState === WebSocket.OPEN) {
+        websocket.close(1000, 'Component unmounted');
       }
     };
-  }, [societyId]);
+  }, [id, type]);
 
-  const sendMessage = (content) => {
+  useEffect(() => {
+    const cleanup = connectWebSocket();
+    return cleanup;
+  }, [connectWebSocket]);
+
+  const sendMessage = (content, bookId = null) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      const message = { type: 'message', content };
-      ws.send(JSON.stringify(message));
+      ws.send(
+        JSON.stringify({
+          action: 'send_message',
+          content,
+          book_id: bookId,
+        })
+      );
     } else {
       toast.error('WebSocket is not connected');
     }
   };
 
-  const sendEventRSVP = (eventId) => {
+  const addReaction = (messageId, reactionType) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      const rsvp = { type: 'event', action: 'rsvp', event_id: eventId };
-      ws.send(JSON.stringify(rsvp));
+      ws.send(
+        JSON.stringify({
+          action: 'add_reaction',
+          message_id: messageId,
+          reaction_type: reactionType,
+        })
+      );
     } else {
       toast.error('WebSocket is not connected');
     }
   };
 
-  const sendEventCreation = (eventData) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const event = { type: 'event', action: 'create', event_id: eventData.id, data: eventData };
-      ws.send(JSON.stringify(event));
+  const addNote = (content, parentNoteId = null) => {
+    if (ws && ws.readyState === WebSocket.OPEN && type === 'discussion') {
+      ws.send(
+        JSON.stringify({
+          action: 'add_note',
+          content,
+          parent_note_id: parentNoteId,
+        })
+      );
     } else {
-      toast.error('WebSocket is not connected');
+      toast.error('WebSocket is not connected or invalid type');
     }
   };
 
-  const sendEventDeletion = (eventId) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const event = { type: 'event', action: 'delete', event_id: eventId };
-      ws.send(JSON.stringify(event));
+  const likeNote = (noteId) => {
+    if (ws && ws.readyState === WebSocket.OPEN && type === 'discussion') {
+      ws.send(
+        JSON.stringify({
+          action: 'like_note',
+          note_id: noteId,
+        })
+      );
     } else {
-      toast.error('WebSocket is not connected');
+      toast.error('WebSocket is not connected or invalid type');
     }
   };
 
-  const sendEventUpdate = (eventId, eventData) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const event = { type: 'event', action: 'update', event_id: eventId, data: eventData };
-      ws.send(JSON.stringify(event));
+  const upvotePost = () => {
+    if (ws && ws.readyState === WebSocket.OPEN && type === 'discussion') {
+      ws.send(
+        JSON.stringify({
+          action: 'upvote_post',
+        })
+      );
     } else {
-      toast.error('WebSocket is not connected');
+      toast.error('WebSocket is not connected or invalid type');
     }
   };
 
-  return { messages, events, sendMessage, sendEventRSVP, sendEventCreation, sendEventDeletion, sendEventUpdate };
+  const reprintPost = (comment = '') => {
+    if (ws && ws.readyState === WebSocket.OPEN && type === 'discussion') {
+      ws.send(
+        JSON.stringify({
+          action: 'reprint_post',
+          comment,
+        })
+      );
+    } else {
+      toast.error('WebSocket is not connected or invalid type');
+    }
+  };
+
+  return {
+    messages,
+    discussionData,
+    isConnected,
+    sendMessage,
+    addReaction,
+    addNote,
+    likeNote,
+    upvotePost,
+    reprintPost,
+  };
 }
