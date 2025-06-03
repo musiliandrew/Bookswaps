@@ -1,6 +1,4 @@
 from django.db import models
-from django.conf import settings
-from backend.library.models import Book
 import uuid
 from django.utils import timezone
 
@@ -13,13 +11,13 @@ class Chats(models.Model):
 
     chat_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'users.CustomUser', 
         on_delete=models.SET_NULL,
         null=True,
         related_name='sent_chats'
     )
     receiver = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'users.CustomUser', 
         on_delete=models.SET_NULL,
         null=True,
         related_name='received_chats'
@@ -27,7 +25,7 @@ class Chats(models.Model):
     content = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UNREAD')
     book = models.ForeignKey(
-        Book,
+        'library.Book', 
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -62,7 +60,7 @@ class MessageReaction(models.Model):
 
     reaction_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'users.CustomUser', 
         on_delete=models.CASCADE,
         related_name='reactions'
     )
@@ -74,7 +72,7 @@ class MessageReaction(models.Model):
         related_name='reactions'
     )
     society_message = models.ForeignKey(
-        'discussions.SocietyMessage',
+        'discussions.SocietyMessage', 
         on_delete=models.CASCADE,
         null=True,
         blank=True,

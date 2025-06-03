@@ -32,8 +32,12 @@ const LoginForm = ({ onSubmit, error, isLoading, className = '' }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Form submit triggered with credentials:', credentials);
     if (validateForm()) {
+      console.log('Validation passed, calling onSubmit');
       onSubmit(credentials);
+    } else {
+      console.log('Validation failed:', fieldErrors);
     }
   };
 

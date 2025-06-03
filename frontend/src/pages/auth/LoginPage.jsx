@@ -1,26 +1,18 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; 
+import { useAuth } from '../../hooks/useAuth'; 
 import LoginForm from '../../components/auth/LoginForm';
 import AuthLink from '../../components/auth/AuthLink';
 
 const LoginPage = () => {
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, error: authError, isLoading: authLoading } = useAuth(); // Use useAuth
+  const navigate = useNavigate(); // For redirecting after login
 
   const handleLogin = async (loginCredentials) => {
-    setIsLoading(true);
-    setError('');
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (loginCredentials.username === 'demo' && loginCredentials.password === 'password') {
-        console.log('Login successful!');
-        setError('');
-      } else {
-        setError('Invalid username or password. Try demo/password');
-      }
-      setIsLoading(false);
-    }, 1500);
+    const success = await login(loginCredentials); // Call useAuth's login
+    if (success) {
+      navigate('/profile/me'); // Redirect to profile or home on success
+    }
   };
 
   return (
@@ -127,8 +119,8 @@ const LoginPage = () => {
         >
           <LoginForm
             onSubmit={handleLogin}
-            error={error}
-            isLoading={isLoading}
+            error={authError} // Use error from useAuth
+            isLoading={authLoading} // Use isLoading from useAuth
           />
         </motion.div>
 
@@ -157,7 +149,7 @@ const LoginPage = () => {
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           <p className="text-xs text-blue-800 text-center font-['Open_Sans']">
-            <strong>Demo:</strong> username: demo, password: password
+            <strong>Demo:</strong> username: andrew, password: *Andrew2003
           </p>
         </motion.div>
       </motion.div>

@@ -13,8 +13,25 @@ const Input = ({
   className = '',
   labelClassName = '',
   error = '',
+  rows = 5, // Added for textarea
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+
+  const inputProps = {
+    id: name,
+    name,
+    value,
+    onChange,
+    placeholder,
+    required,
+    onFocus: () => setIsFocused(true),
+    onBlur: () => setIsFocused(false),
+    className: `bookish-input w-full px-4 py-3 rounded-xl font-['Open_Sans'] text-[var(--text)] placeholder-gray-400 border ${error ? 'border-red-500' : 'border-transparent'} ${className}`,
+    whileFocus: { scale: 1.02 },
+    transition: { duration: 0.2 },
+    'aria-invalid': !!error,
+    'aria-describedby': error ? `${name}-error` : undefined,
+  };
 
   return (
     <motion.div
@@ -36,22 +53,17 @@ const Input = ({
       </motion.label>
 
       <div className="relative">
-        <motion.input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          required={required}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          className={`bookish-input w-full px-4 py-3 rounded-xl font-['Open_Sans'] text-[var(--text)] placeholder-gray-400 border ${error ? 'border-red-500' : 'border-transparent'} ${className}`}
-          whileFocus={{ scale: 1.02 }}
-          transition={{ duration: 0.2 }}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${name}-error` : undefined}
-        />
+        {type === 'textarea' ? (
+          <motion.textarea
+            {...inputProps}
+            rows={rows}
+          />
+        ) : (
+          <motion.input
+            {...inputProps}
+            type={type}
+          />
+        )}
         <motion.div
           className="absolute inset-0 rounded-xl pointer-events-none"
           animate={{
@@ -81,13 +93,14 @@ Input.propTypes = {
   label: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   type: PropTypes.string,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  value: PropTypes.string.isRequired, // Changed to string for consistency
   onChange: PropTypes.func.isRequired,
   placeholder: PropTypes.string,
   required: PropTypes.bool,
   className: PropTypes.string,
   labelClassName: PropTypes.string,
   error: PropTypes.string,
+  rows: PropTypes.number, // Added for textarea
 };
 
 export default Input;

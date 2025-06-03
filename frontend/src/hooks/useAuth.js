@@ -15,17 +15,19 @@ export function useAuth() {
   const [followStatus, setFollowStatus] = useState(null);
   const isAuthenticated = !!localStorage.getItem('access_token');
 
-  const login = async (credentials) => {
+  const login = async (data) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post('/users/login/', credentials);
-      const { access_token, refresh_token } = response.data;
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
+      console.log('Sending login request:', data);
+      const response = await api.post('/users/login/', data);
+      console.log('Login response:', response.data);
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
       toast.success('Welcome back!');
       return true;
     } catch (err) {
+      console.error('Login error:', err.response?.data || err.message);
       const errorMessage = err.response?.data?.detail || 'Invalid credentials';
       setError(errorMessage);
       toast.error(errorMessage);

@@ -12,23 +12,26 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    console.log('API request:', config.method.toUpperCase(), config.url, config.data);
     const token = localStorage.getItem('access_token');
-    if (token && !config.url.includes('/users/login/')) {
-      if (isDev) console.log('Adding Authorization header with token:', token);
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    if (isDev) console.log('Request config:', config);
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
 );
 
 api.interceptors.response.use(
   (response) => {
-    if (isDev) console.log('Response:', response.data);
+    console.log('API response:', response.status, response.data);
     return response;
   },
   async (error) => {
+    console.error('Response error:', error.response?.status, error.response?.data);
     const originalRequest = error.config;
     if (
       error.response?.status === 401 &&

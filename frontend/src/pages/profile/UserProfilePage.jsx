@@ -4,18 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import ProfileForm from '../../components/profile/ProfileForm';
 import SettingsForm from '../../components/profile/SettingsForm';
-import AuthLink from '../../components/auth/AuthLink';
 import Button from '../../components/common/Button';
 import { UserIcon } from '@heroicons/react/24/outline';
 
 function UserProfilePage() {
   const navigate = useNavigate();
-  const { getProfile, updateProfile, deleteAccount, logout, profile, error, isLoading, isAuthenticated } = useAuth();
+  const { getProfile, updateProfile, updateAccountSettings, updateChatPreferences, deleteAccount, logout, profile, error, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activity, setActivity] = useState([]);
   const [globalError, setGlobalError] = useState('');
 
   useEffect(() => {
@@ -26,27 +24,16 @@ function UserProfilePage() {
     }
   }, [isAuthenticated, profile, getProfile, navigate]);
 
-  // Fetch activity (replace mock with API)
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        // Replace with: const response = await fetch('/api/users/me/activity/');
-        const mockActivity = [
-          { id: 1, action: 'Swapped "Dune" with BookLover123', timestamp: '2025-05-20T10:00:00Z' },
-          { id: 2, action: 'Posted in Sci-Fi Society: "Best space operas?"', timestamp: '2025-05-19T15:30:00Z' },
-          { id: 3, action: 'Added "Project Hail Mary" to library', timestamp: '2025-05-18T09:00:00Z' },
-        ];
-        setActivity(mockActivity);
-      } catch {
-        setGlobalError('Failed to load activity.');
-      }
-    };
-    if (activeTab === 'activity') fetchActivity();
-  }, [activeTab]);
-
   const handleProfileSubmit = async (data) => {
     try {
-      await updateProfile(data);
+      await updateProfile({
+        city: data.city,
+        country: data.country,
+        age: data.age,
+        about_you: data.bio,
+        genres: data.genres,
+        profile_picture: data.avatar,
+      });
       setIsEditingProfile(false);
     } catch {
       setGlobalError('Failed to update profile.');
@@ -55,12 +42,17 @@ function UserProfilePage() {
 
   const handleSettingsSubmit = async (data) => {
     try {
-      await updateProfile({
+      // Update account settings (email, password, profile_public)
+      await updateAccountSettings({
         email: data.email,
         password: data.password,
-        privacy: data.privacy,
-        mute_societies: data.mute_societies,
-        notifications: data.notifications,
+        profile_public: data.privacy === 'public',
+      });
+      // Update chat preferences (mute_societies)
+      await updateChatPreferences({
+        chat_preferences: {
+          mute_societies: data.mute_societies,
+        },
       });
       setIsEditingSettings(false);
     } catch {
@@ -70,8 +62,7 @@ function UserProfilePage() {
 
   const handleDeleteAccount = async () => {
     try {
-      await deleteAccount();
-      navigate('/login');
+      await deleteAccount(navigate);
     } catch {
       setGlobalError('Failed to delete account.');
     }
@@ -136,7 +127,7 @@ function UserProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {['profile', 'settings', 'activity'].map((tab) => (
+          {['profile', 'settings'].map((tab) => (
             <motion.button
               key={tab}
               onClick={() => {
@@ -174,9 +165,9 @@ function UserProfilePage() {
                     className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#FF6F61]"
                     whileHover={{ scale: 1.05 }}
                   >
-                    {profile.avatar ? (
+                    {profile.profile_picture ? (
                       <img
-                        src={profile.avatar}
+                        src={profile.profile_picture}
                         alt={`${profile.username}'s avatar`}
                         className="w-full h-full object-cover"
                       />
@@ -188,9 +179,8 @@ function UserProfilePage() {
                   </motion.div>
                   <p className="mt-2 text-xl font-['Poppins'] text-[#333]">{profile.username}</p>
                   <div className="mt-2 flex space-x-4 text-sm text-[#333] font-['Poppins']">
-                    <span>{profile.swaps || 0} Swaps</span>
-                    <span>{profile.books || 0} Books</span>
-                    <span>{profile.posts || 0} Posts</span>
+                    <span>{profile.followers_count || 0} Followers</span>
+                    <span>{profile.following_count || 0} Following</span>
                   </div>
                 </div>
                 {/* Profile Details */}
@@ -205,7 +195,7 @@ function UserProfilePage() {
                     <label className="block text-sm font-['Poppins'] text-[#333]">
                       Bio
                     </label>
-                    <p className="mt-1 text-[#333]">{profile.bio || 'Not set'}</p>
+                    <p className="mt-1 text-[#333]">{profile.about_you || 'Not set'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-['Poppins'] text-[#333]">
@@ -260,26 +250,16 @@ function UserProfilePage() {
                     Privacy
                   </label>
                   <p className="mt-1 text-[#333]">
-                    {profile.privacy === 'public' ? 'Public' : profile.privacy === 'friends_only' ? 'Friends Only' : 'Private'}
+                    {profile.profile_public ? 'Public' : 'Private'}
                   </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-['Poppins'] text-[#333]">
-                    Notifications
-                  </label>
-                  <div className="mt-1 text-[#333]">
-                    <p>Swaps: {profile.notifications?.swaps ? 'On' : 'Off'}</p>
-                    <p>Messages: {profile.notifications?.messages ? 'On' : 'Off'}</p>
-                    <p>Societies: {profile.notifications?.societies ? 'On' : 'Off'}</p>
-                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-['Poppins'] text-[#333]">
                     Muted Societies
                   </label>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {profile.mute_societies?.length ? (
-                      profile.mute_societies.map((society) => (
+                    {profile.chat_preferences?.mute_societies?.length ? (
+                      profile.chat_preferences.mute_societies.map((society) => (
                         <span
                           key={society}
                           className="society-tag bg-[#FF6F61] text-white px-2 py-1 rounded-full text-sm font-['Caveat']"
@@ -298,31 +278,6 @@ function UserProfilePage() {
                   onClick={() => setIsEditingSettings(true)}
                   className="w-full bookish-button-enhanced bg-[#FF6F61] text-white"
                 />
-              </div>
-            )}
-            {activeTab === 'activity' && (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                <h3 className="text-lg font-['Playfair_Display'] text-[#FF6F61]">
-                  Recent Activity
-                </h3>
-                {activity.length ? (
-                  activity.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      className="p-4 bg-[#F5E8C7] rounded-lg bookish-shadow"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.3 }}
-                    >
-                      <p className="text-[#333] font-['Poppins']">{item.action}</p>
-                      <p className="text-sm text-[#FFA726] font-['Caveat'] mt-1">
-                        {new Date(item.timestamp).toLocaleDateString()}
-                      </p>
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="text-[#333] font-['Poppins']">No recent activity.</p>
-                )}
               </div>
             )}
           </motion.div>
@@ -346,7 +301,14 @@ function UserProfilePage() {
                 transition={{ duration: 0.3 }}
               >
                 <ProfileForm
-                  profile={profile}
+                  profile={{
+                    city: profile.city,
+                    country: profile.country,
+                    age: profile.age,
+                    bio: profile.about_you,
+                    genres: profile.genres || [],
+                    avatar: profile.profile_picture,
+                  }}
                   onSubmit={handleProfileSubmit}
                   onCancel={() => setIsEditingProfile(false)}
                   error={error}
@@ -377,9 +339,8 @@ function UserProfilePage() {
                 <SettingsForm
                   initialSettings={{
                     email: profile.email,
-                    privacy: profile.privacy || 'public',
-                    mute_societies: profile.mute_societies || [],
-                    notifications: profile.notifications || { swaps: true, messages: true, societies: true },
+                    privacy: profile.profile_public ? 'public' : 'private',
+                    mute_societies: profile.chat_preferences?.mute_societies || [],
                   }}
                   onSubmit={handleSettingsSubmit}
                   onCancel={() => setIsEditingSettings(false)}
