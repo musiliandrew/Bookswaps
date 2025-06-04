@@ -2,8 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -32,7 +30,6 @@ function App() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        <Navbar />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -62,7 +59,6 @@ function App() {
             <Route path="/contact" element={<StaticPage title="Contact Us" contentKey="contact" />} />
           </Routes>
         </main>
-        <Footer />
       </div>
       <ToastContainer
         position="top-right"

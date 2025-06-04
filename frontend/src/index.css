@@ -3,7 +3,7 @@
 
 :root {
   --primary: #456A76;
-  --secondary: #F0EAD0;
+  --secondary: hsl(49, 52%, 88%);
   --accent: #D4A017;
   --text: #2F2F2F;
   --background: #F5F5F5;
