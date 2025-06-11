@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { useNotifications } from './useNotifications';
 
 export function useLibrary() {
   const [book, setBook] = useState(null);
@@ -10,209 +11,390 @@ export function useLibrary() {
   const [bookmarks, setBookmarks] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({ next: null, previous: null });
+  const [pagination, setPagination] = useState({
+    books: { next: null, previous: null, page: 1, totalPages: 1 },
+    search: { next: null, previous: null, page: 1, totalPages: 1 },
+    library: { next: null, previous: null, page: 1, totalPages: 1 },
+    bookmarks: { next: null, previous: null, page: 1, totalPages: 1 },
+    favorites: { next: null, previous: null, page: 1, totalPages: 1 },
+    history: { next: null, previous: null, page: 1, totalPages: 1 },
+    recommended: { next: null, previous: null, page: 1, totalPages: 1 },
+  });
 
-  const getBook = async (bookId) => {
+  const { notifications, isWebSocketConnected } = useNotifications();
+
+  const getBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.get(`/library/books/${bookId}/`);
-      setBook(response.data);
+      setBook(response.data.data || response.data);
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch book';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const listBooks = async (filters = {}, pageUrl = null) => {
+  const listBooks = useCallback(async (filters = {}, page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || `/library/books/?${new URLSearchParams(filters).toString()}`;
-      const response = await api.get(url);
-      setBooks(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const params = new URLSearchParams({ page });
+      if (filters.genre?.length) params.append('genre', filters.genre.join(','));
+      if (filters.author) params.append('author', filters.author);
+      if (filters.title) params.append('title', filters.query);
+      const response = await api.get(`/library/books/?${params.toString()}`);
+      setBooks(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        books: {
+          next: response.data.next,
+          prev: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch books';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch books';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const searchBooks = async (query) => {
+  const searchBooks = useCallback(async (filters = {}, page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/library/books/search/?q=${encodeURIComponent(query)}`);
-      setSearchResults(response.data.results || response.data);
-      toast.success(`Found ${response.data.results?.length || response.data.length} books!`);
+      const params = new URLSearchParams({ page });
+      if (filters.query) params.append('q', filters.query);
+      if (filters.genre?.length) params.append('genre', filters.genre.join(','));
+      if (filters.author) params.append('author', filters.author);
+      const response = await api.get(`/library/books/search/?${params.toString()}`);
+      setSearchResults(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        search: {
+          next: response.data.results,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to search books';
+      const errorMessage = err.response?.data?.data || err.response?.data?.detail || 'Failed to search books';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const addBook = async (data) => {
+  const addBook = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.post('/library/books/add/', data);
-      setBook(response.data);
-      toast.success('Book added to library!');
+      setBook(response.data.data || response.data);
+      toast.success('Book added!');
+      getUserLibrary();
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to add book';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to add book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getUserLibrary]);
 
-  const getUserLibrary = async (pageUrl = null) => {
+  const getUserLibrary = useCallback(async (page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || '/library/library/';
-      const response = await api.get(url);
-      setUserLibrary(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const response = await api.get(`/library/library/?page=${page}`);
+      setUserLibrary(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        library: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch user library';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch user library';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const updateAvailability = async (bookId, data) => {
+  const updateAvailability = useCallback(async (bookId, data) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.patch(`/library/books/${bookId}/availability/`, data);
-      setBook((prev) => ({ ...prev, ...response.data }));
-      toast.success('Book availability updated!');
+      setBook((prev) => (prev?.id === bookId ? { ...prev, ...response.data } : prev));
+      setUserLibrary((prev) =>
+        prev.map((b) => (b.id === bookId ? { ...b, ...response.data } : b))
+      );
+      toast.success('Availability updated!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to update availability';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to update availability';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const removeBook = async (bookId) => {
+  const removeBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
       await api.delete(`/library/books/${bookId}/remove/`);
-      setBook(null);
-      toast.success('Book removed from library!');
+      setUserLibrary((prev) => prev.filter((b) => b.id !== bookId));
+      if (book?.id === bookId) setBook(null);
+      toast.success('Book removed!');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to remove book';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to remove book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [book]);
 
-  const bookmarkBook = async (bookId, bookmark) => {
+  const bookmarkBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
-      const endpoint = bookmark ? `/library/books/${bookId}/bookmark/` : `/library/books/${bookId}/bookmark/remove/`;
-      await api.post(endpoint);
-      setBook((prev) => ({ ...prev, is_bookmarked: bookmark }));
-      toast.success(bookmark ? 'Book bookmarked!' : 'Bookmark removed!');
-      getBookmarks(); // Refresh bookmarks
+      const response = await api.post(`/library/books/${bookId}/bookmark/`);
+      setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
+      setBookmarks((prev) => [...prev, response.data]);
+      toast.success('Book bookmarked!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to bookmark book';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to bookmark book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const favoriteBook = async (bookId, favorite) => {
+  const removeBookmark = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
-      const endpoint = favorite ? `/library/books/${bookId}/favorite/` : `/library/books/${bookId}/favorite/remove/`;
-      await api.post(endpoint);
-      setBook((prev) => ({ ...prev, is_favorited: favorite }));
-      toast.success(favorite ? 'Book favorited!' : 'Favorite removed!');
-      getFavorites(); // Refresh favorites
+      await api.delete(`/library/books/${bookId}/bookmark/remove/`);
+      setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: false } : prev));
+      setBookmarks((prev) => prev.filter((b) => b.id !== bookId));
+      toast.success('Bookmark removed!');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to favorite book';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to remove bookmark';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getBookmarks = async (pageUrl = null) => {
+  const favoriteBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || '/library/bookmarks/';
-      const response = await api.get(url);
-      setBookmarks(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const response = await api.post(`/library/books/${bookId}/favorite/`);
+      setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
+      setFavorites((prev) => [...prev, response.data]);
+      toast.success('Book favorited!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch bookmarks';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to favorite book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getFavorites = async (pageUrl = null) => {
+  const unfavoriteBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || '/library/favorites/';
-      const response = await api.get(url);
-      setFavorites(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      await api.delete(`/library/books/${bookId}/favorite/remove/`);
+      setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: false } : prev));
+      setFavorites((prev) => prev.filter((b) => b.id !== bookId));
+      toast.success('Book unfavorited!');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch favorites';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to unfavorite book';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getBookHistory = async (bookId = null, pageUrl = null) => {
+  const getBookmarks = useCallback(async (page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || (bookId ? `/library/history/?book_id=${bookId}` : '/library/history/');
-      const response = await api.get(url);
-      setHistory(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const response = await api.get(`/library/bookmarks/?page=${page}`);
+      setBookmarks(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        bookmarks: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch book history';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch bookmarks';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  const getFavorites = useCallback(async (page = 1) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get(`/library/favorites/?page=${page}`);
+      setFavorites(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        favorites: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch favorites';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getBookHistory = useCallback(async (filters = {}, page = 1) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ page });
+      if (filters.book_id) params.append('book_id', filters.book_id);
+      const response = await api.get(`/library/history/?${params.toString()}`);
+      setHistory(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        history: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch history';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const listRecommendedBooks = useCallback(async (filters = {}, page = 1) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ page });
+      if (filters.search) params.append('search', filters.search);
+      if (filters.genre?.length) params.append('genre', filters.genre.join(','));
+      const response = await api.get(`/library/recommended/?${params.toString()}`);
+      setRecommendedBooks(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        recommended: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch recommended books';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Handle notifications for library updates
+  useEffect(() => {
+    if (!isWebSocketConnected || !notifications?.length) return;
+
+    notifications.forEach((notification) => {
+      const { type, book } = notification;
+      if (type === 'book_available' && book?.book_id) {
+        setBook((prev) =>
+          prev?.id === book.book_id ? { ...prev, available_for_exchange: book.available_for_exchange, available_for_borrow: book.available_for_borrow } : prev
+        );
+        setUserLibrary((prev) =>
+          prev.map((b) =>
+            b.id === book.book_id ? { ...b, available_for_exchange: book.available_for_exchange, available_for_borrow: book.available_for_borrow } : b
+          )
+        );
+        toast.info(`Book available: ${book.title}`);
+      } else if (type === 'book_added' || type === 'book_removed') {
+        getUserLibrary();
+        toast.info(`Library updated: ${type === 'book_added' ? 'Book added' : 'Book removed'}`);
+      }
+    });
+  }, [notifications, isWebSocketConnected, getUserLibrary]);
 
   return {
     getBook,
@@ -223,10 +405,13 @@ export function useLibrary() {
     updateAvailability,
     removeBook,
     bookmarkBook,
+    removeBookmark,
     favoriteBook,
+    unfavoriteBook,
     getBookmarks,
     getFavorites,
     getBookHistory,
+    listRecommendedBooks,
     book,
     books,
     searchResults,
@@ -234,8 +419,10 @@ export function useLibrary() {
     bookmarks,
     favorites,
     history,
+    recommendedBooks,
     isLoading,
     error,
     pagination,
+    isWebSocketConnected,
   };
 }

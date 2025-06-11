@@ -1,118 +1,155 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { useNotifications } from './useNotifications';
 
 export function useSwaps() {
   const [swaps, setSwaps] = useState([]);
   const [swapHistory, setSwapHistory] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [qrData, setQrData] = useState(null);
   const [midpoint, setMidpoint] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({ next: null, previous: null });
+  const [pagination, setPagination] = useState({
+    swaps: { next: null, previous: null, page: 1, totalPages: 1 },
+    history: { next: null, previous: null, page: 1, totalPages: 1 },
+  });
 
-  const initiateSwap = async (data) => {
+  const { notifications, isWebSocketConnected } = useNotifications();
+
+  const initiateSwap = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.post('/swaps/', data);
-      toast.success('Swap requested!');
-      getSwaps(); // Refresh swaps
+      setSwaps((prev) => [response.data, ...prev]);
+      toast.success('Swap initiated!');
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to initiate swap';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to initiate swap';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getSwaps = async (status = '', pageUrl = null) => {
+  const getSwaps = useCallback(async (filters = {}, page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || `/swaps/list/?status=${encodeURIComponent(status)}`;
-      const response = await api.get(url);
-      setSwaps(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const params = new URLSearchParams({ page });
+      if (filters.status) params.append('status', filters.status);
+      const response = await api.get(`/swaps/list/?${params.toString()}`);
+      setSwaps(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        swaps: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to fetch swaps';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch swaps';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const acceptSwap = async (swapId, data) => {
+  const acceptSwap = useCallback(async (swapId) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.patch(`/swaps/${swapId}/accept/`, data);
+      const response = await api.patch(`/swaps/${swapId}/accept/`);
+      setSwaps((prev) =>
+        prev.map((s) => (s.id === swapId ? { ...s, status: 'Accepted' } : s))
+      );
       toast.success('Swap accepted!');
-      getSwaps();
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to accept swap';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to accept swap';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const confirmSwap = async (swapId, qrCodeUrl) => {
+  const confirmSwap = useCallback(async (swapId, data) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.patch(`/swaps/${swapId}/confirm/`, { qr_code_url: qrCodeUrl });
+      const response = await api.patch(`/swaps/${swapId}/confirm/`, { qr_code_url: data.qr_code });
+      setSwaps((prev) =>
+        prev.map((s) => (s.id === swapId ? { ...s, status: response.data.status } : s))
+      );
       toast.success('Swap confirmed!');
-      getSwaps();
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to confirm swap';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to confirm swap';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const cancelSwap = async (swapId) => {
+  const cancelSwap = useCallback(async (swapId) => {
     setIsLoading(true);
     setError(null);
     try {
       await api.patch(`/swaps/${swapId}/cancel/`);
+      setSwaps((prev) =>
+        prev.map((s) => (s.id === swapId ? { ...s, status: 'Cancelled' } : s))
+      );
       toast.success('Swap cancelled!');
-      getSwaps();
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to cancel swap';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to cancel swap';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getSwapHistory = async (pageUrl = null) => {
+  const getSwapHistory = useCallback(async (page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const url = pageUrl || '/swaps/history/';
-      const response = await api.get(url);
-      setSwapHistory(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
+      const response = await api.get(`/swaps/history/?page=${page}`);
+      setSwapHistory(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        history: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to fetch swap history';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch swap history';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const addLocation = async (data) => {
+  const addLocation = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -120,39 +157,34 @@ export function useSwaps() {
       toast.success('Location added!');
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to add location';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to add location';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getMidpoint = async (coords) => {
+  const getMidpoint = useCallback(async (coords) => {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        user_lat: coords.user_lat,
-        user_lon: coords.user_lon,
-        other_lat: coords.other_lat,
-        other_lon: coords.other_lon,
-      });
+      const params = new URLSearchParams(coords);
       const response = await api.get(`/swaps/midpoint/?${params.toString()}`);
       setMidpoint(response.data);
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to fetch midpoint';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch midpoint';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const shareContent = async (data) => {
+  const shareContent = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -160,67 +192,52 @@ export function useSwaps() {
       toast.success('Content shared!');
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to share content';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to share content';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const getNotifications = async (filters = {}, pageUrl = null) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
-      if (filters.type) params.append('type', filters.type);
-      const url = pageUrl || `/swaps/notifications/?${params.toString()}`;
-      const response = await api.get(url);
-      setNotifications(response.data.results || response.data);
-      setPagination({ next: response.data.next, previous: response.data.previous });
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to fetch notifications';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const markNotificationRead = async (notificationId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.patch(`/swaps/notifications/${notificationId}/read/`);
-      toast.success('Notification marked as read!');
-      getNotifications();
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to mark notification read';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getSwapQR = async (swapId) => {
+  const getSwapQR = useCallback(async (swapId) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.get(`/swaps/${swapId}/qr/`);
-      setQrData(response.data.qr_code_url);
-      return response.data.qr_code_url;
+      setQrData(response.data.qr_code_url || response.data);
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to fetch QR code';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch QR code';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Handle notifications for swaps
+  useEffect(() => {
+    if (!isWebSocketConnected || !notifications?.length) return;
+
+    notifications.forEach((notification) => {
+      const { type, swap } = notification;
+      if (type === 'swap_proposed' && swap?.swap_id) {
+        setSwaps((prev) => [swap, ...prev.filter((s) => s.id !== swap.swap_id)]);
+        toast.info(`New swap proposed: ${swap.initiator.username}`);
+      } else if (['swap_accepted', 'swap_confirmed', 'swap_completed', 'swap_cancelled'].includes(type) && swap?.swap_id) {
+        setSwaps((prev) =>
+          prev.map((s) =>
+            s.id === swap.swap_id ? { ...s, status: swap.status } : s
+          )
+        );
+        getSwapHistory();
+        toast.info(`Swap ${swap.swap_id} ${type.replace('swap_', '')}`);
+      }
+    });
+  }, [notifications, isWebSocketConnected, getSwapHistory]);
 
   return {
     initiateSwap,
@@ -232,16 +249,14 @@ export function useSwaps() {
     addLocation,
     getMidpoint,
     shareContent,
-    getNotifications,
-    markNotificationRead,
     getSwapQR,
     swaps,
     swapHistory,
-    notifications,
     qrData,
     midpoint,
     isLoading,
     error,
     pagination,
+    isWebSocketConnected,
   };
 }

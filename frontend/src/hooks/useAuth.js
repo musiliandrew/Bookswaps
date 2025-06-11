@@ -1,389 +1,285 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
 
 export function useAuth() {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [publicProfile, setPublicProfile] = useState(null);
-  const [books, setBooks] = useState(null);
-  const [recommendedUsers, setRecommendedUsers] = useState(null);
-  const [followers, setFollowers] = useState(null);
-  const [following, setFollowing] = useState(null);
-  const [followStatus, setFollowStatus] = useState(null);
-  const isAuthenticated = !!localStorage.getItem('access_token');
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const navigate = useNavigate();
 
-  const login = async (data) => {
+  // Configure axios interceptor for token refresh
+  useEffect(() => {
+    const interceptor = api.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (err) => Promise.reject(err)
+    );
+
+    const responseInterceptor = api.interceptors.response.use(
+      (response) => response,
+      async (err) => {
+        const originalRequest = err.config;
+        if (err.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          try {
+            await refreshToken();
+            const newToken = localStorage.getItem('access_token');
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          } catch (refreshError) {
+            logout();
+            navigate('/login');
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(err);
+      }
+    );
+
+    return () => {
+      api.interceptors.request.eject(interceptor);
+      api.interceptors.response.eject(responseInterceptor);
+    };
+  }, [navigate, logout, refreshToken]);
+
+  const login = useCallback(async (credentials) => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Sending login request:', data);
-      const response = await api.post('/users/login/', data);
-      console.log('Login response:', response.data);
+      const response = await api.post('/users/login/', credentials);
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
-      toast.success('Welcome back!');
+      setIsAuthenticated(true);
+      await getProfile();
+      toast.success('Logged in successfully!');
+      navigate('/dashboard');
       return true;
     } catch (err) {
-      console.error('Login error:', err.response?.data || err.message);
-      const errorMessage = err.response?.data?.detail || 'Invalid credentials';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to login';
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate, getProfile]);
 
-  const register = async (data) => {
+  const register = useCallback(async (userData) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post('/users/register/', data);
-      const { access_token, refresh_token } = response.data;
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      toast.success('Welcome to BookSwap!');
+      const response = await api.post('/users/register/', userData);
+      localStorage.setItem('access_token', response.data.token);
+      localStorage.setItem('refresh_token', response.data.refresh);
+      setIsAuthenticated(true);
+      await getProfile();
+      toast.success('Registered successfully!');
+      navigate('/dashboard');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Registration failed';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to register';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate, getProfile]);
 
-  const refreshToken = async () => {
+  const refreshToken = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      const response = await api.post('/users/token/refresh/', { refresh: refreshToken });
-      const { access } = response.data;
-      localStorage.setItem('access_token', access);
-      return access;
+      const refresh = localStorage.getItem('refresh_token');
+      if (!refresh) throw new Error('No refresh token');
+      const response = await api.post('/users/token/refresh/', { refresh });
+      localStorage.setItem('access_token', response.data.access);
+      setIsAuthenticated(true);
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to refresh token';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to refresh token';
       setError(errorMessage);
+      setIsAuthenticated(false);
       toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      await api.post('/users/logout/', { refresh: refreshToken });
-    } catch (err) {
-      console.error('Logout failed:', err);
-    } finally {
+      await api.post('/users/logout/', { refresh: localStorage.getItem('refresh_token') });
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      setIsAuthenticated(false);
       setProfile(null);
-      setPublicProfile(null);
-      setBooks(null);
-      setRecommendedUsers(null);
-      setFollowers(null);
-      setFollowing(null);
-      setFollowStatus(null);
-      toast.success('Signed out successfully!');
+      toast.success('Logged out successfully!');
+      navigate('/login');
+      return true;
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to logout';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const requestPasswordReset = async (data) => {
+  const requestPasswordReset = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
     try {
       await api.post('/users/password/reset/', data);
-      toast.success('Check your email for a reset link');
-      setSuccess(true);
+      setSuccess('Password reset link sent!');
+      toast.success('Password reset link sent!');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to send reset link';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to request password reset';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const confirmPasswordReset = async (data) => {
+  const confirmPasswordReset = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
     try {
       await api.post('/users/password/reset/confirm/', data);
+      setSuccess('Password reset successfully!');
       toast.success('Password reset successfully!');
-      setSuccess(true);
+      navigate('/login');
+      return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Invalid or expired token';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to reset password';
       setError(errorMessage);
       toast.error(errorMessage);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const getProfile = async () => {
+  const getProfile = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.get('/users/me/profile/');
       setProfile(response.data);
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch profile';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const updateProfile = async (data) => {
+  const updateProfile = useCallback(async (data) => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.patch('/users/me/profile/', data);
       setProfile(response.data);
       toast.success('Profile updated!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to update profile';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to update profile';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const updateAccountSettings = async (data) => {
+  const updateAccountSettings = useCallback(async (data) => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.patch('/users/me/settings/account/', data);
       setProfile((prev) => ({ ...prev, ...response.data }));
       toast.success('Account settings updated!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to update account settings';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to update account settings';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const updateChatPreferences = async (data) => {
+  const updateChatPreferences = useCallback(async (data) => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
       const response = await api.patch('/users/me/settings/preferences/', data);
-      setProfile((prev) => ({
-        ...prev,
-        chat_preferences: { ...prev.chat_preferences, ...response.data },
-      }));
+      setProfile((prev) => ({ ...prev, chat_preferences: response.data.chat_preferences }));
       toast.success('Chat preferences updated!');
+      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to update chat preferences';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to update chat preferences';
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
-  const deleteAccount = async (navigateFn) => {
+  const deleteAccount = useCallback(async () => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     setError(null);
     try {
-      await api.delete('/users/me/delete/', {
-        data: { confirm: true },
-      });
-      logout();
-      navigateFn('/login');
+      await api.delete('/users/me/delete/');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      setIsAuthenticated(false);
+      setProfile(null);
       toast.success('Account deleted successfully!');
+      navigate('/login');
       return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to delete account';
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to delete account';
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, navigate]);
 
-  const getUserProfile = async (username) => {
-    setIsLoading(true);
-    setError(null);
-    setPublicProfile(null);
-    try {
-      const response = await api.get(`/users/profile/${username}/`);
-      setPublicProfile(response.data);
-      toast.success('Profile loaded!');
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'User not found';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (isAuthenticated && !profile) {
+      getProfile();
     }
-  };
-
-  const getBooks = async (filters) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.genres?.length) params.append('genre', filters.genres.join(','));
-      const response = await api.get(`/library/recommended/?${params.toString()}`);
-      setBooks(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch books';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const bookmarkBook = async (bookId, bookmark) => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to bookmark books');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const endpoint = bookmark ? `/library/books/${bookId}/bookmark/` : `/library/books/${bookId}/bookmark/remove/`;
-      await api.post(endpoint);
-      toast.success(bookmark ? 'Book bookmarked!' : 'Bookmark removed!');
-      getBooks({}); // Refresh books
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to bookmark book';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const followUser = async (userId) => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to follow users');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.post(`/users/follow/${userId}/`);
-      setFollowStatus({ is_following: true });
-      setPublicProfile((prev) => ({
-        ...prev,
-        followers_count: (prev.followers_count || 0) + 1,
-      }));
-      toast.success('Followed user!');
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to follow user';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const unfollowUser = async (userId) => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to unfollow users');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.delete(`/users/unfollow/${userId}/`);
-      setFollowStatus({ is_following: false });
-      setPublicProfile((prev) => ({
-        ...prev,
-        followers_count: (prev.followers_count || 1) - 1,
-      }));
-      toast.success('Unfollowed user!');
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to unfollow user';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getFollowStatus = async (userId, otherUserId) => {
-    if (!isAuthenticated) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/users/follow-status/${userId}/?other_user_id=${otherUserId}`);
-      setFollowStatus(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch follow status';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const getFollowers = async (userId) => {
-    setIsLoading(true);
-    setError(null);
-    setFollowers(null);
-    try {
-      const response = await api.get(`/users/followers/${userId}/`);
-      setFollowers(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch followers';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getFollowing = async (userId) => {
-    setIsLoading(true);
-    setError(null);
-    setFollowing(null);
-    try {
-      const response = await api.get(`/users/following/${userId}/`);
-      setFollowing(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch following';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getRecommendedUsers = useCallback(async () => {
-    if (!isAuthenticated || recommendedUsers) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/users/recommended/');
-      setRecommendedUsers(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch recommended users';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, recommendedUsers]);
+  }, [isAuthenticated, profile, getProfile]);
 
   return {
     login,
@@ -397,25 +293,10 @@ export function useAuth() {
     updateAccountSettings,
     updateChatPreferences,
     deleteAccount,
-    getUserProfile,
-    getBooks,
-    bookmarkBook,
-    followUser,
-    unfollowUser,
-    getFollowStatus,
-    getFollowers,
-    getFollowing,
-    getRecommendedUsers,
     profile,
-    publicProfile,
-    books,
-    recommendedUsers,
-    followers,
-    following,
-    followStatus,
     isAuthenticated,
-    error,
     isLoading,
+    error,
     success,
   };
 }
