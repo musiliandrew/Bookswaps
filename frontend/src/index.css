@@ -252,3 +252,13 @@
 .app-icon-spacing {
   margin-left: 1rem;
 }
+
+/* Additional CSS to add to your stylesheet */
+
+.navbar-item-active span {
+  color: var(--accent) !important;
+}
+
+.navbar-item-active img {
+  filter: brightness(0) saturate(100%) invert(67%) sepia(90%) saturate(1345%) hue-rotate(13deg) brightness(94%) contrast(88%) !important;
+}
