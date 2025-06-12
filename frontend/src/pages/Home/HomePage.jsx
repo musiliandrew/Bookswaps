@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import HeroSection from '../../components/Home/HeroSection';
 import LoginCTA from '../../components/Home/LoginCTA';
 import SignupCTA from '../../components/Home/SignupCTA';
-import FeatureCard from '../../components/Home/FeatureCard';
+import FeatureCard from '../../components/Home/FeaturedCard';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { api } from '../../utils/api';
 

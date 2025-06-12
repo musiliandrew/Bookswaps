@@ -6,7 +6,8 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../Common/Button';
 import ErrorMessage from '../Common/ErrorMessage';
 import { Link } from 'react-router-dom';
-// import Particles from 'particles.js'; // Removed unused import
+import Particles from '@tsparticles/react';
+import { tsParticles } from '@tsparticles/engine';
 import Tilt from 'react-parallax-tilt';
 import { toast } from 'react-toastify';
 
@@ -15,36 +16,22 @@ const NotificationList = ({ className = '' }) => {
   const { createDiscussion } = useDiscussions();
   const { profile } = useAuth();
   const [filter, setFilter] = useState('all');
-  const [expanded, setExpanded] = useState({});
-  const observer = useRef();
-  const particlesRef = useRef();
+  const [expanded, setExpanded] = useState({} );
+  const observerRef = useRef();
   const lastNotificationRef = useRef();
+
+  const particlesInit = async () => {
+    await tsParticles.init();
+  };
 
   useEffect(() => {
     getNotifications({ is_read: filter === 'unread' ? false : undefined });
   }, [filter, getNotifications]);
 
   useEffect(() => {
-    if (particlesRef.current) {
-      window.particlesJS(particlesRef.current.id, {
-        particles: {
-          number: { value: 50, density: { enable: true, value_area: 800 } },
-          color: { value: '#FFD700' },
-          shape: { type: 'circle' },
-          opacity: { value: 0.5, random: true },
-          size: { value: 3, random: true },
-          line_linked: { enable: false },
-          move: { enable: true, speed: 2, direction: 'none', random: true, straight: false },
-        },
-        interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false } } },
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     if (isLoading || !pagination.next) return;
 
-    observer.current = new IntersectionObserver((entries) => {
+    observerRef.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         getNotifications({}, pagination.page + 1);
       }
@@ -52,12 +39,12 @@ const NotificationList = ({ className = '' }) => {
 
     const lastRef = lastNotificationRef.current;
     if (lastRef) {
-      observer.current.observe(lastRef);
+      observerRef.current.observe(lastRef);
     }
 
     return () => {
-      if (observer.current && lastRef) {
-        observer.current.unobserve(lastRef);
+      if (observerRef.current && lastRef) {
+        observerRef.current.unobserve(lastRef);
       }
     };
   }, [isLoading, pagination, getNotifications]);
@@ -106,12 +93,25 @@ const NotificationList = ({ className = '' }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div
-        id="particles-js"
-        ref={particlesRef}
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        options={{
+          fullScreen: { enable: false },
+          particles: {
+            number: { value: 50, density: { enable: true, area: 800 } },
+            color: { value: '#FFD700' },
+            shape: { type: 'circle' },
+            opacity: { value: { min: 0.1, max: 0.5 }, random: true },
+            size: { value: { min: 1, max: 3 }, random: true },
+            links: { enable: false },
+            move: { enable: true, speed: { min: 1, max: 2 }, direction: 'none', random: true, straight: false },
+          },
+          interactivity: { events: { onHover: { enable: false }, onClick: { enable: false } } },
+        }}
         className="absolute inset-0 z-0 opacity-20"
         style={{ pointerEvents: 'none' }}
-      ></div>
+      />
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-['Lora'] text-gradient">Notifications</h2>

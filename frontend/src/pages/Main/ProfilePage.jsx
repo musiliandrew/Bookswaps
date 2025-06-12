@@ -1,16 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../hooks/useAuth';
 import { useUsers } from '../../hooks/useUsers';
 import UserCard from '../../components/Profile/UserCard';
+import UserList from '../../components/Profile/UserList';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
 import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-
-// Placeholder for icons (replace with asset paths once CSS confirms)
-const MyProfileIcon = () => <UserIcon className="w-6 h-6" />;
-const SettingsIcon = () => <Cog6ToothIcon className="w-6 h-6" />;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -25,32 +22,108 @@ const ProfilePage = () => {
     pagination,
     getFollowStatus,
   } = useUsers();
+  
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
   const [currentPage, setCurrentPage] = useState({ followers: 1, following: 1 });
+  const [dataLoaded, setDataLoaded] = useState(false);
+  
+  // Use refs to track if data is being fetched to prevent duplicate calls
+  const fetchingRef = useRef({
+    followers: false,
+    following: false,
+    followStatus: false
+  });
 
+  // Debounce utility function
+  const useDebounce = (callback, delay) => {
+    const timeoutRef = useRef(null);
+    
+    return useCallback((...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    }, [callback, delay]);
+  };
+
+  // Debounced API calls
+  const debouncedGetFollowers = useDebounce(async (id, page) => {
+    if (fetchingRef.current.followers) return;
+    fetchingRef.current.followers = true;
+    try {
+      await getFollowers(id, page);
+    } finally {
+      fetchingRef.current.followers = false;
+    }
+  }, 300);
+
+  const debouncedGetFollowing = useDebounce(async (id, page) => {
+    if (fetchingRef.current.following) return;
+    fetchingRef.current.following = true;
+    try {
+      await getFollowing(id, page);
+    } finally {
+      fetchingRef.current.following = false;
+    }
+  }, 300);
+
+  const debouncedGetFollowStatus = useDebounce(async (id, otherId) => {
+    if (fetchingRef.current.followStatus) return;
+    fetchingRef.current.followStatus = true;
+    try {
+      await getFollowStatus(id, otherId);
+    } finally {
+      fetchingRef.current.followStatus = false;
+    }
+  }, 300);
+
+  // Check authentication on mount
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate('/');
       return;
     }
-    getProfile();
-  }, [isAuthenticated, navigate, getProfile]);
-
-  useEffect(() => {
-    if (profile?.id) {
-      getFollowers(profile.id, currentPage.followers);
-      getFollowing(profile.id, currentPage.following);
-      getFollowStatus(profile.id, profile.id); // Ensure follow status is set
+    
+    // Only call getProfile if we don't have profile data
+    if (!profile) {
+      getProfile();
     }
-  }, [profile?.id, getFollowers, getFollowing, getFollowStatus, currentPage.followers, currentPage.following]);
+  }, [isAuthenticated, navigate, getProfile, profile]);
 
+  // Load user data when profile is available
+  useEffect(() => {
+    if (profile?.id && !dataLoaded) {
+      debouncedGetFollowers(profile.id, currentPage.followers);
+      debouncedGetFollowing(profile.id, currentPage.following);
+      debouncedGetFollowStatus(profile.id, profile.id);
+      setDataLoaded(true);
+    }
+  }, [profile?.id, dataLoaded, currentPage.followers, currentPage.following, debouncedGetFollowers, debouncedGetFollowing, debouncedGetFollowStatus]);
+
+  // Handle page changes
+  useEffect(() => {
+    if (profile?.id && dataLoaded) {
+      // Only fetch if page actually changed
+      if (currentPage.followers > 1 || followers.length === 0) {
+        debouncedGetFollowers(profile.id, currentPage.followers);
+      }
+      if (currentPage.following > 1 || following.length === 0) {
+        debouncedGetFollowing(profile.id, currentPage.following);
+      }
+    }
+  }, [currentPage.followers, currentPage.following, profile?.id, dataLoaded, debouncedGetFollowers, debouncedGetFollowing, followers.length, following.length]);
+
+  // Handle screen resize
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Swipe handlers
   const handlers = useSwipeable({
     onSwipedLeft: () => activeTab === 'my-profile' && setActiveTab('settings'),
     onSwipedRight: () => activeTab === 'settings' && setActiveTab('my-profile'),
@@ -59,25 +132,42 @@ const ProfilePage = () => {
   });
 
   const tabs = [
-    { id: 'my-profile', label: 'My Profile', icon: <MyProfileIcon /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
+    { id: 'my-profile', label: 'My Profile', icon: <UserIcon className="w-6 h-6" /> },
+    { id: 'settings', label: 'Settings', icon: <Cog6ToothIcon className="w-6 h-6" /> },
   ];
 
   const handlePageChange = (type, direction) => {
     setCurrentPage((prev) => {
-      const newPage = direction === 'next'
-        ? prev[type] + 1
-        : prev[type] - 1;
-      if (newPage > 0 && newPage <= pagination[type].totalPages) {
-        if (type === 'followers') getFollowers(profile.id, newPage);
-        else getFollowing(profile.id, newPage);
+      const newPage = direction === 'next' ? prev[type] + 1 : prev[type] - 1;
+      const maxPage = pagination[type]?.totalPages || 1;
+      
+      if (newPage > 0 && newPage <= maxPage) {
         return { ...prev, [type]: newPage };
       }
       return prev;
     });
   };
 
-  if (authLoading || usersLoading) {
+  const handleRetry = () => {
+    setDataLoaded(false);
+    fetchingRef.current = {
+      followers: false,
+      following: false,
+      followStatus: false
+    };
+    
+    if (!profile) {
+      getProfile();
+    }
+    
+    if (profile?.id) {
+      debouncedGetFollowers(profile.id, currentPage.followers);
+      debouncedGetFollowing(profile.id, currentPage.following);
+      debouncedGetFollowStatus(profile.id, profile.id);
+    }
+  };
+
+  if (authLoading || (usersLoading && !dataLoaded)) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="bookish-spinner w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
@@ -88,10 +178,12 @@ const ProfilePage = () => {
   if (authError || usersError) {
     return (
       <div className="text-center p-4 text-[var(--text)]">
-        {authError || usersError || 'Failed to load profile data. Please try again later.'}
+        <p className="mb-4">
+          {authError || usersError || 'Failed to load profile data. Please try again later.'}
+        </p>
         <button
-          onClick={() => { getProfile(); if (profile?.id) { getFollowers(profile.id); getFollowing(profile.id); } }}
-          className="bookish-button-enhanced mt-4 px-4 py-2 rounded-xl"
+          onClick={handleRetry}
+          className="bookish-button-enhanced px-4 py-2 rounded-xl"
         >
           Retry
         </button>
@@ -101,7 +193,6 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bookish-gradient p-4" {...handlers}>
-      {/* Bottom Navbar */}
       <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-[var(--primary)] bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
         {tabs.map((tab) => (
           <motion.button
@@ -132,7 +223,6 @@ const ProfilePage = () => {
         ))}
       </nav>
 
-      {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -150,6 +240,7 @@ const ProfilePage = () => {
               pagination={pagination}
               onPageChange={handlePageChange}
               currentPage={currentPage}
+              isLoading={usersLoading && dataLoaded}
             />
           ) : (
             <SettingsSection />
@@ -160,8 +251,7 @@ const ProfilePage = () => {
   );
 };
 
-// MyProfileSection Component
-const MyProfileSection = ({ profile, followers, following, pagination, onPageChange, currentPage }) => {
+const MyProfileSection = ({ profile, followers, following, pagination, onPageChange, currentPage, isLoading }) => {
   return (
     <motion.div
       className="bookish-glass p-6 rounded-xl max-w-2xl mx-auto"
@@ -187,9 +277,12 @@ const MyProfileSection = ({ profile, followers, following, pagination, onPageCha
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h2 className="text-xl font-['Lora'] text-[var(--primary)] mb-2">Followers</h2>
+          <h2 className="text-xl font-['Lora'] text-[var(--primary)] mb-2">
+            Followers
+            {isLoading && <span className="ml-2 text-sm text-[var(--secondary)]">Loading...</span>}
+          </h2>
           <UserList users={followers} />
-          {pagination.followers.totalPages > 1 && (
+          {pagination.followers?.totalPages > 1 && (
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => onPageChange('followers', 'prev')}
@@ -212,9 +305,12 @@ const MyProfileSection = ({ profile, followers, following, pagination, onPageCha
           )}
         </div>
         <div>
-          <h2 className="text-xl font-['Lora'] text-[var(--primary)] mb-2">Following</h2>
+          <h2 className="text-xl font-['Lora'] text-[var(--primary)] mb-2">
+            Following
+            {isLoading && <span className="ml-2 text-sm text-[var(--secondary)]">Loading...</span>}
+          </h2>
           <UserList users={following} />
-          {pagination.following.totalPages > 1 && (
+          {pagination.following?.totalPages > 1 && (
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => onPageChange('following', 'prev')}
@@ -241,7 +337,6 @@ const MyProfileSection = ({ profile, followers, following, pagination, onPageCha
   );
 };
 
-// SettingsSection Component
 const SettingsSection = () => {
   return (
     <motion.div

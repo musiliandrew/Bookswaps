@@ -4,7 +4,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { toast } from 'react-toastify';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
-import { EmojiHappyIcon } from '@heroicons/react/24/outline';
+import { FaceSmileIcon } from '@heroicons/react/24/outline';
 
 const MessageInput = ({ onSend, isLoading, className = '' }) => {
   const [content, setContent] = useState('');
@@ -50,7 +50,7 @@ const MessageInput = ({ onSend, isLoading, className = '' }) => {
           onClick={() => setShowEmojiPicker((prev) => !prev)}
           className="bookish-button-enhanced bg-gray-600 text-white"
         >
-          <EmojiHappyIcon className="w-5 h-5" />
+          <FaceSmileIcon className="w-5 h-5" />
         </Button>
         <Button
           type="submit"
@@ -64,7 +64,7 @@ const MessageInput = ({ onSend, isLoading, className = '' }) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="absolute z-10"
+          className="absolute bottom-12 right-0 z-10"
         >
           <EmojiPicker onEmojiClick={onEmojiClick} />
         </motion.div>

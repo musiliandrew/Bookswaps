@@ -26,6 +26,33 @@ export function useLibrary() {
 
   const { notifications, isWebSocketConnected } = useNotifications();
 
+  // Define getUserLibrary first since other functions depend on it
+  const getUserLibrary = useCallback(async (page = 1) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get(`/library/library/?page=${page}`);
+      setUserLibrary(response.data.results || []);
+      setPagination((prev) => ({
+        ...prev,
+        library: {
+          next: response.data.next,
+          previous: response.data.previous,
+          page,
+          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+        },
+      }));
+      return response.data;
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch user library';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const getBook = useCallback(async (bookId) => {
     setIsLoading(true);
     setError(null);
@@ -121,32 +148,6 @@ export function useLibrary() {
       setIsLoading(false);
     }
   }, [getUserLibrary]);
-
-  const getUserLibrary = useCallback(async (page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/library/library/?page=${page}`);
-      setUserLibrary(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        library: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch user library';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   const updateAvailability = useCallback(async (bookId, data) => {
     setIsLoading(true);

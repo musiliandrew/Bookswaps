@@ -4,7 +4,7 @@ import BookmarkButton from './BookmarkButton';
 import FavoriteButton from './FavoriteButton';
 import GenreTag from '../Common/GenreTag';
 import Button from '../Common/Button';
-import { BookIcon } from '@heroicons/react/24/outline';
+import { BookOpenIcon } from '@heroicons/react/24/outline';
 
 const BookCard = ({ book, className = '' }) => {
   return (
@@ -25,7 +25,7 @@ const BookCard = ({ book, className = '' }) => {
             <img src={book.cover_image} alt={`${book.title} cover`} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-[var(--secondary)] flex items-center justify-center">
-              <BookIcon className="w-8 h-8 text-[var(--text)]" />
+              <BookOpenIcon className="w-8 h-8 text-[var(--text)]" />
             </div>
           )}
         </div>

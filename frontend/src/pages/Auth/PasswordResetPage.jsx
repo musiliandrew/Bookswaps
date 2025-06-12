@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
-import PasswordResetForm from '../../components/auth/PasswordResetForm';
-import AuthLink from '../../components/auth/AuthLink';
+import PasswordResetForm from '../../components/Auth/PasswordResetForm';
+import AuthLink from '../../components/Auth/AuthLink';
 
 const PasswordResetPage = () => {
   const navigate = useNavigate();

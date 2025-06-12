@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import NotificationBadge from '../../components/NotificationBadge';
-import NotificationList from '../../components/NotificationList';
+import NotificationBadge from '../../components/Notifications/NotificationBadge';
+import NotificationList from '../../components/Notifications/NotificationList';
 
 const NotificationsPage = () => {
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import EmojiPicker from 'emoji-picker-react';
-import { EmojiHappyIcon } from '@heroicons/react/24/outline';
+import { FaceSmileIcon } from '@heroicons/react/24/outline';
 
 const ReactionButton = ({ onReact, className = '' }) => {
   const [showPicker, setShowPicker] = useState(false);
@@ -22,7 +22,7 @@ const ReactionButton = ({ onReact, className = '' }) => {
         onClick={() => setShowPicker((prev) => !prev)}
         className="p-1 rounded-full hover:bg-[var(--secondary)]"
       >
-        <EmojiHappyIcon className="w-4 h-4 text-[var(--accent)]" />
+        <FaceSmileIcon className="w-4 h-4 text-[var(--accent)]" />
       </button>
       {showPicker && (
         <motion.div

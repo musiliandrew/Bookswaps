@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import LoginForm from '../../components/auth/LoginForm';
-import AuthLink from '../../components/auth/AuthLink';
+import LoginForm from '../../components/Auth/LoginForm';
+import AuthLink from '../../components/Auth/AuthLink';
 
 const LoginPage = () => {
   const { login, error: authError, isLoading: authLoading } = useAuth();
