@@ -3,28 +3,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
 
-
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
-# CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Frontend Vite dev server
+    "http://localhost:5173",
     "http://0.0.0.0:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:9000",
 ]
 
 CORS_ALLOW_METHODS = [
@@ -48,8 +40,6 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -65,27 +55,22 @@ INSTALLED_APPS = [
     'channels',
     'axes',
     'django_extensions',
-
-    
-    #apps
     'backend.users.apps.UsersConfig',
-    'backend.chat.apps.ChatConfig',      
-    'backend.library.apps.LibraryConfig', 
-    'backend.discussions.apps.DiscussionsConfig', 
-    'backend.swaps.apps.SwapsConfig',    
+    'backend.chat.apps.ChatConfig',
+    'backend.library.apps.LibraryConfig',
+    'backend.discussions.apps.DiscussionsConfig',
+    'backend.swaps.apps.SwapsConfig',
 ]
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': (),  # Remove IsAuthenticated globally
+    'DEFAULT_PERMISSION_CLASSES': (),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
-
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
@@ -115,9 +100,8 @@ MIDDLEWARE = [
 ]
 
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 1  # in hours
+AXES_COOLOFF_TIME = 1
 AXES_LOCKOUT_CALLABLE = 'axes.handlers.database.AxesDatabaseHandler'
-
 
 ROOT_URLCONF = "backend.urls"
 
@@ -139,10 +123,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -153,11 +133,6 @@ DATABASES = {
         'PORT': os.getenv("DB_PORT", "5432"),
     }
 }
-
-
-
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -174,28 +149,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -211,11 +172,11 @@ CACHES = {
     }
 }
 
-GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY'  # Replace with your key
+GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY'
 
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesStandaloneBackend',  # Updated backend for django-axes
-    'django.contrib.auth.backends.ModelBackend',  # Default Django backend
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 LOGGING = {
@@ -229,38 +190,44 @@ LOGGING = {
     'loggers': {
         'rest_framework_simplejwt': {
             'handlers': ['console'],
-            'level': 'INFO',  # Reduce verbosity
+            'level': 'INFO',
             'propagate': False,
         },
         'backend.users.views': {
             'handlers': ['console'],
-            'level': 'INFO',  # Reduce verbosity
+            'level': 'INFO',
             'propagate': False,
         },
     },
 }
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://Bookswaps:3000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-# Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')  # e.g., Gmail SMTP
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.getenv("REDIS_URL", "redis://redis:6379/1")],
-            "capacity": 1500,  # Maximum number of channels per worker
-            "expiry": 10,  # Time before a message is dropped (seconds)
+            "capacity": 1500,
+            "expiry": 10,
         },
     },
 }
 
-# Set ASGI application
 ASGI_APPLICATION = 'backend.asgi.application'
+
+# MinIO Configuration
+AWS_ACCESS_KEY_ID = os.getenv('MINIO_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('MINIO_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('MINIO_ENDPOINT_URL')
+AWS_S3_REGION_NAME = os.getenv('MINIO_REGION')
+AWS_S3_SIGNATURE_VERSION = 's3v4'

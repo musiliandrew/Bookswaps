@@ -62,7 +62,6 @@ export function useAuth() {
     }
   }, [navigate, clearAuthState]);
 
-  // Define getProfile before checkAuthStatus to avoid initialization error
   const getProfile = useCallback(async () => {
     const token = localStorage.getItem('access_token');
     if (!token) return null;
@@ -78,7 +77,6 @@ export function useAuth() {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch profile';
       setError(errorMessage);
       if (err.response?.status === 401) {
-        // Don't show toast for 401 errors as they'll be handled by token refresh
         console.warn('Profile fetch failed with 401:', errorMessage);
       } else {
         toast.error(errorMessage);
@@ -94,14 +92,12 @@ export function useAuth() {
     const token = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
     
-    // No tokens at all - user is not authenticated
     if (!token && !refresh) {
       setIsAuthenticated(false);
       setIsLoading(false);
       return;
     }
 
-    // No access token but have refresh token - try to refresh
     if (!token && refresh) {
       const refreshResult = await refreshToken();
       if (refreshResult) {
@@ -121,12 +117,10 @@ export function useAuth() {
       return;
     }
 
-    // Have access token - try to get profile
     try {
       const profileData = await getProfile();
       if (profileData) {
         setIsAuthenticated(true);
-        // Only navigate if we're on the root path to avoid disrupting user navigation
         if (window.location.pathname === '/') {
           navigate('/profile/me');
         }
@@ -134,7 +128,6 @@ export function useAuth() {
         throw new Error('Failed to get profile');
       }
     } catch (err) {
-      // If 401 and we have refresh token, try to refresh
       if (err.response?.status === 401 && refresh) {
         const refreshResult = await refreshToken();
         if (refreshResult) {
@@ -161,7 +154,6 @@ export function useAuth() {
     }
   }, [refreshToken, clearAuthState, navigate, getProfile]);
 
-  // Set up API interceptors
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
@@ -179,7 +171,6 @@ export function useAuth() {
       async (err) => {
         const originalRequest = err.config;
         
-        // Avoid infinite loops
         if (originalRequest._retry || originalRequest.url?.includes('/token/refresh/')) {
           return Promise.reject(err);
         }
@@ -194,7 +185,6 @@ export function useAuth() {
             return api(originalRequest);
           } else {
             clearAuthState();
-            // Only navigate if not already on home page
             if (window.location.pathname !== '/') {
               navigate('/');
             }
@@ -211,7 +201,6 @@ export function useAuth() {
     };
   }, [refreshToken, clearAuthState, navigate]);
 
-  // Check auth status on mount
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
@@ -224,7 +213,6 @@ export function useAuth() {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
       
-      // Get profile after successful login
       const profileData = await getProfile();
       if (profileData) {
         setIsAuthenticated(true);
@@ -249,11 +237,22 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post('/users/register/', userData);
+      const formData = new FormData();
+      Object.keys(userData).forEach(key => {
+        if (key === 'genres' && Array.isArray(userData[key])) {
+          formData.append(key, JSON.stringify(userData[key]));
+        } else if (userData[key] instanceof File) {
+          formData.append(key, userData[key]);
+        } else if (userData[key] !== undefined) {
+          formData.append(key, userData[key]);
+        }
+      });
+      const response = await api.post('/users/register/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       localStorage.setItem('access_token', response.data.token);
       localStorage.setItem('refresh_token', response.data.refresh);
       
-      // Get profile after successful registration
       const profileData = await getProfile();
       if (profileData) {
         setIsAuthenticated(true);
@@ -318,7 +317,19 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.patch('/users/me/profile/', data);
+      const formData = new FormData();
+      Object.keys(data).forEach(key => {
+        if (key === 'genres' && Array.isArray(data[key])) {
+          formData.append(key, JSON.stringify(data[key]));
+        } else if (data[key] instanceof File) {
+          formData.append(key, data[key]);
+        } else if (data[key] !== undefined) {
+          formData.append(key, data[key]);
+        }
+      });
+      const response = await api.patch('/users/me/profile/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setProfile(response.data);
       toast.success('Profile updated!');
       return response.data;
@@ -333,14 +344,10 @@ export function useAuth() {
   }, [isAuthenticated]);
 
   const updateAccountSettings = useCallback(async (data) => {
-    if (!isAuthenticated) return null;
-    setIsLoading(true);
-    setError(null);
     try {
-      const response = await api.patch('/users/me/settings/account/', data);
-      setProfile((prev) => ({ ...prev, ...response.data }));
-      toast.success('Account settings updated!');
-      return response.data;
+      await api.patch('/users/me/settings/account/', data);
+      const profileData = await getProfile();
+      return profileData;
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to update account settings';
       setError(errorMessage);
@@ -349,7 +356,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [getProfile]);
 
   const updateChatPreferences = useCallback(async (data) => {
     if (!isAuthenticated) return null;
@@ -375,7 +382,7 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      await api.delete('/users/me/delete/');
+      await api.delete('/users/me/delete/', { data: { confirm: true } });
       clearAuthState();
       toast.success('Account deleted successfully!');
       navigate('/');

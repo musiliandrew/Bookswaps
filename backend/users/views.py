@@ -30,33 +30,31 @@ import logging
 logger = logging.getLogger(__name__)
 
 class RegisterView(generics.CreateAPIView):
-    """Register a new user and return JWT token."""
     serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
+    permission_classes = []
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
         refresh = RefreshToken.for_user(user)
-        return Response({
-            "user_id": str(user.user_id),
-            "username": user.username,
-            "email": user.email,
-            "token": str(refresh.access_token)
-        }, status=status.HTTP_201_CREATED)
-
+        data = {
+            'user_id': str(user.user_id),
+            'username': user.username,
+            'email': user.email,
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+        }
+        logger.info(f"User registered: {user.username} ({user.user_id})")
+        return Response(data, status=status.HTTP_201_CREATED)
 
 class CustomTokenRefreshView(APIView):
-    """Refresh an access token using a valid refresh token."""
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        if settings.DEBUG:  # Log headers only in DEBUG mode
+        if settings.DEBUG:
             logger.debug(f"Refresh request headers: {request.headers}")
             logger.debug(f"Refresh request data: {request.data}")
-        
         serializer = TokenRefreshSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -66,17 +64,14 @@ class CustomTokenRefreshView(APIView):
         except serializers.ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
             return Response({'detail': str(e), 'code': 'validation_error'}, status=status.HTTP_400_BAD_REQUEST)
-
         refresh_token = serializer.validated_data['refresh_token']
         try:
             new_access_token = str(refresh_token.access_token)
             response_data = {'access': new_access_token}
-
             if getattr(settings, 'SIMPLE_JWT', {}).get('ROTATE_REFRESH_TOKENS', False):
                 refresh_token.set_jti()
                 refresh_token.set_exp()
                 response_data['refresh'] = str(refresh_token)
-
             logger.info("Successfully issued new access token")
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -86,27 +81,19 @@ class CustomTokenRefreshView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 class LoginView(APIView):
-    """Authenticate user and return JWT token."""
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # Log headers only in DEBUG mode
         if settings.DEBUG:
             logger.debug(f"Login request headers: {request.headers}")
-        
-        # Log request data without password
         safe_data = request.data.copy()
-        safe_data.pop('password', None)  # Remove password if present
+        safe_data.pop('password', None)
         logger.info(f"Login request data: {safe_data}")
-        
         serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
-        
-        # Log token details without full token for security
         logger.info(f"Generated tokens for user {user.username}: user_id={user.user_id}")
-        
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
@@ -115,7 +102,6 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
-    """Blacklist refresh token to log out user."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -137,13 +123,11 @@ class PasswordResetRequestView(APIView):
         email = request.data.get("email")
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-
         user = CustomUser.objects.filter(email=email).first()
         if user:
             token_generator = PasswordResetTokenGenerator()
             token = token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.user_id))
-
             reset_link = f"{settings.FRONTEND_URL}/reset-password/{uidb64}/{token}/"
             try:
                 send_mail(
@@ -155,25 +139,21 @@ class PasswordResetRequestView(APIView):
                 )
             except Exception as e:
                 return Response({"error": f"Failed to send email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
         return Response({"message": "Reset link sent"}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmView(APIView):
-    """Confirm password reset with token and update password."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         uidb64 = request.data.get("uid")
         token = request.data.get("token")
         new_password = request.data.get("password")
-
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = CustomUser.objects.get(user_id=uid)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
             return Response({"error": "Invalid user"}, status=status.HTTP_400_BAD_REQUEST)
-
         token_generator = PasswordResetTokenGenerator()
         if token_generator.check_token(user, token):
             password_validation.validate_password(new_password, user)
@@ -188,33 +168,26 @@ class UserProfileView(APIView):
 
     def get(self, request, identifier):
         try:
-            # Try username first
             user = CustomUser.objects.get(username=identifier)
         except CustomUser.DoesNotExist:
             try:
-                # Fallback to user_id
                 user = CustomUser.objects.get(user_id=identifier)
             except (CustomUser.DoesNotExist, ValueError):
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             user.clean()
         except ValidationError as e:
             return Response({"error": f"Invalid user data: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
         if not user.profile_public and (not request.user.is_authenticated or request.user != user):
             return Response({"detail": "Profile is private"}, status=status.HTTP_403_FORBIDDEN)
-
         serializer = UserProfileSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class UpdateProfileView(APIView):
-    """Update authenticated user's profile."""
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
-        if settings.DEBUG:  # Log headers only in DEBUG mode
+        if settings.DEBUG:
             logger.debug(f"Profile request headers: {request.headers}")
         try:
             user = request.user
@@ -223,6 +196,7 @@ class UpdateProfileView(APIView):
         except Exception as e:
             logger.error(f"Profile request failed: {str(e)}")
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     def patch(self, request):
         user = request.user
         serializer = UpdateProfileSerializer(user, data=request.data, partial=True)
@@ -230,32 +204,25 @@ class UpdateProfileView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class DeleteAccountView(APIView):
-    """Soft delete authenticated user's account."""
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
         if settings.DEBUG:
             logger.debug(f"Delete account request headers: {request.headers}")
             logger.debug(f"Delete account request data: {request.data}")
-        
         serializer = DeleteAccountSerializer(data=request.data, context={'request': request})
         try:
             serializer.is_valid(raise_exception=True)
         except serializers.ValidationError as e:
             logger.error(f"Delete account validation failed: {str(e)}")
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
         user = serializer.validated_data['user']
         logger.info(f"Soft deleting account for user_id={user.user_id}")
-
-        # Soft deletion for GDPR compliance
         user.is_active = False
         user.email = f"deleted_{user.user_id}@bookswap.com"
         user.username = f"deleted_{user.user_id}"
         user.save()
-
         try:
             send_mail(
                 'Account Deletion Confirmation',
@@ -267,10 +234,9 @@ class DeleteAccountView(APIView):
             logger.info(f"Deletion confirmation email sent to deleted_{user.user_id}@bookswap.com")
         except Exception as e:
             logger.error(f"Failed to send deletion confirmation email: {str(e)}")
-
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
 class FollowUserView(APIView):
-    """Follow a user and send WebSocket notification."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
@@ -280,8 +246,6 @@ class FollowUserView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         follow = serializer.save()
-
-        # Send WebSocket notification
         channel_layer = get_channel_layer()
         if channel_layer:
             async_to_sync(channel_layer.group_send)(
@@ -289,12 +253,12 @@ class FollowUserView(APIView):
                 {
                     'type': 'notification',
                     'message': f"{request.user.username} started following you",
-                    'follow_id': str(follow.follow_id)
+                    'follow_id': str(follow.follow_id),
+                    'user_id': str(follow.followed.user_id)
                 }
             )
         else:
             print("Warning: Channel layer not available, skipping WebSocket notification")
-
         return Response({
             "follow_id": str(follow.follow_id),
             "follower": request.user.username,
@@ -303,7 +267,6 @@ class FollowUserView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 class UnfollowUserView(APIView):
-    """Soft unfollow a user."""
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, user_id):
@@ -311,26 +274,20 @@ class UnfollowUserView(APIView):
             followed_user = CustomUser.objects.get(user_id=user_id)
         except CustomUser.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
         follow = Follows.objects.filter(follower=request.user, followed=followed_user, active=True).first()
         if not follow:
             return Response({"detail": "You are not following this user"}, status=status.HTTP_400_BAD_REQUEST)
-
         follow.active = False
         follow.save()
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CustomPagination(PageNumberPagination):
-    """Pagination for follower/following lists."""
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
 class FollowersFollowingView(APIView):
-    """List followers or following with pagination."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
@@ -338,10 +295,8 @@ class FollowersFollowingView(APIView):
             user = CustomUser.objects.get(user_id=user_id)
         except CustomUser.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
         if not user.profile_public and (not request.user.is_authenticated or request.user != user):
             return Response({"detail": "Profile is private"}, status=status.HTTP_403_FORBIDDEN)
-
         if 'followers' in request.path:
             follows = Follows.objects.filter(followed=user, active=True)
             users = [follow.follower for follow in follows]
@@ -350,7 +305,6 @@ class FollowersFollowingView(APIView):
             users = [follow.followed for follow in follows]
         else:
             return Response({"detail": "Invalid endpoint"}, status=status.HTTP_400_BAD_REQUEST)
-
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(users, request)
         serializer = UserSearchSerializer(result_page, many=True)
@@ -358,7 +312,6 @@ class FollowersFollowingView(APIView):
 
 
 class FollowStatusView(APIView):
-    """Check follow and mutual status between users."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
@@ -370,18 +323,14 @@ class FollowStatusView(APIView):
             other_user = CustomUser.objects.get(user_id=other_user_id)
         except CustomUser.DoesNotExist:
             return Response({"detail": "One or both users not found"}, status=status.HTTP_404_NOT_FOUND)
-
         is_following = Follows.objects.filter(follower=user, followed=other_user, active=True).exists()
         is_mutual = is_following and Follows.objects.filter(follower=other_user, followed=user, active=True).exists()
-
         return Response({
             "is_following": is_following,
             "is_mutual": is_mutual
         }, status=status.HTTP_200_OK)
 
-
 class UpdateChatPreferencesView(APIView):
-    """Update user's chat preferences."""
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -389,25 +338,20 @@ class UpdateChatPreferencesView(APIView):
         chat_preferences = request.data.get('chat_preferences')
         if not isinstance(chat_preferences, dict):
             raise ValidationError({"detail": "chat_preferences must be a JSON object"})
-
         for key, value in chat_preferences.items():
             if key == "location_enabled" and not isinstance(value, bool):
                 raise ValidationError({"detail": "location_enabled must be a boolean"})
             if key == "mute_societies" and not isinstance(value, list):
                 raise ValidationError({"detail": "mute_societies must be a list"})
-
         user.chat_preferences = chat_preferences
         user.save()
-
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
             "chat_preferences": user.chat_preferences
         }, status=status.HTTP_200_OK)
 
-
 class UpdateAccountSettingsView(APIView):
-    """Update user's account settings (email, password, privacy)."""
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -416,23 +360,18 @@ class UpdateAccountSettingsView(APIView):
         new_password = request.data.get('password')
         profile_public = request.data.get('profile_public')
         email_notifications = request.data.get('email_notifications')
-
         if new_email and CustomUser.objects.filter(email=new_email).exclude(user_id=user.user_id).exists():
             raise ValidationError({"detail": "Email address is already in use"})
-
         if new_password:
             password_validation.validate_password(new_password, user)
             user.set_password(new_password)
-
         if new_email:
             user.email = new_email
         if profile_public is not None:
             user.profile_public = profile_public
         if email_notifications is not None:
             user.email_notifications = email_notifications
-
         user.save()
-
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
@@ -441,34 +380,27 @@ class UpdateAccountSettingsView(APIView):
             "email_notifications": user.email_notifications
         }, status=status.HTTP_200_OK)
 
-
 class SearchUsersView(APIView):
-    """Search users by username, city, or genres with caching."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         query = request.GET.get('q', '').strip()
         if not query:
             return Response([], status=status.HTTP_200_OK)
-
         redis = get_redis_connection('default')
         cache_key = f"search_users:{query.lower()}"
         cached = redis.get(cache_key)
         if cached:
             return Response(json.loads(cached), status=status.HTTP_200_OK)
-
         users = CustomUser.objects.filter(
             Q(username__icontains=query) | Q(city__icontains=query) | Q(genres__contains=query),
             profile_public=True, is_active=True
         ).exclude(user_id=request.user.user_id)[:10]
-
         serializer = UserSearchSerializer(users, many=True)
         redis.setex(cache_key, 300, json.dumps(serializer.data))
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class RecommendedUsersView(APIView):
-    """Recommend users based on shared genres, city, or public profiles."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -477,12 +409,9 @@ class RecommendedUsersView(APIView):
             Q(genres__overlap=user.genres) | Q(city=user.city) | Q(profile_public=True),
             is_active=True
         ).exclude(user_id=user.user_id).distinct()[:5]
-
         if not recommended:
-            # Fallback to any public, active users
             recommended = CustomUser.objects.filter(
                 profile_public=True, is_active=True
             ).exclude(user_id=user.user_id).distinct()[:5]
-
         serializer = UserSearchSerializer(recommended, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

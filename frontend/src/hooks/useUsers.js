@@ -38,11 +38,11 @@ export function useUsers() {
     }
   }, []);
 
-  const followUser = useCallback(async (userId) => {
+  const followUser = useCallback(async (userId, source = 'Search') => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/users/follow/${userId}/`);
+      const response = await api.post(`/users/follow/${userId}/`, { source });
       setFollowStatus({ user_id: userId, is_following: true });
       toast.success('User followed!');
       return response.data;
@@ -202,13 +202,13 @@ export function useUsers() {
     if (!isWebSocketConnected || !notifications?.length) return;
 
     const lastNotification = notifications[notifications.length - 1];
-    if (lastNotification?.type === 'notification' && lastNotification.follow_id) {
+    if (lastNotification?.type === 'notification' && lastNotification.user_id) {
       setFollowStatus((prev) =>
-        prev?.user_id === lastNotification.follow_id
+        prev?.user_id === lastNotification.user_id
           ? { ...prev, is_following: true }
           : prev
       );
-      getFollowers(lastNotification.follow_id);
+      getFollowers(lastNotification.user_id);
     }
   }, [notifications, isWebSocketConnected, getFollowers]);
 

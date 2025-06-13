@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.db import models
 from django.core.validators import EmailValidator, MinValueValidator
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -28,12 +29,17 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(username, email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    GENDER_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('Non-binary', 'Non-binary'),
+        ('Prefer not to say', 'Prefer not to say'),
+    ]
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
-    age = models.IntegerField(
-        blank=True, null=True, validators=[MinValueValidator(13, message="Users must be at least 13 years old")]
-    )
+    birth_date = models.DateField(blank=True, null=True) 
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
     country = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
     ethnicity = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
@@ -58,11 +64,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['email']
 
     def clean(self):
-        """Validate genres and chat_preferences structure."""
         if self.genres and not isinstance(self.genres, list):
             raise ValidationError("Genres must be a list (e.g., ['Fiction', 'Sci-Fi'])")
         if self.chat_preferences and not isinstance(self.chat_preferences, dict):
             raise ValidationError("Chat preferences must be a dictionary")
+        if self.birth_date and self.birth_date > timezone.now().date():
+            raise ValidationError("Birth date cannot be in the future")
 
     def __str__(self):
         return self.username
@@ -103,15 +110,12 @@ class Follows(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        """Update is_mutual status on save."""
         super().save(*args, **kwargs)
-        # Check if the reverse follow exists and is active
         reverse_follow = Follows.objects.filter(
             follower=self.followed, followed=self.follower, active=True
         ).exists()
         self.is_mutual = reverse_follow
         super().save(update_fields=['is_mutual'])
-        # Update reverse follow's is_mutual if it exists
         if reverse_follow:
             Follows.objects.filter(follower=self.followed, followed=self.follower).update(is_mutual=True)
 
