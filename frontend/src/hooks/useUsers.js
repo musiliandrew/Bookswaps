@@ -148,14 +148,16 @@ export function useUsers() {
     setError(null);
     try {
       const response = await api.get(`/users/recommended/?page=${page}`);
-      setRecommendedUsers(response.data.results || []);
+      console.log('Recommended users response:', response.data); // Debug log
+      const results = response.data.results || [];
+      setRecommendedUsers(results);
       setPagination((prev) => ({
         ...prev,
         recommended: {
           next: response.data.next,
           previous: response.data.previous,
           page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+          totalPages: Math.ceil((response.data.count || results.length || 0) / (results.length || 1)),
         },
       }));
       return response.data;

@@ -39,24 +39,22 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
     birth_date = models.DateField(blank=True, null=True) 
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
-    country = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
-    ethnicity = models.CharField(max_length=100, blank=True, null=True)  # Changed to CharField
-    role = models.CharField(max_length=50, blank=True, null=True)  # Changed to CharField
+    gender = models.CharField(max_length=17, choices=GENDER_CHOICES, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    ethnicity = models.CharField(max_length=100, blank=True, null=True)
+    role = models.CharField(max_length=50, blank=True, null=True)
     about_you = models.TextField(blank=True, null=True)
-    genres = models.JSONField(blank=True, null=True, default=list)  # Changed to JSONField for structured genres
-    chat_preferences = models.JSONField(
-        blank=True, null=True, default=dict
-    )  # Default to empty dict for clarity
-    profile_picture = models.URLField(blank=True, null=True)  # Renamed from profile_pic, changed to URLField
+    genres = models.JSONField(blank=True, null=True, default=list)
+    chat_preferences = models.JSONField(blank=True, null=True, default=dict)
+    profile_picture = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_active = models.DateTimeField(blank=True, null=True)
-    last_login = models.DateTimeField(blank=True, null=True)  # Added for session tracking
+    last_login = models.DateTimeField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    profile_public = models.BooleanField(default=True)  # Added for privacy
-    email_notifications = models.BooleanField(default=True)  # Added for notification settings
+    profile_public = models.BooleanField(default=True)
+    email_notifications = models.BooleanField(default=True)
 
     objects = CustomUserManager()
 
