@@ -4,7 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { useAuth } from './hooks/useAuth';
-import Navbar from './components/Navbar'; // this is for main navigation (authenticated users)
+import Navbar from './components/Navbar';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import PasswordResetPage from './pages/Auth/PasswordResetPage';
@@ -24,7 +24,6 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Show loading screen while checking authentication status
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -36,18 +35,20 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Only show main Navbar for authenticated users */}
-      {isAuthenticated && <Navbar isSmallScreen={isSmallScreen} />}
+      {/* Navbar with fixed positioning */}
+      {isAuthenticated && (
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <Navbar isSmallScreen={isSmallScreen} />
+        </div>
+      )}
       
-      <main className="flex-grow">
+      {/* Main content with padding to account for navbar */}
+      <main className={`flex-grow ${isAuthenticated ? 'pt-16' : ''}`}>
         <Routes>
-          {/* Root route - HomePage for unauthenticated, Profile for authenticated */}
           <Route 
             path="/" 
             element={isAuthenticated ? <Navigate to="/profile/me" /> : <HomePage />} 
           />
-          
-          {/* Auth routes - only accessible when not authenticated */}
           <Route 
             path="/login" 
             element={!isAuthenticated ? <LoginPage /> : <Navigate to="/profile/me" />} 
@@ -60,8 +61,6 @@ function App() {
             path="/password-reset/:token?" 
             element={!isAuthenticated ? <PasswordResetPage /> : <Navigate to="/profile/me" />} 
           />
-          
-          {/* Protected Main routes - only accessible when authenticated */}
           <Route 
             path="/library" 
             element={isAuthenticated ? <LibraryPage /> : <Navigate to="/" />} 
@@ -78,8 +77,6 @@ function App() {
             path="/notifications" 
             element={isAuthenticated ? <NotificationsPage /> : <Navigate to="/" />} 
           />
-          
-          {/* Catch all route */}
           <Route 
             path="*" 
             element={<Navigate to={isAuthenticated ? "/profile/me" : "/"} />} 

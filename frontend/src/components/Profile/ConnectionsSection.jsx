@@ -12,6 +12,7 @@ const ConnectionsSection = ({
   onViewProfile,
   onFollow,
   onUnfollow,
+  onRemoveFollower, // Added prop
   userFollowStatuses,
   isLoading,
 }) => {
@@ -50,8 +51,10 @@ const ConnectionsSection = ({
                 onViewProfile={onViewProfile}
                 onFollow={onFollow}
                 onUnfollow={onUnfollow}
+                onRemoveFollower={onRemoveFollower} // Pass new prop
                 userFollowStatuses={userFollowStatuses}
                 isLoading={isLoading}
+                listType={list.type} // Pass list type to UserList
               />
               <Pagination
                 type={list.type}

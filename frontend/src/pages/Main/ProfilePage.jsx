@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
@@ -7,13 +7,35 @@ import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
 import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
+class ErrorBoundary extends Component {
+  state = { hasError: false, error: null };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center p-4 text-[var(--text)] bg-bookish-gradient h-screen">
+          <p className="mb-4">Error: {this.state.error?.message || 'Something went wrong.'}</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="bookish-button-enhanced px-4 py-2 rounded-xl text-[var(--secondary)]"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, profile, isLoading: authLoading, error: authError, getProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
-  // Authentication check
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
@@ -24,14 +46,12 @@ const ProfilePage = () => {
     }
   }, [isAuthenticated, navigate, getProfile, profile]);
 
-  // Handle screen resize
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Swipe handlers
   const handlers = useSwipeable({
     onSwipedLeft: () => activeTab === 'my-profile' && setActiveTab('settings'),
     onSwipedRight: () => activeTab === 'settings' && setActiveTab('my-profile'),
@@ -107,11 +127,9 @@ const ProfilePage = () => {
           transition={{ duration: 0.3 }}
           className="max-w-3xl mx-auto px-4"
         >
-          {activeTab === 'my-profile' ? (
-            <ProfileSection />
-          ) : (
-            <ProfileSettings />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'my-profile' ? <ProfileSection /> : <ProfileSettings />}
+          </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
     </div>

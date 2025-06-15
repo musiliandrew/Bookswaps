@@ -6,16 +6,16 @@ import { useUsers } from '../../hooks/useUsers';
 import UserProfileCard from './UserProfileCard';
 import ConnectionsSection from './ConnectionsSection';
 import DiscoverSection from './DiscoverSection';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 
 const ProfileSection = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, profile, isLoading: authLoading, error: authError, getProfile } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
   const {
     getUserProfile,
     followUser,
     unfollowUser,
+    removeFollower,
     getFollowStatus,
     getFollowers,
     getFollowing,
@@ -28,24 +28,22 @@ const ProfileSection = () => {
     searchResults,
     isLoading: usersLoading,
     error: usersError,
-    pagination,
   } = useUsers();
 
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState({
-    followers: 1,
-    following: 1,
-    search: 1,
-    recommended: 1,
-    mutual: 1,
-  });
   const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userFollowStatuses, setUserFollowStatuses] = useState({});
   const [mutualFollowers, setMutualFollowers] = useState([]);
-  const [localPagination, setLocalPagination] = useState({});
-  const searchRef = useRef(null);
+  const [pagination, setPagination] = useState({
+    followers: { next: null, previous: null, page: 1, totalPages: 1 },
+    following: { next: null, previous: null, page: 1, totalPages: 1 },
+    search: { next: null, previous: null, page: 1, totalPages: 1 },
+    recommended: { next: null, previous: null, page: 1, totalPages: 1 },
+    mutual: { next: null, previous: null, page: 1, totalPages: 1 },
+  });
+
   const fetchingRef = useRef({
     followers: false,
     following: false,
@@ -58,10 +56,13 @@ const ProfileSection = () => {
   // Debounce utility
   const useDebounce = (callback, delay) => {
     const timeoutRef = useRef(null);
-    return useCallback((...args) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => callback(...args), delay);
-    }, [callback, delay]);
+    return useCallback(
+      (...args) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => callback(...args), delay);
+      },
+      [callback, delay]
+    );
   };
 
   // Debounced API calls
@@ -69,7 +70,18 @@ const ProfileSection = () => {
     if (fetchingRef.current.followers) return;
     fetchingRef.current.followers = true;
     try {
-      await getFollowers(id, page);
+      const data = await getFollowers(id, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          followers: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
     } finally {
       fetchingRef.current.followers = false;
     }
@@ -79,7 +91,18 @@ const ProfileSection = () => {
     if (fetchingRef.current.following) return;
     fetchingRef.current.following = true;
     try {
-      await getFollowing(id, page);
+      const data = await getFollowing(id, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          following: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
     } finally {
       fetchingRef.current.following = false;
     }
@@ -91,19 +114,21 @@ const ProfileSection = () => {
     try {
       const followersData = await getFollowers(id, page);
       const followingData = await getFollowing(id, page);
-      const mutuals = followersData.results.filter((follower) =>
-        followingData.results.some((followed) => followed.user_id === follower.user_id),
-      );
-      setMutualFollowers(mutuals);
-      setLocalPagination((prev) => ({
-        ...prev,
-        mutual: {
-          next: followersData.next,
-          previous: followersData.previous,
-          page,
-          totalPages: Math.ceil(followersData.count / (followersData.results?.length || 1)),
-        },
-      }));
+      if (followersData && followingData) {
+        const mutuals = followersData.results.filter((follower) =>
+          followingData.results.some((followed) => followed.user_id === follower.user_id)
+        );
+        setMutualFollowers(mutuals);
+        setPagination((prev) => ({
+          ...prev,
+          mutual: {
+            next: followersData.next,
+            previous: followersData.previous,
+            page,
+            totalPages: Math.ceil(followersData.count / (followersData.results?.length || 1)) || 1,
+          },
+        }));
+      }
     } finally {
       fetchingRef.current.mutual = false;
     }
@@ -113,7 +138,18 @@ const ProfileSection = () => {
     if (fetchingRef.current.recommended) return;
     fetchingRef.current.recommended = true;
     try {
-      await getRecommendedUsers(page);
+      const data = await getRecommendedUsers(page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          recommended: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
     } finally {
       fetchingRef.current.recommended = false;
     }
@@ -123,7 +159,18 @@ const ProfileSection = () => {
     if (fetchingRef.current.search) return;
     fetchingRef.current.search = true;
     try {
-      await searchUsers({ query }, page);
+      const data = await searchUsers({ query }, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          search: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 10)) || 1,
+          },
+        }));
+      }
     } finally {
       fetchingRef.current.search = false;
     }
@@ -147,32 +194,31 @@ const ProfileSection = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
-      return;
     }
-    if (!profile) {
-      getProfile();
-    }
-  }, [isAuthenticated, navigate, getProfile, profile]);
+  }, [isAuthenticated, navigate]);
 
   // Load initial data
   useEffect(() => {
     if (profile?.user_id && !dataLoaded) {
       getUserProfile(profile.user_id);
-      debouncedGetFollowers(profile.user_id, currentPage.followers);
-      debouncedGetFollowing(profile.user_id, currentPage.following);
-      debouncedGetMutualFollowers(profile.user_id, currentPage.mutual);
-      debouncedGetRecommendedUsers(currentPage.recommended);
+      debouncedGetFollowers(profile.user_id, pagination.followers.page);
+      debouncedGetFollowing(profile.user_id, pagination.following.page);
+      debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page);
+      debouncedGetRecommendedUsers(pagination.recommended.page);
       setDataLoaded(true);
     }
   }, [
     profile?.user_id,
     dataLoaded,
-    currentPage,
     getUserProfile,
     debouncedGetFollowers,
     debouncedGetFollowing,
     debouncedGetMutualFollowers,
     debouncedGetRecommendedUsers,
+    pagination.followers.page,
+    pagination.following.page,
+    pagination.mutual.page,
+    pagination.recommended.page,
   ]);
 
   // Fetch follow status for listed users
@@ -189,10 +235,10 @@ const ProfileSection = () => {
 
   // Handle page changes
   const handlePageChange = (type, page) => {
-    setCurrentPage((prev) => {
-      const maxPage = (localPagination[type] || pagination[type])?.totalPages || 1;
+    setPagination((prev) => {
+      const maxPage = prev[type]?.totalPages || 1;
       if (page > 0 && page <= maxPage) {
-        return { ...prev, [type]: page };
+        return { ...prev, [type]: { ...prev[type], page } };
       }
       return prev;
     });
@@ -205,22 +251,36 @@ const ProfileSection = () => {
 
   // Handle search
   const handleSearch = (e) => {
-    const query = e.target.value;
+    const query = e.target.value.trim();
     setSearchQuery(query);
-    setCurrentPage((prev) => ({ ...prev, search: 1 }));
-    if (query.trim()) {
+    setPagination((prev) => ({
+      ...prev,
+      search: { ...prev.search, page: 1, totalPages: 1 },
+    }));
+    if (query) {
       debouncedSearchUsers(query, 1);
+    } else {
+      setPagination((prev) => ({
+        ...prev,
+        search: { next: null, previous: null, page: 1, totalPages: 1 },
+      }));
     }
   };
-  // Handle follow/unfollow
+
+  // Handle follow
   const handleFollow = async (userId, source = 'Search') => {
+    if (!userId || typeof userId !== 'string') {
+      toast.error('Invalid user ID');
+      return;
+    }
     const result = await followUser(userId, source);
     if (result) {
-      debouncedGetFollowers(profile.user_id, currentPage.followers);
-      debouncedGetFollowing(profile.user_id, currentPage.following);
-      debouncedGetMutualFollowers(profile.user_id, currentPage.mutual);
-      debouncedGetRecommendedUsers(currentPage.recommended);
-      if (searchQuery) debouncedSearchUsers(searchQuery, currentPage.search);
+      await getUserProfile(publicProfile?.user_id || userId);
+      debouncedGetFollowers(profile.user_id, pagination.followers.page);
+      debouncedGetFollowing(profile.user_id, pagination.following.page);
+      debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page);
+      debouncedGetRecommendedUsers(pagination.recommended.page);
+      if (searchQuery) debouncedSearchUsers(searchQuery, pagination.search.page);
       setUserFollowStatuses((prev) => ({
         ...prev,
         [userId]: { is_following: true, is_mutual: result.is_mutual },
@@ -229,14 +289,16 @@ const ProfileSection = () => {
     }
   };
 
+  // Handle unfollow
   const handleUnfollow = async (userId) => {
     const result = await unfollowUser(userId);
     if (result) {
-      debouncedGetFollowers(profile.user_id, currentPage.followers);
-      debouncedGetFollowing(profile.user_id, currentPage.following);
-      debouncedGetMutualFollowers(profile.user_id, currentPage.mutual);
-      debouncedGetRecommendedUsers(currentPage.recommended);
-      if (searchQuery) debouncedSearchUsers(searchQuery, currentPage.search);
+      await getUserProfile(publicProfile?.user_id || userId);
+      debouncedGetFollowers(profile.user_id, pagination.followers.page);
+      debouncedGetFollowing(profile.user_id, pagination.following.page);
+      debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page);
+      debouncedGetRecommendedUsers(pagination.recommended.page);
+      if (searchQuery) debouncedSearchUsers(searchQuery, pagination.search.page);
       setUserFollowStatuses((prev) => ({
         ...prev,
         [userId]: { is_following: false, is_mutual: false },
@@ -245,16 +307,33 @@ const ProfileSection = () => {
     }
   };
 
+  // Handle remove follower
+  const handleRemoveFollower = async (userId) => {
+    const result = await removeFollower(userId);
+    if (result) {
+      debouncedGetFollowers(profile.user_id, pagination.followers.page);
+      debouncedGetFollowing(profile.user_id, pagination.following.page);
+      debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page);
+      if (searchQuery) debouncedSearchUsers(searchQuery, pagination.search.page);
+      const status = await getFollowStatus(profile.user_id, userId);
+      setUserFollowStatuses((prev) => ({
+        ...prev,
+        [userId]: status || { is_following: false, is_mutual: false },
+      }));
+      toast.success('Follower removed!');
+    }
+  };
+
   // View other user's profile
   const viewUserProfile = async (userId) => {
     const userProfile = await getUserProfile(userId);
     if (userProfile) {
       await debouncedGetFollowStatus(profile.user_id, userId);
-      debouncedGetFollowStatus(profile.user_id, userId);
       setSelectedUser(userProfile);
     }
   };
-  if (authLoading || (usersLoading && !dataLoaded)) {
+
+  if (!profile) {
     return (
       <div className="flex justify-center items-center h-screen bg-bookish-gradient">
         <div className="bookish-spinner w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
@@ -262,10 +341,10 @@ const ProfileSection = () => {
     );
   }
 
-  if (authError || usersError) {
+  if (usersError) {
     return (
       <div className="text-center p-4 text-[var(--text)] bg-bookish-gradient h-screen">
-        <p className="mb-4">{authError || usersError || 'Failed to load profile data.'}</p>
+        <p className="mb-4">{usersError || 'Failed to load profile data.'}</p>
         <button
           onClick={() => {
             setDataLoaded(false);
@@ -277,9 +356,9 @@ const ProfileSection = () => {
               followStatus: false,
               mutual: false,
             };
-            getProfile();
+            getUserProfile(profile?.user_id);
           }}
-          className="bookish-button-enhanced px-4 py-2 rounded-xl text-[var(--secondary)]"
+          className="py-2 px-2 rounded-xl text-[var(--secondary)]"
         >
           Retry
         </button>
@@ -293,38 +372,26 @@ const ProfileSection = () => {
         <motion.div
           initial={{ opacity: 0, x: 100 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          className="bookish-glass p-4 rounded-xl mb-6"
+          className="px-4 mb-4 rounded-xl px-2"
         >
           <button
             onClick={() => setSelectedUser(null)}
-            className="flex items-center text-[var(--accent)] mb-4 hover:underline text-sm"
+            className="flex items-center justify-center py-2 mb-2 text-sm text-[var(--accent)] hover:underline"
           >
             <span className="mr-2">←</span> Back
           </button>
           <UserProfileCard
-            user={selectedUser}
-            isOwnProfile={selectedUser.user_id === profile.user_id}
-            followStatus={userFollowStatuses[selectedUser.user_id] || { is_following: false, is_mutual: false }}
-            onFollow={() => handleFollow(selectedUser.user_id, 'Profile')}
-            onUnfollow={() => handleUnfollow(selectedUser.user_id)}
-            onViewProfile={() => {}}
+            user={selectedUser || publicProfile}
+            isOwnProfile={selectedUser?.user_id === profile.user_id}
+            followStatus={userFollowStatuses[selectedUser?.user_id || profile?.user_id] || []}
+            onFollow={() => handleFollow(selectedUser?.user_id, 'Profile')}
+            onUnFollow={() => handleUnfollow(selectedUser?.user_id)}
+            onRefreshProfile={() => getUserProfile(selectedUser?.user_id || profile.user_id)}
           />
         </motion.div>
       ) : (
         <>
-          <div className="relative w-full max-w-md mx-auto mb-4">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#456A76]" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search book readers..."
-              className="bookish-input w-full pl-10 pr-4 py-2 rounded-xl text-[var(--text)] text-sm focus:outline-none"
-            />
-          </div>
-          <nav className="flex space-x-2 mb-4 border-b border-[var(--secondary)]/20">
+          <nav className="flex mb-4 gap-2 border-b border-[var(--secondary)] pb-2 py-2">
             {[
               { id: 'profile', label: 'Profile' },
               { id: 'connections', label: 'Connections' },
@@ -333,10 +400,10 @@ const ProfileSection = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center px-3 py-1.5 font-['Open_Sans'] text-sm ${
+                className={`px-2 py-2 text-sm font-medium rounded-lg ${
                   activeSubTab === tab.id
-                    ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-                    : 'text-[#456A76] hover:text-[var(--accent)]'
+                    ? 'text-[var(--accent)] bg-[var(--accent)]/10'
+                    : 'text-[#456A76] hover:text-[var(--accent)] hover:bg-[var(--accent)]/5'
                 }`}
               >
                 {tab.label}
@@ -352,9 +419,9 @@ const ProfileSection = () => {
               <UserProfileCard
                 user={publicProfile}
                 isOwnProfile={true}
-                followStatus={userFollowStatuses[profile?.user_id] || { is_following: false, is_mutual: false }}
+                followStatus={userFollowStatuses[profile?.user_id] || []}
                 onFollow={() => {}}
-                onUnfollow={() => {}}
+                onUnFollow={() => {}}
                 onViewProfile={() => {}}
               />
             )}
@@ -363,12 +430,13 @@ const ProfileSection = () => {
                 followers={followers}
                 following={following}
                 mutualFollowers={mutualFollowers}
-                pagination={{ ...pagination, ...localPagination }}
-                currentPage={currentPage}
+                pagination={pagination}
+                currentPage={pagination}
                 onPageChange={handlePageChange}
                 onViewProfile={viewUserProfile}
                 onFollow={handleFollow}
                 onUnfollow={handleUnfollow}
+                onRemoveFollower={handleRemoveFollower}
                 userFollowStatuses={userFollowStatuses}
                 isLoading={usersLoading && dataLoaded}
               />
@@ -378,12 +446,13 @@ const ProfileSection = () => {
                 recommendedUsers={recommendedUsers}
                 searchResults={searchResults}
                 searchQuery={searchQuery}
+                onSearch={handleSearch}
                 pagination={pagination}
-                currentPage={currentPage}
+                currentPage={pagination}
                 onPageChange={handlePageChange}
                 onViewProfile={viewUserProfile}
                 onFollow={handleFollow}
-                onUnfollow={handleUnfollow}
+                onUnFollow={handleUnfollow}
                 userFollowStatuses={userFollowStatuses}
                 isLoading={usersLoading && dataLoaded}
               />

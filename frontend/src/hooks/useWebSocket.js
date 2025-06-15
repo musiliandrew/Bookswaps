@@ -4,27 +4,35 @@ import { toast } from 'react-toastify';
 
 export function useWebSocket(userId = null, type = 'notification') {
   const [isConnected, setIsConnected] = useState(false);
-  const [data, setData] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [discussionData, setDiscussionData] = useState({ notes: [], likes: [], upvotes: [], reprints: [] });
   const [chatData, setChatData] = useState({ messages: [], reactions: [] });
   const [societyData, setSocietyData] = useState({ messages: [], reactions: [], pinned: [] });
   const wsRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const reconnectInterval = 5000;
-  const { auth } = useAuth();
+  const reconnectInterval = 15000; // Increased to 15s
+  const { isAuthenticated, profile } = useAuth();
+  const messageBuffer = useRef([]); // Buffer messages to batch updates
+  const bufferTimeout = useRef(null);
+
+  const flushBuffer = useCallback(() => {
+    if (messageBuffer.current.length > 0) {
+      setMessages((prev) => [...prev, ...messageBuffer.current]);
+      messageBuffer.current = [];
+    }
+  }, []);
 
   const connectWebSocket = useCallback(() => {
     if (reconnectAttempts.current >= maxReconnectAttempts) {
-      toast.error('Max reconnection attempts reached');
+      toast.error('Max WebSocket reconnection attempts reached');
       return;
     }
-
-    // For Vite:
-        const wsUrl = `${import.meta.env.VITE_WS_URL}/${type}/${userId || auth?.user?.id || ''}/`;
-    
-    // If using Create React App, use:
-    // const wsUrl = `${process.env.REACT_APP_WS_URL}/${type}/${userId || auth?.user?.id || ''}/`;
+    if (!isAuthenticated || !profile?.user?.id) {
+      console.log('WebSocket: Skipping connection, not authenticated or no user ID');
+      return;
+    }
+    const wsUrl = `${import.meta.env.VITE_WS_URL}/${type}/${userId || profile?.user?.id}/`;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
@@ -48,16 +56,23 @@ export function useWebSocket(userId = null, type = 'notification') {
             messages: message.type === 'chat_message' ? [...prev.messages, message.message] : prev.messages,
             reactions: message.type === 'reaction_added' ? [...prev.reactions, message.reaction] : prev.reactions,
           }));
-          setData(message); // For backward compatibility
+          messageBuffer.current.push(message);
         } else if (type === 'society') {
           setSocietyData((prev) => ({
             messages: message.type === 'society_message' ? [...prev.messages, message.message] : prev.messages,
             reactions: message.type === 'reaction_added' ? [...prev.reactions, message.reaction] : prev.reactions,
             pinned: message.type === 'message_pinned' ? [...prev.pinned, { message_id: message.message_id }] : prev.pinned,
           }));
-          setData(message); // For backward compatibility
+          messageBuffer.current.push(message);
         } else {
-          setData(message);
+          messageBuffer.current.push(message);
+        }
+        // Batch updates every 500ms
+        if (!bufferTimeout.current) {
+          bufferTimeout.current = setTimeout(() => {
+            flushBuffer();
+            bufferTimeout.current = null;
+          }, 500);
         }
       } catch (err) {
         console.error('WebSocket message error:', err);
@@ -67,6 +82,7 @@ export function useWebSocket(userId = null, type = 'notification') {
     wsRef.current.onclose = () => {
       setIsConnected(false);
       reconnectAttempts.current += 1;
+      console.log(`WebSocket closed, attempting reconnect ${reconnectAttempts.current}/${maxReconnectAttempts}`);
       setTimeout(connectWebSocket, reconnectInterval);
     };
 
@@ -74,7 +90,7 @@ export function useWebSocket(userId = null, type = 'notification') {
       console.error('WebSocket error:', error);
       wsRef.current?.close();
     };
-  }, [userId, auth?.user?.id, type]);
+  }, [userId, isAuthenticated, profile?.user?.id, type, flushBuffer]);
 
   const disconnectWebSocket = useCallback(() => {
     if (wsRef.current) {
@@ -82,6 +98,10 @@ export function useWebSocket(userId = null, type = 'notification') {
       wsRef.current = null;
       setIsConnected(false);
       reconnectAttempts.current = 0;
+    }
+    if (bufferTimeout.current) {
+      clearTimeout(bufferTimeout.current);
+      bufferTimeout.current = null;
     }
   }, []);
 
@@ -127,15 +147,15 @@ export function useWebSocket(userId = null, type = 'notification') {
   }, [isConnected]);
 
   useEffect(() => {
-    if (userId || auth?.user?.id) {
+    if (isAuthenticated && (userId || profile?.user?.id)) {
       connectWebSocket();
     }
     return disconnectWebSocket;
-  }, [connectWebSocket, disconnectWebSocket, userId, auth?.user?.id]);
+  }, [connectWebSocket, disconnectWebSocket, userId, isAuthenticated, profile?.user?.id]);
 
   return {
     isConnected,
-    data,
+    messages,
     discussionData,
     chatData,
     societyData,

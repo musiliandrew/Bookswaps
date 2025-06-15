@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
 import { useWebSocket } from './useWebSocket';
+import debounce from 'lodash/debounce';
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState([]);
@@ -13,16 +14,23 @@ export function useNotifications() {
     page: 1,
     totalPages: 1,
   });
+  const [isFetching, setIsFetching] = useState(false);
 
   const { messages: wsNotifications, isConnected } = useWebSocket('notification');
 
   const getNotifications = useCallback(async (filters = {}, page = 1) => {
+    if (isFetching) {
+      console.log('getNotifications: Already fetching, skipping');
+      return null;
+    }
+    setIsFetching(true);
     setIsLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ page });
       if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
       if (filters.type) params.append('type', filters.type);
+      console.log('Fetching notifications:', params.toString());
       const response = await api.get(`/swaps/notifications/?${params.toString()}`);
       setNotifications(response.data.results || []);
       setPagination({
@@ -39,8 +47,9 @@ export function useNotifications() {
       return null;
     } finally {
       setIsLoading(false);
+      setIsFetching(false);
     }
-  }, []);
+  }, [isFetching]);
 
   const markNotificationRead = useCallback(async (notificationId) => {
     setIsLoading(true);
@@ -62,10 +71,8 @@ export function useNotifications() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!isConnected || !wsNotifications?.length) return;
-
-    wsNotifications.forEach(({ type, message, follow_id }) => {
+  const handleWsNotifications = debounce((notifications) => {
+    notifications.forEach(({ type, message, follow_id }) => {
       if (type === 'notification' && follow_id) {
         setNotifications((prev) => {
           if (prev.some((n) => n.id === follow_id)) return prev;
@@ -74,7 +81,23 @@ export function useNotifications() {
         });
       }
     });
-  }, [wsNotifications, isConnected]);
+  }, 1000);
+
+  useEffect(() => {
+    if (!isConnected || !wsNotifications?.length) return;
+    console.log('Processing WebSocket notifications:', wsNotifications.length);
+    handleWsNotifications(wsNotifications);
+  }, [wsNotifications, isConnected, handleWsNotifications]);
+
+  // Explicit polling
+  useEffect(() => {
+    getNotifications({ is_read: false }); // Initial fetch
+    const interval = setInterval(() => {
+      console.log('Polling notifications');
+      getNotifications({ is_read: false });
+    }, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [getNotifications]);
 
   return {
     getNotifications,

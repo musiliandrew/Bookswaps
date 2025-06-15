@@ -177,8 +177,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_followers_count(self, obj):
+    # Make request access more defensive
+        request = self.context.get('request')
+        force_refresh = request and request.query_params.get('refresh') == 'true'
+        
         redis = get_redis_connection('default')
         cache_key = f'followers_count:{obj.user_id}'
+        
+        if force_refresh:
+            redis.delete(cache_key)
+            
         count = redis.get(cache_key)
         if count is None:
             count = Follows.objects.filter(followed=obj, active=True).count()
@@ -186,8 +194,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return int(count)
 
     def get_following_count(self, obj):
+        # Make request access more defensive
+        request = self.context.get('request')
+        force_refresh = request and request.query_params.get('refresh') == 'true'
+        
         redis = get_redis_connection('default')
         cache_key = f'following_count:{obj.user_id}'
+        
+        if force_refresh:
+            redis.delete(cache_key)
+            
         count = redis.get(cache_key)
         if count is None:
             count = Follows.objects.filter(follower=obj, active=True).count()
@@ -249,36 +265,51 @@ class DeleteAccountSerializer(serializers.Serializer):
         return data
     
 class FollowSerializer(serializers.ModelSerializer):
-    followed_id = serializers.UUIDField(write_only=True)
-    source = serializers.ChoiceField(choices=Follows.FOLLOW_SOURCES, default='Search')
+    followed_id = serializers.UUIDField(write_only=True, required=True)
+    source = serializers.CharField(default='Search', required=False)
 
     class Meta:
         model = Follows
-        fields = ['followed_id', 'source', 'created_at', 'is_mutual']
+        fields = ['followed_id', 'source']
         read_only_fields = ['created_at', 'is_mutual']
 
-    def validate_followed_id(self, value):
+    def validate(self, attrs):
         user = self.context['request'].user
-        if not CustomUser.objects.filter(user_id=value).exists():
-            raise serializers.ValidationError("User does not exist.")
-        if value == user.user_id:
-            raise serializers.ValidationError("Cannot follow yourself.")
-        return value
+        followed_id = attrs.get('followed_id')
+        
+        try:
+            followed = CustomUser.objects.get(user_id=followed_id)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"followed_id": "User does not exist."})
+        
+        if followed_id == user.user_id:
+            raise serializers.ValidationError({"followed_id": "Cannot follow yourself."})
+            
+        attrs['followed'] = followed
+        return attrs
 
     def create(self, validated_data):
         follower = self.context['request'].user
-        followed = CustomUser.objects.get(user_id=validated_data['followed_id'])
+        followed = validated_data['followed']
+        source = validated_data.get('source', 'Search')
+        
+        # Check if follow relationship already exists (active or inactive)
         follow, created = Follows.objects.get_or_create(
             follower=follower,
             followed=followed,
-            defaults={'source': validated_data['source'], 'active': True}
+            defaults={
+                'source': source,
+                'active': True
+            }
         )
-        if not created and not follow.active:
-            follow.active = True
-            follow.source = validated_data['source']
-            follow.save()
+        
+        if not created:
+            if not follow.active:
+                follow.active = True
+                follow.source = source
+                follow.save()
+        
         return follow
-
 class UserSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser

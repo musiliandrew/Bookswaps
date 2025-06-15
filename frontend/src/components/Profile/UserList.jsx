@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const UserList = ({ users, onViewProfile, onFollow, onUnfollow, userFollowStatuses, isLoading }) => {
+const UserList = ({ users, onViewProfile, onFollow, onUnfollow, onRemoveFollower, userFollowStatuses, isLoading, listType }) => {
   if (isLoading) {
     return <p className="text-[var(--text)] text-center">Loading...</p>;
   }
@@ -12,6 +12,8 @@ const UserList = ({ users, onViewProfile, onFollow, onUnfollow, userFollowStatus
     <div className="space-y-3">
       {users.map((user) => {
         const followStatus = userFollowStatuses[user.user_id] || { is_following: false, is_mutual: false };
+        const isFollowerList = listType === 'followers' || listType === 'mutual';
+        
         return (
           <motion.div
             key={user.user_id}
@@ -40,16 +42,26 @@ const UserList = ({ users, onViewProfile, onFollow, onUnfollow, userFollowStatus
                 <p className="text-xs text-[var(--secondary)]">{user.city || 'Unknown'}</p>
               </div>
             </div>
-            <button
-              onClick={() =>
-                followStatus.is_following
-                  ? onUnfollow(user.user_id)
-                  : onFollow(user.user_id, 'Connections')
-              }
-              className="bookish-button-enhanced px-4 py-2 rounded-lg text-[var(--secondary)] text-xs font-['Open_Sans']"
-            >
-              {followStatus.is_following ? 'Unfollow' : 'Follow'}
-            </button>
+            <div className="flex gap-2">
+              {isFollowerList && (
+                <button
+                  onClick={() => onRemoveFollower(user.user_id)}
+                  className="bookish-button-enhanced px-4 py-2 rounded-lg text-[var(--secondary)] text-xs font-['Open_Sans']"
+                >
+                  Remove
+                </button>
+              )}
+              <button
+                onClick={() =>
+                  followStatus.is_following
+                    ? onUnfollow(user.user_id)
+                    : onFollow(user.user_id, 'Connections')
+                }
+                className="bookish-button-enhanced px-4 py-2 rounded-lg text-[var(--secondary)] text-xs font-['Open_Sans']"
+              >
+                {followStatus.is_following ? 'Unfollow' : isFollowerList ? 'Follow Back' : 'Follow'}
+              </button>
+            </div>
           </motion.div>
         );
       })}

@@ -80,6 +80,7 @@ class CustomTokenRefreshView(APIView):
                 {'detail': 'Error processing token', 'code': 'token_error'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -89,16 +90,20 @@ class LoginView(APIView):
         safe_data = request.data.copy()
         safe_data.pop('password', None)
         logger.info(f"Login request data: {safe_data}")
+        
         serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
+        
         logger.info(f"Generated tokens for user {user.username}: user_id={user.user_id}")
         return Response({
             "user_id": str(user.user_id),
             "username": user.username,
             "access_token": str(refresh.access_token),
-            "refresh_token": str(refresh)
+            "refresh_token": str(refresh),
+            "token": str(refresh.access_token),  # For backward compatibility
+            "refresh": str(refresh)             # For backward compatibility
         }, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
@@ -114,7 +119,6 @@ class LogoutView(APIView):
             return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
         except TokenError:
             return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
@@ -141,7 +145,6 @@ class PasswordResetRequestView(APIView):
                 return Response({"error": f"Failed to send email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": "Reset link sent"}, status=status.HTTP_200_OK)
 
-
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
@@ -161,7 +164,6 @@ class PasswordResetConfirmView(APIView):
             user.save()
             return Response({"message": "Password updated"}, status=status.HTTP_200_OK)
         return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class UserProfileView(APIView):
     permission_classes = [AllowAny]
@@ -191,7 +193,7 @@ class UpdateProfileView(APIView):
             logger.debug(f"Profile request headers: {request.headers}")
         try:
             user = request.user
-            serializer = UserProfileSerializer(user)
+            serializer = UserProfileSerializer(user, context={'request': request})  # Add request to context
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Profile request failed: {str(e)}")
@@ -199,7 +201,12 @@ class UpdateProfileView(APIView):
 
     def patch(self, request):
         user = request.user
-        serializer = UpdateProfileSerializer(user, data=request.data, partial=True)
+        serializer = UpdateProfileSerializer(
+            user, 
+            data=request.data, 
+            partial=True,
+            context={'request': request}  # Add request to context
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -240,47 +247,135 @@ class FollowUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
-        serializer = FollowSerializer(
-            data={'followed_id': user_id, 'source': request.data.get('source', 'Search')},
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        follow = serializer.save()
-        channel_layer = get_channel_layer()
-        if channel_layer:
-            async_to_sync(channel_layer.group_send)(
-                f"user_{follow.followed.user_id}",
-                {
-                    'type': 'notification',
-                    'message': f"{request.user.username} started following you",
-                    'follow_id': str(follow.follow_id),
-                    'user_id': str(follow.followed.user_id)
-                }
+        try:
+            followed_user = CustomUser.objects.get(user_id=user_id)
+            
+            serializer = FollowSerializer(
+                data={
+                    'followed_id': user_id,
+                    'source': request.data.get('source', 'Search')
+                },
+                context={'request': request}
             )
-        else:
-            print("Warning: Channel layer not available, skipping WebSocket notification")
-        return Response({
-            "follow_id": str(follow.follow_id),
-            "follower": request.user.username,
-            "followed": follow.followed.username,
-            "is_mutual": follow.is_mutual
-        }, status=status.HTTP_201_CREATED)
-
+            serializer.is_valid(raise_exception=True)
+            
+            follow = serializer.save()
+            
+            # Invalidate cache for both users
+            redis = get_redis_connection('default')
+            redis.delete(f'followers_count:{followed_user.user_id}')
+            redis.delete(f'following_count:{request.user.user_id}')
+            
+            # WebSocket notification
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{follow.followed.user_id}",
+                    {
+                        'type': 'notification',
+                        'message': f"{request.user.username} started following you",
+                        'follow_id': str(follow.follow_id),
+                        'user_id': str(follow.followed.user_id)
+                    }
+                )
+            
+            return Response({
+                "follow_id": str(follow.follow_id),
+                "follower": request.user.username,
+                "followed": follow.followed.username,
+                "is_mutual": follow.is_mutual,
+                "followers_count": Follows.objects.filter(followed=followed_user, active=True).count(),
+                "following_count": Follows.objects.filter(follower=request.user, active=True).count()
+            }, status=status.HTTP_201_CREATED)
+            
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error in FollowUserView: {str(e)}")
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 class UnfollowUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, user_id):
         try:
             followed_user = CustomUser.objects.get(user_id=user_id)
+            follow = Follows.objects.filter(
+                follower=request.user, 
+                followed=followed_user, 
+                active=True
+            ).first()
+            
+            if not follow:
+                return Response(
+                    {"detail": "You are not following this user"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            follow.active = False
+            follow.save()
+            
+            # Update mutual status for reverse follow if it exists
+            reverse_follow = Follows.objects.filter(
+                follower=followed_user,
+                followed=request.user,
+                active=True
+            ).first()
+            
+            if reverse_follow:
+                reverse_follow.is_mutual = False
+                reverse_follow.save(update_fields=['is_mutual'])
+            
+            # Invalidate cache
+            redis = get_redis_connection('default')
+            redis.delete(f'followers_count:{followed_user.user_id}')
+            redis.delete(f'following_count:{request.user.user_id}')
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
         except CustomUser.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        follow = Follows.objects.filter(follower=request.user, followed=followed_user, active=True).first()
-        if not follow:
-            return Response({"detail": "You are not following this user"}, status=status.HTTP_400_BAD_REQUEST)
-        follow.active = False
-        follow.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
+class RemoveFollowerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, user_id):
+        try:
+            follower_user = CustomUser.objects.get(user_id=user_id)
+            follow = Follows.objects.filter(
+                follower=follower_user,
+                followed=request.user,
+                active=True
+            ).first()
+            
+            if not follow:
+                return Response(
+                    {"detail": "This user is not following you"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            follow.active = False
+            follow.save()
+            
+            # Update mutual status for reverse follow if it exists
+            reverse_follow = Follows.objects.filter(
+                follower=request.user,
+                followed=follower_user,
+                active=True
+            ).first()
+            
+            if reverse_follow:
+                reverse_follow.is_mutual = False
+                reverse_follow.save(update_fields=['is_mutual'])
+            
+            # Invalidate cache
+            redis = get_redis_connection('default')
+            redis.delete(f'followers_count:{request.user.user_id}')
+            redis.delete(f'following_count:{follower_user.user_id}')
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class CustomPagination(PageNumberPagination):
     page_size = 10
@@ -309,7 +404,6 @@ class FollowersFollowingView(APIView):
         result_page = paginator.paginate_queryset(users, request)
         serializer = UserSearchSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
-
 
 class FollowStatusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -387,31 +481,62 @@ class SearchUsersView(APIView):
         query = request.GET.get('q', '').strip()
         if not query:
             return Response([], status=status.HTTP_200_OK)
+        
         redis = get_redis_connection('default')
-        cache_key = f"search_users:{query.lower()}"
+        cache_key = f"search_users:{request.user.user_id}:{query.lower()}"
         cached = redis.get(cache_key)
+        
         if cached:
             return Response(json.loads(cached), status=status.HTTP_200_OK)
+            
         users = CustomUser.objects.filter(
-            Q(username__icontains=query) | Q(city__icontains=query) | Q(genres__contains=query),
-            profile_public=True, is_active=True
-        ).exclude(user_id=request.user.user_id)[:10]
-        serializer = UserSearchSerializer(users, many=True)
+            Q(username__icontains=query) | 
+            Q(city__icontains=query) | 
+            Q(genres__contains=query),
+            profile_public=True, 
+            is_active=True
+        ).exclude(user_id=request.user.user_id).order_by('username')[:10]
+        
+        serializer = UserSearchSerializer(users, many=True, context={'request': request})
         redis.setex(cache_key, 300, json.dumps(serializer.data))
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data),
+            'next': None,
+            'previous': None
+        }, status=status.HTTP_200_OK)
 
 class RecommendedUsersView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        # Get IDs of users the current user is already following
+        following_ids = Follows.objects.filter(
+            follower=user,
+            active=True
+        ).values_list('followed__user_id', flat=True)
+        
         recommended = CustomUser.objects.filter(
-            Q(genres__overlap=user.genres) | Q(city=user.city) | Q(profile_public=True),
+            Q(genres__overlap=user.genres) | Q(city=user.city),
+            profile_public=True,
             is_active=True
-        ).exclude(user_id=user.user_id).distinct()[:5]
+        ).exclude(
+            user_id__in=following_ids  # Exclude already followed users
+        ).exclude(
+            user_id=user.user_id  # Exclude self
+        ).distinct()[:5]
+        
         if not recommended:
+            # Fallback to random public users if no recommendations
             recommended = CustomUser.objects.filter(
-                profile_public=True, is_active=True
-            ).exclude(user_id=user.user_id).distinct()[:5]
+                profile_public=True,
+                is_active=True
+            ).exclude(
+                user_id__in=following_ids
+            ).exclude(
+                user_id=user.user_id
+            ).order_by('?')[:5]  # Random order
+            
         serializer = UserSearchSerializer(recommended, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

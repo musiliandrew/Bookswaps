@@ -12,12 +12,6 @@ export function useUsers() {
   const [followStatus, setFollowStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    followers: { next: null, previous: null, page: 1, totalPages: 1 },
-    following: { next: null, previous: null, page: 1, totalPages: 1 },
-    search: { next: null, previous: null, page: 1, totalPages: 1 },
-    recommended: { next: null, previous: null, page: 1, totalPages: 1 },
-  });
 
   const { notifications, isWebSocketConnected } = useNotifications();
 
@@ -42,12 +36,18 @@ export function useUsers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/users/follow/${userId}/`, { source });
-      setFollowStatus({ user_id: userId, is_following: true });
+      const response = await api.post(`/users/follow/${userId}/`, {
+        followed_id: userId,
+        source,
+      });
+      setFollowStatus((prev) => ({
+        ...prev,
+        [userId]: { is_following: true, is_mutual: response.data.is_mutual },
+      }));
       toast.success('User followed!');
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to follow user';
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to follow user';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
@@ -61,11 +61,36 @@ export function useUsers() {
     setError(null);
     try {
       await api.delete(`/users/unfollow/${userId}/`);
-      setFollowStatus({ user_id: userId, is_following: false });
+      setFollowStatus((prev) => ({
+        ...prev,
+        [userId]: { is_following: false, is_mutual: false },
+      }));
       toast.success('User unfollowed!');
       return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to unfollow user';
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to unfollow user';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const removeFollower = useCallback(async (userId) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/users/remove-follower/${userId}/`);
+      setFollowers((prev) => prev.filter((follower) => follower.user_id !== userId));
+      setFollowStatus((prev) => ({
+        ...prev,
+        [userId]: { is_following: false, is_mutual: false },
+      }));
+      toast.success('Follower removed!');
+      return true;
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || 'Failed to remove follower';
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -97,16 +122,12 @@ export function useUsers() {
     try {
       const response = await api.get(`/users/followers/${userId}/?page=${page}`);
       setFollowers(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        followers: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
+      return {
+        results: response.data.results || [],
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count || 0,
+      };
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch followers';
       setError(errorMessage);
@@ -123,16 +144,12 @@ export function useUsers() {
     try {
       const response = await api.get(`/users/following/${userId}/?page=${page}`);
       setFollowing(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        following: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
+      return {
+        results: response.data.results || [],
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count || 0,
+      };
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch following';
       setError(errorMessage);
@@ -148,19 +165,20 @@ export function useUsers() {
     setError(null);
     try {
       const response = await api.get(`/users/recommended/?page=${page}`);
-      console.log('Recommended users response:', response.data); // Debug log
-      const results = response.data.results || [];
+      let results, next, previous, count;
+      if (Array.isArray(response.data)) {
+        results = response.data;
+        next = null;
+        previous = null;
+        count = response.data.length;
+      } else {
+        results = response.data.results || [];
+        next = response.data.next;
+        previous = response.data.previous;
+        count = response.data.count || 0;
+      }
       setRecommendedUsers(results);
-      setPagination((prev) => ({
-        ...prev,
-        recommended: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil((response.data.count || results.length || 0) / (results.length || 1)),
-        },
-      }));
-      return response.data;
+      return { results, next, previous, count };
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch recommended users';
       setError(errorMessage);
@@ -175,21 +193,20 @@ export function useUsers() {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page });
-      if (filters.query) params.append('q', filters.query);
+      const params = new URLSearchParams();
+      params.append('page', page);
+      if (filters.query) params.append('q', filters.query.trim());
       if (filters.genres?.length) params.append('genres', filters.genres.join(','));
+
       const response = await api.get(`/users/search/?${params.toString()}`);
-      setSearchResults(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        search: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
+      const responseData = {
+        results: Array.isArray(response.data) ? response.data : response.data.results || [],
+        count: response.data.count || response.data.length || 0,
+        next: response.data.next || null,
+        previous: response.data.previous || null,
+      };
+      setSearchResults(responseData.results);
+      return responseData;
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to search users';
       setError(errorMessage);
@@ -218,6 +235,7 @@ export function useUsers() {
     getUserProfile,
     followUser,
     unfollowUser,
+    removeFollower,
     getFollowStatus,
     getFollowers,
     getFollowing,
@@ -228,9 +246,9 @@ export function useUsers() {
     following,
     recommendedUsers,
     searchResults,
+    setSearchResults, // Added to allow clearing search results
     followStatus,
     isLoading,
     error,
-    pagination,
   };
 }
