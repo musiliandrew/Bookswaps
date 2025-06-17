@@ -19,7 +19,7 @@ const ProfilePage = () => {
       navigate('/');
       return;
     }
-    if (!profile && !authLoading) { // Only call if profile is null and not loading
+    if (!profile && !authLoading) {
       getProfile();
     }
   }, [isAuthenticated, navigate, getProfile, profile, authLoading]);
@@ -42,10 +42,11 @@ const ProfilePage = () => {
     { id: 'settings', label: 'Settings', icon: <Cog6ToothIcon className="w-4 h-4" /> },
   ];
 
-  if (authLoading) {
+  if (authLoading || !profile) {
     return (
       <div className="flex justify-center items-center h-screen bg-bookish-gradient">
         <div className="bookish-spinner w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+        <span className="ml-3 text-lg">Loading profile...</span>
       </div>
     );
   }

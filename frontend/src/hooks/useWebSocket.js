@@ -91,7 +91,7 @@ export function useWebSocket(userId = null, type = 'notification') {
     wsRef.current.onclose = () => {
       setIsConnected(false);
       if (reconnectAttempts.current < maxReconnectAttempts) {
-        const delay = reconnectInterval * Math.pow(2, reconnectAttempts.current); // Exponential backoff
+        const delay = reconnectInterval * Math.pow(2, reconnectAttempts.current);
         console.log(`WebSocket closed, attempting reconnect ${reconnectAttempts.current + 1}/${maxReconnectAttempts} in ${delay}ms`);
         setTimeout(connectWebSocket, delay);
         reconnectAttempts.current += 1;

@@ -10,10 +10,8 @@ const NotificationBadge = ({ className = '' }) => {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   useEffect(() => {
-    if (unreadCount === 0) {
-      getNotifications({ is_read: false });
-    }
-  }, [getNotifications, unreadCount]);
+    getNotifications({ is_read: false }); // Fetch only on mount
+  }, [getNotifications]);
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);

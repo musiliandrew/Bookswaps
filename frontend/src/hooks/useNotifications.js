@@ -14,19 +14,19 @@ export function useNotifications() {
     page: 1,
     totalPages: 1,
   });
-  const { messages: wsNotifications, isConnected } = useWebSocket('notification');
+  const { isConnected } = useWebSocket('notification');
 
   // Use useRef to store the debounced function
   const debouncedGetNotificationsRef = useRef(
     debounce(
       async (filters = {}, page = 1, { setIsLoading, setError, setNotifications, setPagination }) => {
+        console.log('Fetching notifications:', filters, page);
         setIsLoading(true);
         setError(null);
         try {
           const params = new URLSearchParams({ page });
           if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
           if (filters.type) params.append('type', filters.type);
-          console.log('Fetching notifications:', params.toString());
           const response = await api.get(`/swaps/notifications/?${params.toString()}`);
           setNotifications(response.data.results || []);
           setPagination({
@@ -45,7 +45,7 @@ export function useNotifications() {
           setIsLoading(false);
         }
       },
-      500,
+      1000, // Increase debounce to 1000ms
       { leading: false, trailing: true }
     )
   );
@@ -84,32 +84,9 @@ export function useNotifications() {
   }, []);
 
   // Memoized WebSocket notification handler
-  const handleWsNotifications = useCallback(
-    (notifications) => {
-      debounce((notifications) => {
-        notifications.forEach(({ type, message, follow_id }) => {
-          if (type === 'notification' && follow_id) {
-            setNotifications((prev) => {
-              if (prev.some((n) => n.id === follow_id)) return prev;
-              toast.info(`New notification: ${message}`);
-              return [{ id: follow_id, message, is_read: false }, ...prev];
-            });
-          }
-        });
-      }, 1000)(notifications);
-    },
-    []
-  );
+  // (Removed unused handleWsNotifications)
 
   useEffect(() => {
-    if (!isConnected || !wsNotifications?.length) return;
-    console.log('Processing WebSocket notifications:', wsNotifications.length);
-    handleWsNotifications(wsNotifications);
-  }, [wsNotifications, isConnected, handleWsNotifications]);
-
-  // Polling effect (only when WebSocket is disconnected)
-  useEffect(() => {
-    // Capture the ref value at the beginning of the effect
     const debouncedFn = debouncedGetNotificationsRef.current;
     
     if (isConnected) {
@@ -122,7 +99,7 @@ export function useNotifications() {
     const interval = setInterval(() => {
       console.log('Polling notifications');
       getNotifications({ is_read: false });
-    }, 30000); // Increased polling interval to 30 seconds
+    }, 60000); // Increase to 60 seconds
 
     return () => {
       clearInterval(interval);

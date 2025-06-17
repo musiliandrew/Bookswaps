@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
-import debounce from 'lodash/debounce';
 
 export function useAuth() {
   const [profile, setProfile] = useState(null);
@@ -11,6 +10,7 @@ export function useAuth() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const navigate = useNavigate();
+  const abortControllerRef = useRef(null);
 
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('access_token');
@@ -38,44 +38,63 @@ export function useAuth() {
     }
   }, [clearAuthState]);
 
-  const getProfile = useMemo(
-    () => debounce(async () => {
-      const cachedProfile = localStorage.getItem('user_profile');
-      if (cachedProfile) {
-        const parsedProfile = JSON.parse(cachedProfile);
-        setProfile(parsedProfile);
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return parsedProfile;
-      }
+  const getProfile = useCallback(async () => {
+    console.log('Fetching profile...');
+    const cachedProfile = localStorage.getItem('user_profile');
+    if (cachedProfile) {
+      const parsedProfile = JSON.parse(cachedProfile);
+      console.log('Using cached profile:', parsedProfile);
+      setProfile(parsedProfile);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return parsedProfile;
+    }
 
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setIsLoading(false);
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      setIsLoading(false);
+      setIsAuthenticated(false);
+      navigate('/login', { replace: true });
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+    
+    try {
+      const response = await api.get('/users/me/profile/', {
+        signal: abortControllerRef.current.signal
+      });
+      console.log('Profile fetched:', response.data);
+      setProfile(response.data);
+      localStorage.setItem('user_profile', JSON.stringify(response.data));
+      setIsAuthenticated(true);
+      return response.data;
+    } catch (err) {
+      // Don't handle error if request was aborted
+      if (err.name === 'AbortError') {
+        console.log('Profile fetch aborted');
         return null;
       }
-
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await api.get('/users/me/profile/');
-        setProfile(response.data);
-        localStorage.setItem('user_profile', JSON.stringify(response.data));
-        setIsAuthenticated(true);
-        return response.data;
-      } catch (err) {
-        const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
-        setError(errorMessage);
-        if (err.response?.status !== 401) {
-          toast.error(errorMessage);
-        }
-        return null;
-      } finally {
-        setIsLoading(false);
+      
+      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+      console.error('Profile fetch error:', errorMessage);
+      setError(errorMessage);
+      if (err.response?.status === 401) {
+        clearAuthState();
+        navigate('/login', { replace: true });
+      } else {
+        toast.error(errorMessage);
       }
-    }, 1000),
-    []
-  );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigate, clearAuthState]);
 
   const checkAuthStatus = useCallback(async () => {
     setIsLoading(true);
@@ -143,9 +162,13 @@ export function useAuth() {
     return () => {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
-      getProfile.cancel();
+      
+      // Cancel any ongoing profile fetch request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [checkAuthStatus, refreshToken, clearAuthState, getProfile]);
+  }, [checkAuthStatus, refreshToken, clearAuthState]);
 
   const login = useCallback(async (credentials) => {
     setIsLoading(true);
@@ -155,6 +178,7 @@ export function useAuth() {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+      setIsAuthenticated(true); // Set immediately after successful login
       await getProfile();
       toast.success('Logged in successfully!');
       navigate('/profile/me', { replace: true });
