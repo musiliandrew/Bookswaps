@@ -10,8 +10,10 @@ const NotificationBadge = ({ className = '' }) => {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   useEffect(() => {
-    getNotifications({ is_read: false });
-  }, [getNotifications]);
+    if (unreadCount === 0) {
+      getNotifications({ is_read: false });
+    }
+  }, [getNotifications, unreadCount]);
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);

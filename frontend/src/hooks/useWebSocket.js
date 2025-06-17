@@ -11,7 +11,7 @@ export function useWebSocket(userId = null, type = 'notification') {
   const wsRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const reconnectInterval = 15000; // Increased to 15s
+  const reconnectInterval = 30000; // Increased to 15s
   const { isAuthenticated, profile } = useAuth();
   const messageBuffer = useRef([]); // Buffer messages to batch updates
   const bufferTimeout = useRef(null);
@@ -24,26 +24,34 @@ export function useWebSocket(userId = null, type = 'notification') {
   }, []);
 
   const connectWebSocket = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected, skipping');
+      return;
+    }
+    
     if (reconnectAttempts.current >= maxReconnectAttempts) {
       toast.error('Max WebSocket reconnection attempts reached');
       return;
     }
+    
     if (!isAuthenticated || !profile?.user?.id) {
       console.log('WebSocket: Skipping connection, not authenticated or no user ID');
       return;
     }
+    
     const wsUrl = `${import.meta.env.VITE_WS_URL}/${type}/${userId || profile?.user?.id}/`;
     wsRef.current = new WebSocket(wsUrl);
-
+    
     wsRef.current.onopen = () => {
       setIsConnected(true);
       reconnectAttempts.current = 0;
       console.log(`WebSocket connected for ${type}`);
     };
-
+    
     wsRef.current.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        
         if (type === 'discussion') {
           setDiscussionData((prev) => ({
             notes: message.type === 'note_added' ? [...prev.notes, message.note] : prev.notes,
@@ -67,6 +75,7 @@ export function useWebSocket(userId = null, type = 'notification') {
         } else {
           messageBuffer.current.push(message);
         }
+        
         // Batch updates every 500ms
         if (!bufferTimeout.current) {
           bufferTimeout.current = setTimeout(() => {
@@ -78,19 +87,40 @@ export function useWebSocket(userId = null, type = 'notification') {
         console.error('WebSocket message error:', err);
       }
     };
-
+    
     wsRef.current.onclose = () => {
       setIsConnected(false);
-      reconnectAttempts.current += 1;
-      console.log(`WebSocket closed, attempting reconnect ${reconnectAttempts.current}/${maxReconnectAttempts}`);
-      setTimeout(connectWebSocket, reconnectInterval);
+      if (reconnectAttempts.current < maxReconnectAttempts) {
+        const delay = reconnectInterval * Math.pow(2, reconnectAttempts.current); // Exponential backoff
+        console.log(`WebSocket closed, attempting reconnect ${reconnectAttempts.current + 1}/${maxReconnectAttempts} in ${delay}ms`);
+        setTimeout(connectWebSocket, delay);
+        reconnectAttempts.current += 1;
+      } else {
+        toast.error('WebSocket connection failed after max retries');
+      }
     };
-
+    
     wsRef.current.onerror = (error) => {
       console.error('WebSocket error:', error);
-      wsRef.current?.close();
+      setIsConnected(false);
+      toast.error('WebSocket connection error, attempting to reconnect...');
+      if (wsRef.current.readyState !== WebSocket.OPEN) {
+        wsRef.current?.close();
+      }
     };
-  }, [userId, isAuthenticated, profile?.user?.id, type, flushBuffer]);
+  }, [
+    userId, 
+    isAuthenticated, 
+    profile?.user?.id, 
+    type, 
+    flushBuffer,
+    maxReconnectAttempts,        // Added: used in condition check
+    setIsConnected,              // Added: used in onopen and onclose
+    setDiscussionData,           // Added: used in onmessage for discussion type
+    setChatData,                 // Added: used in onmessage for chat type
+    setSocietyData,              // Added: used in onmessage for society type
+  reconnectInterval            // Added: used in exponential backoff calculation
+]);
 
   const disconnectWebSocket = useCallback(() => {
     if (wsRef.current) {

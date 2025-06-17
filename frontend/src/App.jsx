@@ -35,55 +35,60 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Navbar with fixed positioning */}
+      {/* Navbar with fixed positioning - only show when authenticated */}
       {isAuthenticated && (
         <div className="fixed top-0 left-0 right-0 z-50">
           <Navbar isSmallScreen={isSmallScreen} />
         </div>
       )}
-      
+
       {/* Main content with padding to account for navbar */}
       <main className={`flex-grow ${isAuthenticated ? 'pt-16' : ''}`}>
         <Routes>
-          <Route 
-            path="/" 
-            element={isAuthenticated ? <Navigate to="/profile/me" /> : <HomePage />} 
+          {/* Public Routes (Unauthenticated Users) */}
+          <Route
+            path="/"
+            element={isAuthenticated ? <Navigate to="/profile/me" replace /> : <HomePage />}
           />
-          <Route 
-            path="/login" 
-            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/profile/me" />} 
+          <Route
+            path="/login"
+            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/profile/me" replace />}
           />
-          <Route 
-            path="/register" 
-            element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/profile/me" />} 
+          <Route
+            path="/register"
+            element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/profile/me" replace />}
           />
-          <Route 
-            path="/password-reset/:token?" 
-            element={!isAuthenticated ? <PasswordResetPage /> : <Navigate to="/profile/me" />} 
+          <Route
+            path="/password-reset/:token?"
+            element={!isAuthenticated ? <PasswordResetPage /> : <Navigate to="/profile/me" replace />}
           />
-          <Route 
-            path="/library" 
-            element={isAuthenticated ? <LibraryPage /> : <Navigate to="/" />} 
+
+          {/* Protected Routes (Authenticated Users) */}
+          <Route
+            path="/profile/me"
+            element={isAuthenticated ? <ProfilePage /> : <Navigate to="/" replace />}
           />
-          <Route 
-            path="/profile/me" 
-            element={isAuthenticated ? <ProfilePage /> : <Navigate to="/" />} 
+          <Route
+            path="/library"
+            element={isAuthenticated ? <LibraryPage /> : <Navigate to="/" replace />}
           />
-          <Route 
-            path="/socials" 
-            element={isAuthenticated ? <SocialsPage /> : <Navigate to="/" />} 
+          <Route
+            path="/socials"
+            element={isAuthenticated ? <SocialsPage /> : <Navigate to="/" replace />}
           />
-          <Route 
-            path="/notifications" 
-            element={isAuthenticated ? <NotificationsPage /> : <Navigate to="/" />} 
+          <Route
+            path="/notifications"
+            element={isAuthenticated ? <NotificationsPage /> : <Navigate to="/" replace />}
           />
-          <Route 
-            path="*" 
-            element={<Navigate to={isAuthenticated ? "/profile/me" : "/"} />} 
+
+          {/* Catch-all route */}
+          <Route
+            path="*"
+            element={<Navigate to={isAuthenticated ? "/profile/me" : "/"} replace />}
           />
         </Routes>
       </main>
-      
+
       <ToastContainer
         position="top-right"
         autoClose={3000}

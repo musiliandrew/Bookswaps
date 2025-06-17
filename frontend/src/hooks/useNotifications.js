@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
 import { useWebSocket } from './useWebSocket';
@@ -14,42 +14,54 @@ export function useNotifications() {
     page: 1,
     totalPages: 1,
   });
-  const [isFetching, setIsFetching] = useState(false);
-
   const { messages: wsNotifications, isConnected } = useWebSocket('notification');
 
-  const getNotifications = useCallback(async (filters = {}, page = 1) => {
-    if (isFetching) {
-      console.log('getNotifications: Already fetching, skipping');
-      return null;
-    }
-    setIsFetching(true);
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page });
-      if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
-      if (filters.type) params.append('type', filters.type);
-      console.log('Fetching notifications:', params.toString());
-      const response = await api.get(`/swaps/notifications/?${params.toString()}`);
-      setNotifications(response.data.results || []);
-      setPagination({
-        next: response.data.next,
-        previous: response.data.previous,
-        page,
-        totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+  // Use useRef to store the debounced function
+  const debouncedGetNotificationsRef = useRef(
+    debounce(
+      async (filters = {}, page = 1, { setIsLoading, setError, setNotifications, setPagination }) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const params = new URLSearchParams({ page });
+          if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
+          if (filters.type) params.append('type', filters.type);
+          console.log('Fetching notifications:', params.toString());
+          const response = await api.get(`/swaps/notifications/?${params.toString()}`);
+          setNotifications(response.data.results || []);
+          setPagination({
+            next: response.data.next,
+            previous: response.data.previous,
+            page,
+            totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
+          });
+          return response.data;
+        } catch (err) {
+          const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch notifications';
+          setError(errorMessage);
+          toast.error(errorMessage);
+          return null;
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      500,
+      { leading: false, trailing: true }
+    )
+  );
+
+  // Memoized getNotifications function
+  const getNotifications = useCallback(
+    (filters = {}, page = 1) => {
+      return debouncedGetNotificationsRef.current(filters, page, {
+        setIsLoading,
+        setError,
+        setNotifications,
+        setPagination,
       });
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch notifications';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-      setIsFetching(false);
-    }
-  }, [isFetching]);
+    },
+    []
+  );
 
   const markNotificationRead = useCallback(async (notificationId) => {
     setIsLoading(true);
@@ -71,17 +83,23 @@ export function useNotifications() {
     }
   }, []);
 
-  const handleWsNotifications = debounce((notifications) => {
-    notifications.forEach(({ type, message, follow_id }) => {
-      if (type === 'notification' && follow_id) {
-        setNotifications((prev) => {
-          if (prev.some((n) => n.id === follow_id)) return prev;
-          toast.info(`New notification: ${message}`);
-          return [{ id: follow_id, message, is_read: false }, ...prev];
+  // Memoized WebSocket notification handler
+  const handleWsNotifications = useCallback(
+    (notifications) => {
+      debounce((notifications) => {
+        notifications.forEach(({ type, message, follow_id }) => {
+          if (type === 'notification' && follow_id) {
+            setNotifications((prev) => {
+              if (prev.some((n) => n.id === follow_id)) return prev;
+              toast.info(`New notification: ${message}`);
+              return [{ id: follow_id, message, is_read: false }, ...prev];
+            });
+          }
         });
-      }
-    });
-  }, 1000);
+      }, 1000)(notifications);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!isConnected || !wsNotifications?.length) return;
@@ -89,15 +107,42 @@ export function useNotifications() {
     handleWsNotifications(wsNotifications);
   }, [wsNotifications, isConnected, handleWsNotifications]);
 
-  // Explicit polling
+  // Polling effect (only when WebSocket is disconnected)
   useEffect(() => {
+    // Capture the ref value at the beginning of the effect
+    const debouncedFn = debouncedGetNotificationsRef.current;
+    
+    if (isConnected) {
+      console.log('WebSocket connected, skipping polling');
+      getNotifications({ is_read: false }); // Initial fetch
+      return;
+    }
+
     getNotifications({ is_read: false }); // Initial fetch
     const interval = setInterval(() => {
       console.log('Polling notifications');
       getNotifications({ is_read: false });
-    }, 10000); // Poll every 10s
-    return () => clearInterval(interval);
-  }, [getNotifications]);
+    }, 30000); // Increased polling interval to 30 seconds
+
+    return () => {
+      clearInterval(interval);
+      if (debouncedFn) {
+        debouncedFn.cancel();
+      }
+    };
+  }, [getNotifications, isConnected]);
+
+  // Clean up debounced function on unmount
+  useEffect(() => {
+    // Capture the ref value at the beginning of the effect
+    const debouncedFn = debouncedGetNotificationsRef.current;
+    
+    return () => {
+      if (debouncedFn) {
+        debouncedFn.cancel();
+      }
+    };
+  }, []);
 
   return {
     getNotifications,

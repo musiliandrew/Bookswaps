@@ -10,6 +10,7 @@ import DiscussionPost from '../../components/Socials/DiscussionPost';
 import ConversationList from '../../components/Socials/ConversationList';
 import ChatMessages from '../../components/Socials/ChatMessages';
 import SocietyMessages from '../../components/Socials/SocietyMessages';
+import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const SocialsPage = () => {
   const navigate = useNavigate();
@@ -66,6 +67,7 @@ const SocialsPage = () => {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bookish-gradient p-4" {...handlers}>
       {/* Bottom Navbar */}
       <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-[var(--primary)] bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
@@ -120,6 +122,7 @@ const SocialsPage = () => {
         </motion.div>
       </AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 };
 

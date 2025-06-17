@@ -8,7 +8,7 @@ import { useSwaps } from '../../hooks/useSwaps';
 import LibraryList from '../../components/Library/LibraryList';
 import SwapCard from '../../components/Library/SwapCard';
 import SearchBar from '../../components/Library/SearchBar';
-import ErrorMessage from '../../components/Common/ErrorMessage';
+import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const LibraryPage = () => {
   const navigate = useNavigate();
@@ -62,6 +62,7 @@ const LibraryPage = () => {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bookish-gradient p-4" {...handlers}>
       {/* Bottom Navbar */}
       <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-[var(--primary)] bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
@@ -112,6 +113,7 @@ const LibraryPage = () => {
         </motion.div>
       </AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 };
 

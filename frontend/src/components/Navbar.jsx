@@ -46,7 +46,7 @@ const Navbar = ({ isSmallScreen }) => {
             <h1 className="text-4xl font-['Lora'] text-[hsl(49,52%,88%)]">BookSwaps</h1>
           </div>
           <div className="flex items-center space-x-8">
-            {/* Library Text */}
+            {/* Library Link */}
             <motion.div
               className={`navbar-item ${activeTab === '/library' ? 'navbar-item-active' : ''}`}
               onClick={() => navigate('/library')}
@@ -57,10 +57,10 @@ const Navbar = ({ isSmallScreen }) => {
               </span>
             </motion.div>
 
-            {/* Socials Text */}
+            {/* Socials Link - FIXED: Now navigates to /socials instead of / */}
             <motion.div
-              className={`navbar-item ${activeTab === '/' ? 'navbar-item-active' : ''}`}
-              onClick={() => navigate('/')}
+              className={`navbar-item ${activeTab === '/socials' ? 'navbar-item-active' : ''}`}
+              onClick={() => navigate('/socials')}
               whileHover={{ scale: 1.05 }}
             >
               <span className="text-xl font-['Lora'] text-[hsl(49,52%,88%)] cursor-pointer hover:text-[var(--accent)] transition-colors">
@@ -82,6 +82,7 @@ const Navbar = ({ isSmallScreen }) => {
             {/* User Badge */}
             <motion.div
               className={`navbar-item ${activeTab === '/profile/me' ? 'navbar-item-active' : ''}`}
+              onClick={() => navigate('/profile/me')}
               whileHover={{ scale: 1.1 }}
             >
               <UserBadge />

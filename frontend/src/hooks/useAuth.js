@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import debounce from 'lodash/debounce';
 
 export function useAuth() {
   const [profile, setProfile] = useState(null);
@@ -9,23 +10,23 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [isFetchingProfile, setIsFetchingProfile] = useState(false); // New flag
   const navigate = useNavigate();
 
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_profile');
     setIsAuthenticated(false);
     setProfile(null);
   }, []);
 
   const refreshToken = useCallback(async () => {
+    const refresh = localStorage.getItem('refresh_token');
+    if (!refresh) {
+      clearAuthState();
+      return null;
+    }
     try {
-      const refresh = localStorage.getItem('refresh_token');
-      if (!refresh) {
-        clearAuthState();
-        return null;
-      }
       const response = await api.post('/users/token/refresh/', { refresh });
       localStorage.setItem('access_token', response.data.access);
       setIsAuthenticated(true);
@@ -37,99 +38,70 @@ export function useAuth() {
     }
   }, [clearAuthState]);
 
-  const logout = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        await api.post('/users/logout/', { refresh: refreshToken });
+  const getProfile = useMemo(
+    () => debounce(async () => {
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        const parsedProfile = JSON.parse(cachedProfile);
+        setProfile(parsedProfile);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return parsedProfile;
       }
-      clearAuthState();
-      navigate('/');
-      return true;
-    } catch (err) {
-      clearAuthState();
-      setError(err.response?.data?.detail || 'Failed to logout');
-      navigate('/');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate, clearAuthState]);
 
-  const getProfile = useCallback(async () => {
-    if (isFetchingProfile) {
-      console.log('getProfile: Already fetching, skipping');
-      return null;
-    }
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      console.log('getProfile: No access token');
-      return null;
-    }
-    setIsFetchingProfile(true);
-    setIsLoading(true);
-    setError(null);
-    try {
-      console.log('getProfile: Fetching profile...');
-      const response = await api.get('/users/me/profile/');
-      setProfile(response.data);
-      setIsAuthenticated(true);
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
-      console.error('getProfile Error:', errorMessage, err.response?.status);
-      setError(errorMessage);
-      if (err.response?.status !== 401) {
-        toast.error(errorMessage);
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setIsLoading(false);
+        return null;
       }
-      return null;
-    } finally {
-      setIsLoading(false);
-      setIsFetchingProfile(false);
-    }
-  }, [isFetchingProfile]);
+
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await api.get('/users/me/profile/');
+        setProfile(response.data);
+        localStorage.setItem('user_profile', JSON.stringify(response.data));
+        setIsAuthenticated(true);
+        return response.data;
+      } catch (err) {
+        const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+        setError(errorMessage);
+        if (err.response?.status !== 401) {
+          toast.error(errorMessage);
+        }
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    }, 1000),
+    []
+  );
 
   const checkAuthStatus = useCallback(async () => {
     setIsLoading(true);
     const token = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
+
     if (!token && !refresh) {
       setIsAuthenticated(false);
       setIsLoading(false);
       return;
     }
+
     if (!token && refresh) {
       const refreshResult = await refreshToken();
       if (refreshResult) {
         await getProfile();
       } else {
         clearAuthState();
-        navigate('/');
       }
       setIsLoading(false);
       return;
     }
-    try {
-      await getProfile();
-    } catch (err) {
-      if (err.response?.status === 401 && refresh) {
-        const refreshResult = await refreshToken();
-        if (refreshResult) {
-          await getProfile();
-        } else {
-          clearAuthState();
-          navigate('/');
-        }
-      } else {
-        clearAuthState();
-        navigate('/');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshToken, clearAuthState, navigate, getProfile]);
+
+    await getProfile();
+    setIsLoading(false);
+  }, [refreshToken, clearAuthState, getProfile]);
 
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use(
@@ -159,7 +131,6 @@ export function useAuth() {
             return api(originalRequest);
           } else {
             clearAuthState();
-            navigate('/');
             return Promise.reject(err);
           }
         }
@@ -167,15 +138,14 @@ export function useAuth() {
       }
     );
 
+    checkAuthStatus();
+
     return () => {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
+      getProfile.cancel();
     };
-  }, [refreshToken, clearAuthState, navigate]);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+  }, [checkAuthStatus, refreshToken, clearAuthState, getProfile]);
 
   const login = useCallback(async (credentials) => {
     setIsLoading(true);
@@ -187,7 +157,7 @@ export function useAuth() {
       api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
       await getProfile();
       toast.success('Logged in successfully!');
-      navigate('/profile/me');
+      navigate('/profile/me', { replace: true });
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to login';
@@ -221,7 +191,7 @@ export function useAuth() {
       localStorage.setItem('refresh_token', response.data.refresh);
       await getProfile();
       toast.success('Registered successfully!');
-      navigate('/profile/me');
+      navigate('/profile/me', { replace: true });
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to register';
@@ -233,6 +203,26 @@ export function useAuth() {
       setIsLoading(false);
     }
   }, [navigate, getProfile, clearAuthState]);
+
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        await api.post('/users/logout/', { refresh: refreshToken });
+      }
+      clearAuthState();
+      navigate('/', { replace: true });
+      return true;
+    } catch {
+      clearAuthState();
+      navigate('/', { replace: true });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigate, clearAuthState]);
 
   const requestPasswordReset = useCallback(async (data) => {
     setIsLoading(true);
@@ -261,7 +251,7 @@ export function useAuth() {
       await api.post('/users/password/reset/confirm/', data);
       setSuccess('Password reset successfully!');
       toast.success('Password reset successfully!');
-      navigate('/login');
+      navigate('/login', { replace: true });
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to reset password';
@@ -292,6 +282,7 @@ export function useAuth() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setProfile(response.data);
+      localStorage.setItem('user_profile', JSON.stringify(response.data));
       toast.success('Profile updated!');
       return response.data;
     } catch (err) {
@@ -326,6 +317,7 @@ export function useAuth() {
     try {
       const response = await api.patch('/users/me/settings/preferences/', data);
       setProfile((prev) => ({ ...prev, chat_preferences: response.data.chat_preferences }));
+      localStorage.setItem('user_profile', JSON.stringify({ ...profile, chat_preferences: response.data.chat_preferences }));
       toast.success('Chat preferences updated!');
       return response.data;
     } catch (err) {
@@ -336,7 +328,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, profile]);
 
   const deleteAccount = useCallback(async () => {
     if (!isAuthenticated) return false;
@@ -346,7 +338,7 @@ export function useAuth() {
       await api.delete('/users/me/delete/', { data: { confirm: true } });
       clearAuthState();
       toast.success('Account deleted successfully!');
-      navigate('/');
+      navigate('/', { replace: true });
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to delete account';
