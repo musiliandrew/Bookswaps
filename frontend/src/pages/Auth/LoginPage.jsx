@@ -11,7 +11,7 @@ const LoginPage = () => {
   const handleLogin = async (loginCredentials) => {
     const success = await login(loginCredentials);
     if (success) {
-      navigate('/profile/me');
+      navigate('/profile/me', { replace: true });
     }
   };
 

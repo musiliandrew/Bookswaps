@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { jwtDecode } from 'jwt-decode';
 
 export function useAuth() {
   const [profile, setProfile] = useState(null);
@@ -62,7 +63,6 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     
-    // Create new AbortController for this request
     abortControllerRef.current = new AbortController();
     
     try {
@@ -75,7 +75,6 @@ export function useAuth() {
       setIsAuthenticated(true);
       return response.data;
     } catch (err) {
-      // Don't handle error if request was aborted
       if (err.name === 'AbortError') {
         console.log('Profile fetch aborted');
         return null;
@@ -105,6 +104,31 @@ export function useAuth() {
       setIsAuthenticated(false);
       setIsLoading(false);
       return;
+    }
+
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.exp * 1000 < Date.now()) {
+          if (refresh) {
+            const refreshResult = await refreshToken();
+            if (refreshResult) {
+              await getProfile();
+            } else {
+              clearAuthState();
+            }
+          } else {
+            clearAuthState();
+          }
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Invalid token:', err);
+        clearAuthState();
+        setIsLoading(false);
+        return;
+      }
     }
 
     if (!token && refresh) {
@@ -157,18 +181,26 @@ export function useAuth() {
       }
     );
 
+    const handleAuthError = (e) => {
+      if (e.detail.status === 401) {
+        clearAuthState();
+        navigate('/login', { replace: true });
+      }
+    };
+    window.addEventListener('auth:error', handleAuthError);
+
     checkAuthStatus();
 
     return () => {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
+      window.removeEventListener('auth:error', handleAuthError);
       
-      // Cancel any ongoing profile fetch request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [checkAuthStatus, refreshToken, clearAuthState]);
+  }, [checkAuthStatus, refreshToken, clearAuthState, navigate]);
 
   const login = useCallback(async (credentials) => {
     setIsLoading(true);
@@ -178,11 +210,16 @@ export function useAuth() {
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-      setIsAuthenticated(true); // Set immediately after successful login
-      await getProfile();
-      toast.success('Logged in successfully!');
-      navigate('/profile/me', { replace: true });
-      return true;
+      const profileData = await getProfile();
+      if (profileData) {
+        setIsAuthenticated(true);
+        toast.success('Logged in successfully!');
+        return true;
+      } else {
+        clearAuthState();
+        toast.error('Failed to fetch profile after login');
+        return false;
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to login';
       setError(errorMessage);
@@ -192,7 +229,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, getProfile, clearAuthState]);
+  }, [getProfile, clearAuthState]);
 
   const register = useCallback(async (userData) => {
     setIsLoading(true);

@@ -83,35 +83,26 @@ export function useNotifications() {
     }
   }, []);
 
-  // Memoized WebSocket notification handler
-  // (Removed unused handleWsNotifications)
-
   useEffect(() => {
     const debouncedFn = debouncedGetNotificationsRef.current;
-    
-    if (isConnected) {
-      console.log('WebSocket connected, skipping polling');
-      getNotifications({ is_read: false }); // Initial fetch
-      return;
-    }
-
-    getNotifications({ is_read: false }); // Initial fetch
-    const interval = setInterval(() => {
-      console.log('Polling notifications');
+    let interval;
+    if (!isConnected) {
       getNotifications({ is_read: false });
-    }, 60000); // Increase to 60 seconds
-
+      interval = setInterval(() => {
+        console.log('Polling notifications');
+        getNotifications({ is_read: false });
+      }, 60000);
+    } else {
+      getNotifications({ is_read: false });
+    }
     return () => {
-      clearInterval(interval);
-      if (debouncedFn) {
-        debouncedFn.cancel();
-      }
+      if (interval) clearInterval(interval);
+      if (debouncedFn) debouncedFn.cancel();
     };
   }, [getNotifications, isConnected]);
 
   // Clean up debounced function on unmount
   useEffect(() => {
-    // Capture the ref value at the beginning of the effect
     const debouncedFn = debouncedGetNotificationsRef.current;
     
     return () => {

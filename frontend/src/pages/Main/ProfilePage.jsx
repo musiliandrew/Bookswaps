@@ -15,14 +15,13 @@ const ProfilePage = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !authLoading) {
       navigate('/');
-      return;
     }
-    if (!profile && !authLoading) {
+    if (isAuthenticated && !profile && !authLoading) {
       getProfile();
     }
-  }, [isAuthenticated, navigate, getProfile, profile, authLoading]);
+  }, [isAuthenticated, authLoading, navigate, getProfile, profile]);
 
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);

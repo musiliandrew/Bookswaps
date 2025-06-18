@@ -200,12 +200,17 @@ const ProfileSection = () => {
   // Load initial data
   useEffect(() => {
     if (profile?.user_id && !dataLoaded) {
-      getUserProfile(profile.user_id);
-      debouncedGetFollowers(profile.user_id, pagination.followers.page);
-      debouncedGetFollowing(profile.user_id, pagination.following.page);
-      debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page);
-      debouncedGetRecommendedUsers(pagination.recommended.page);
-      setDataLoaded(true);
+      const fetchInitialData = async () => {
+        await Promise.all([
+          getUserProfile(profile.user_id),
+          debouncedGetFollowers(profile.user_id, pagination.followers.page),
+          debouncedGetFollowing(profile.user_id, pagination.following.page),
+          debouncedGetMutualFollowers(profile.user_id, pagination.mutual.page),
+          debouncedGetRecommendedUsers(pagination.recommended.page),
+        ]);
+        setDataLoaded(true);
+      };
+      fetchInitialData();
     }
   }, [
     profile?.user_id,
@@ -224,29 +229,37 @@ const ProfileSection = () => {
   // Fetch follow status for listed users
   useEffect(() => {
     if (profile?.user_id && dataLoaded) {
-      const userIds = [...followers, ...following, ...mutualFollowers].map((user) => user.user_id);
-      userIds.forEach((userId) => {
-        if (!userFollowStatuses[userId]) {
-          debouncedGetFollowStatus(profile.user_id, userId);
-        }
-      });
+      const userIds = [...followers, ...following, ...mutualFollowers]
+        .map((user) => user.user_id)
+        .filter((userId) => !userFollowStatuses[userId]);
+      if (userIds.length > 0) {
+        Promise.all(userIds.map((userId) => debouncedGetFollowStatus(profile.user_id, userId)));
+      }
     }
-  }, [profile?.user_id, followers, following, mutualFollowers, dataLoaded, debouncedGetFollowStatus, userFollowStatuses]);
+  }, [
+    profile?.user_id,
+    dataLoaded,
+    followers,
+    following,
+    mutualFollowers,
+    debouncedGetFollowStatus,
+    userFollowStatuses,
+  ]);
 
   // Handle page changes
   const handlePageChange = (type, page) => {
-    setPagination((prev) => {
-      const maxPage = prev[type]?.totalPages || 1;
-      if (page > 0 && page <= maxPage) {
-        return { ...prev, [type]: { ...prev[type], page } };
-      }
-      return prev;
-    });
-    if (type === 'followers') debouncedGetFollowers(profile.user_id, page);
-    if (type === 'following') debouncedGetFollowing(profile.user_id, page);
-    if (type === 'mutual') debouncedGetMutualFollowers(profile.user_id, page);
-    if (type === 'recommended') debouncedGetRecommendedUsers(page);
-    if (type === 'search') debouncedSearchUsers(searchQuery, page);
+    const maxPage = pagination[type]?.totalPages || 1;
+    if (page > 0 && page <= maxPage) {
+      setPagination((prev) => ({
+        ...prev,
+        [type]: { ...prev[type], page },
+      }));
+      if (type === 'followers') debouncedGetFollowers(profile.user_id, page);
+      if (type === 'following') debouncedGetFollowing(profile.user_id, page);
+      if (type === 'mutual') debouncedGetMutualFollowers(profile.user_id, page);
+      if (type === 'recommended') debouncedGetRecommendedUsers(page);
+      if (type === 'search') debouncedSearchUsers(searchQuery, page);
+    }
   };
 
   // Handle search

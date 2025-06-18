@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
 import { useNotifications } from './useNotifications';
@@ -12,8 +12,33 @@ export function useUsers() {
   const [followStatus, setFollowStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    followers: { next: null, previous: null, page: 1, totalPages: 1 },
+    following: { next: null, previous: null, page: 1, totalPages: 1 },
+    recommended: { next: null, previous: null, page: 1, totalPages: 1 },
+    search: { next: null, previous: null, page: 1, totalPages: 1 },
+  });
+
+  const fetchingRef = useRef({
+    followers: false,
+    following: false,
+    recommended: false,
+    search: false,
+  });
 
   const { notifications, isWebSocketConnected } = useNotifications();
+
+  // Debounce utility
+  const useDebounce = (callback, delay) => {
+    const timeoutRef = useRef(null);
+    return useCallback(
+      (...args) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => callback(...args), delay);
+      },
+      [callback, delay]
+    );
+  };
 
   const getUserProfile = useCallback(async (identifier) => {
     setIsLoading(true);
@@ -217,6 +242,91 @@ export function useUsers() {
     }
   }, []);
 
+  // Debounced API calls
+  const debouncedGetFollowers = useDebounce(async (id, page) => {
+    if (fetchingRef.current.followers) return;
+    fetchingRef.current.followers = true;
+    try {
+      const data = await getFollowers(id, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          followers: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
+    } finally {
+      fetchingRef.current.followers = false;
+    }
+  }, 1000);
+
+  const debouncedGetFollowing = useDebounce(async (id, page) => {
+    if (fetchingRef.current.following) return;
+    fetchingRef.current.following = true;
+    try {
+      const data = await getFollowing(id, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          following: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
+    } finally {
+      fetchingRef.current.following = false;
+    }
+  }, 1000);
+
+  const debouncedGetRecommendedUsers = useDebounce(async (page) => {
+    if (fetchingRef.current.recommended) return;
+    fetchingRef.current.recommended = true;
+    try {
+      const data = await getRecommendedUsers(page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          recommended: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
+    } finally {
+      fetchingRef.current.recommended = false;
+    }
+  }, 1000);
+
+  const debouncedSearchUsers = useDebounce(async (query, page) => {
+    if (fetchingRef.current.search) return;
+    fetchingRef.current.search = true;
+    try {
+      const data = await searchUsers({ query }, page);
+      if (data) {
+        setPagination((prev) => ({
+          ...prev,
+          search: {
+            next: data.next,
+            previous: data.previous,
+            page,
+            totalPages: Math.ceil(data.count / (data.results?.length || 1)) || 1,
+          },
+        }));
+      }
+    } finally {
+      fetchingRef.current.search = false;
+    }
+  }, 1000);
+
   useEffect(() => {
     if (!isWebSocketConnected || !notifications?.length) return;
 
@@ -241,14 +351,20 @@ export function useUsers() {
     getFollowing,
     getRecommendedUsers,
     searchUsers,
+    debouncedGetFollowers,
+    debouncedGetFollowing,
+    debouncedGetRecommendedUsers,
+    debouncedSearchUsers,
     publicProfile,
     followers,
     following,
     recommendedUsers,
     searchResults,
-    setSearchResults, // Added to allow clearing search results
+    setSearchResults,
     followStatus,
     isLoading,
     error,
+    pagination,
+    setPagination,
   };
 }

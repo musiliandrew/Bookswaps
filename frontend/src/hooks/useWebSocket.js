@@ -11,7 +11,7 @@ export function useWebSocket(userId = null, type = 'notification') {
   const wsRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const reconnectInterval = 30000; // Increased to 15s
+  const reconnectInterval = 30000; // Increased to 30s
   const { isAuthenticated, profile } = useAuth();
   const messageBuffer = useRef([]); // Buffer messages to batch updates
   const bufferTimeout = useRef(null);
@@ -45,7 +45,7 @@ export function useWebSocket(userId = null, type = 'notification') {
     wsRef.current.onopen = () => {
       setIsConnected(true);
       reconnectAttempts.current = 0;
-      console.log(`WebSocket connected for ${type}`);
+      console.log(`WebSocket connected for ${type} at ${wsUrl}`);
     };
     
     wsRef.current.onmessage = (event) => {
@@ -101,7 +101,7 @@ export function useWebSocket(userId = null, type = 'notification') {
     };
     
     wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('WebSocket error:', error, `for ${type} at ${wsUrl}`);
       setIsConnected(false);
       toast.error('WebSocket connection error, attempting to reconnect...');
       if (wsRef.current.readyState !== WebSocket.OPEN) {
@@ -114,13 +114,13 @@ export function useWebSocket(userId = null, type = 'notification') {
     profile?.user?.id, 
     type, 
     flushBuffer,
-    maxReconnectAttempts,        // Added: used in condition check
-    setIsConnected,              // Added: used in onopen and onclose
-    setDiscussionData,           // Added: used in onmessage for discussion type
-    setChatData,                 // Added: used in onmessage for chat type
-    setSocietyData,              // Added: used in onmessage for society type
-  reconnectInterval            // Added: used in exponential backoff calculation
-]);
+    maxReconnectAttempts,
+    setIsConnected,
+    setDiscussionData,
+    setChatData,
+    setSocietyData,
+    reconnectInterval
+  ]);
 
   const disconnectWebSocket = useCallback(() => {
     if (wsRef.current) {

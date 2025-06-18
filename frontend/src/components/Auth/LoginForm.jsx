@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
 import ErrorMessage from '../Common/ErrorMessage';
 import AuthLink from '../Common/AuthLink';
 
-const LoginForm = ({ className = '' }) => {
+const LoginForm = ({ className = '', onSubmit, error: externalError, isLoading: externalLoading }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const { login, isLoading, error } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +32,7 @@ const LoginForm = ({ className = '' }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      await login(credentials);
+      await onSubmit(credentials); // Use passed onSubmit
     }
   };
 
@@ -99,11 +97,11 @@ const LoginForm = ({ className = '' }) => {
           </motion.button>
         </div>
       </div>
-      <ErrorMessage message={error} />
+      <ErrorMessage message={externalError} />
       <Button
         type="submit"
-        text={isLoading ? 'Signing in...' : 'Sign In'}
-        disabled={isDisabled || isLoading}
+        text={externalLoading ? 'Signing in...' : 'Sign In'}
+        disabled={isDisabled || externalLoading}
       />
       <div className="text-center">
         <AuthLink to="/register" text="Don't have an account? Sign up" />

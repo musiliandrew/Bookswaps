@@ -20,6 +20,7 @@
     "emoji-picker-react": "^4.12.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
+    "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "prop-types": "^15.8.1",
     "qrcode.react": "^4.2.0",
