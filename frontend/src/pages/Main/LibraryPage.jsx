@@ -1,31 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
-import { useAuth } from '../../hooks/useAuth';
-import { useLibrary } from '../../hooks/useLibrary';
-import { useSwaps } from '../../hooks/useSwaps';
-import LibraryList from '../../components/Library/LibraryList';
-import SwapCard from '../../components/Library/SwapCard';
-import SearchBar from '../../components/Library/SearchBar';
-import ErrorBoundary from '../../components/Common/ErrorBoundary';
+import MyBooksPage from '../../components/Library/MyBooksPage';
+import BrowseBooksPage from '../../components/Library/BrowseBooksPage';
+import { BookOpenIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 
 const LibraryPage = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, profile, isLoading: authLoading, error: authError } = useAuth();
-  const { getUserLibrary, userLibrary, isLoading: libLoading, error: libError } = useLibrary();
-  const { getSwaps, swaps, isLoading: swapsLoading, error: swapsError } = useSwaps();
-  const [activeTab, setActiveTab] = useState('books');
+  const [activeTab, setActiveTab] = useState('my-books');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    getUserLibrary();
-    getSwaps({ status: 'pending' });
-  }, [isAuthenticated, navigate, getUserLibrary, getSwaps]);
 
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
@@ -34,58 +16,41 @@ const LibraryPage = () => {
   }, []);
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => activeTab === 'books' && setActiveTab('swaps'),
-    onSwipedRight: () => activeTab === 'swaps' && setActiveTab('books'),
+    onSwipedLeft: () => activeTab === 'my-books' && setActiveTab('global'),
+    onSwipedRight: () => activeTab === 'global' && setActiveTab('my-books'),
     preventDefaultTouchmoveEvent: true,
     trackMouse: true,
   });
 
   const tabs = [
-    { id: 'books', label: 'Books', icon: '/assets/icons/books.svg' },
-    { id: 'swaps', label: 'Swaps', icon: '/assets/icons/swap.svg' },
+    { id: 'my-books', label: 'My Books', icon: <BookOpenIcon className="w-4 h-4" /> },
+    { id: 'global', label: 'Browse', icon: <GlobeAltIcon className="w-4 h-4" /> },
   ];
 
-  if (authLoading || libLoading || swapsLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="bookish-spinner w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (authError || libError || swapsError) {
-    return (
-      <div className="text-center p-4 text-[var(--text)]">
-        {authError || libError || swapsError || 'Failed to load library data. Please try again.'}
-      </div>
-    );
-  }
-
   return (
-    <ErrorBoundary>
-    <div className="min-h-screen bookish-gradient p-4" {...handlers}>
-      {/* Bottom Navbar */}
-      <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-[var(--primary)] bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
+    <div className="min-h-screen bg-background font-open-sans text-text pt-16 pb-20" {...handlers}>
+      {/* Bottom Floating Navigation */}
+      <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-primary bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+            className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
               activeTab === tab.id
-                ? 'text-[#D4A017] underline'
-                : 'text-[var(--secondary)] hover:text-[var(--accent)]'
+                ? 'text-accent underline'
+                : 'text-[#456A76] hover:text-accent'
             }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
             {isSmallScreen ? (
-              <img src={tab.icon} alt={`${tab.label} icon`} className="w-6 h-6" />
+              tab.icon
             ) : (
-              <span className="text-sm font-['Open_Sans']">{tab.label}</span>
+              <span className="text-xs font-open-sans">{tab.label}</span>
             )}
             {!isSmallScreen && activeTab === tab.id && (
               <motion.div
-                className="w-2 h-1 bg-[#D4A017] rounded-full mt-1"
+                className="w-2 h-1 bg-accent rounded-full mt-1"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.3 }}
@@ -95,69 +60,20 @@ const LibraryPage = () => {
         ))}
       </nav>
 
-      {/* Content */}
+      {/* Main Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, x: activeTab === 'books' ? 100 : -100 }}
+          initial={{ opacity: 0, x: activeTab === 'my-books' ? 100 : -100 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: activeTab === 'books' ? -100 : 100 }}
+          exit={{ opacity: 0, x: activeTab === 'my-books' ? -100 : 100 }}
           transition={{ duration: 0.3 }}
-          className="mt-20 mb-20"
+          className="container mx-auto px-4 py-8"
         >
-          {activeTab === 'books' ? (
-            <BooksSection userLibrary={userLibrary} profile={profile} />
-          ) : (
-            <SwapsSection swaps={swaps} profile={profile} />
-          )}
+          {activeTab === 'my-books' ? <MyBooksPage /> : <BrowseBooksPage />}
         </motion.div>
       </AnimatePresence>
     </div>
-    </ErrorBoundary>
-  );
-};
-
-// BooksSection Component
-const BooksSection = ({ userLibrary }) => {
-  const handleSearch = () => {};
-
-  return (
-    <motion.div
-      className="bookish-glass p-6 rounded-xl max-w-2xl mx-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <h1 className="text-3xl font-['Lora'] text-[var(--primary)] mb-4">My Books</h1>
-      <SearchBar onSearch={handleSearch} />
-      <LibraryList books={userLibrary} />
-    </motion.div>
-  );
-};
-
-// SwapsSection Component
-const SwapsSection = ({ swaps, profile }) => {
-  return (
-    <motion.div
-      className="bookish-glass p-6 rounded-xl max-w-2xl mx-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <h1 className="text-3xl font-['Lora'] text-[var(--primary)] mb-4">My Swaps</h1>
-      {swaps.length > 0 ? (
-        swaps.map((swap) => (
-          <SwapCard
-            key={swap.id}
-            swap={swap}
-            isReceived={profile?.id === swap.responder.id}
-            className="mb-6 last:mb-0"
-          />
-        ))
-      ) : (
-        <p className="text-[var(--text)] font-['Open_Sans'] text-center">No swaps available.</p>
-      )}
-    </motion.div>
   );
 };
 

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../hooks/useAuth';
@@ -9,19 +8,15 @@ import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
   const { isAuthenticated, profile, isLoading: authLoading, error: authError, getProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    if (!isAuthenticated && !authLoading) {
-      navigate('/');
-    }
     if (isAuthenticated && !profile && !authLoading) {
       getProfile();
     }
-  }, [isAuthenticated, authLoading, navigate, getProfile, profile]);
+  }, [isAuthenticated, authLoading, getProfile, profile]);
 
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);

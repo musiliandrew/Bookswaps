@@ -36,8 +36,6 @@ class SendMessageView(APIView):
         if serializer.is_valid():
             chat = serializer.save()
             # Send WebSocket notification
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"chat_{chat.chat_id}",
@@ -97,12 +95,12 @@ class MessageListView(APIView):
         print(f"MessageListView GET: user={request.user.username}, query_params={request.query_params}")
         user = request.user
         cache_key = f"chat_list_{user.user_id}_{str(request.query_params)}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
+        cached_response = cache.get(cache_key)
+        
+        if cached_response:
             print(f"Cache hit: {cache_key}")
-            # Reconstruct paginated response from cached data
-            paginator = PageNumberPagination()
-            return paginator.get_paginated_response(cached_data)
+            # Return the cached response directly
+            return Response(cached_response)
 
         chats = Chats.objects.filter(
             Q(sender=user) | Q(receiver=user),
@@ -123,12 +121,18 @@ class MessageListView(APIView):
 
         chats = chats.order_by('-created_at')
         print(f"Found {chats.count()} chats")
+        
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(chats, request)
         serializer = ChatSerializer(result_page, many=True)
-        # Cache the serialized data, not the Response object
-        cache.set(cache_key, serializer.data, timeout=300)
-        return paginator.get_paginated_response(serializer.data)
+        
+        # Get the paginated response
+        response = paginator.get_paginated_response(serializer.data)
+        
+        # Cache the response data, not the Response object
+        cache.set(cache_key, response.data, timeout=300)
+        
+        return response
 
 class MarkReadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -306,10 +310,11 @@ class SocietyListView(APIView):
         my_societies = request.query_params.get('my_societies') == 'true'
 
         cache_key = f"society_list_{user.user_id if user else 'anon'}_{request.query_params}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            paginator = PageNumberPagination()
-            return paginator.get_paginated_response(cached_data)
+        cached_response = cache.get(cache_key)
+        
+        if cached_response:
+            # Return the cached response directly
+            return Response(cached_response)
 
         societies = Society.objects.all()
         if my_societies and user:
@@ -323,11 +328,18 @@ class SocietyListView(APIView):
             societies = societies.filter(focus_id=focus_id)
 
         societies = societies.distinct()
+        
         paginator = PageNumberPagination()
         paginated = paginator.paginate_queryset(societies, request)
         serializer = SocietySerializer(paginated, many=True)
-        cache.set(cache_key, serializer.data, timeout=3600)
-        return paginator.get_paginated_response(serializer.data)
+        
+        # Get the paginated response
+        response = paginator.get_paginated_response(serializer.data)
+        
+        # Cache the response data
+        cache.set(cache_key, response.data, timeout=3600)
+        
+        return response
 
 class SendSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -399,10 +411,11 @@ class SocietyMessageListView(APIView):
             return Response({"error": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
 
         cache_key = f"society_messages_{society_id}_{request.query_params}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            paginator = PageNumberPagination()
-            return paginator.get_paginated_response(cached_data)
+        cached_response = cache.get(cache_key)
+        
+        if cached_response:
+            # Return the cached response directly
+            return Response(cached_response)
 
         messages = SocietyMessage.objects.filter(
             society__society_id=society_id, status='ACTIVE'
@@ -411,8 +424,14 @@ class SocietyMessageListView(APIView):
         paginator = PageNumberPagination()
         paginated_messages = paginator.paginate_queryset(messages, request)
         serializer = SocietyMessageSerializer(paginated_messages, many=True)
-        cache.set(cache_key, serializer.data, timeout=300)
-        return paginator.get_paginated_response(serializer.data)
+        
+        # Get the paginated response
+        response = paginator.get_paginated_response(serializer.data)
+        
+        # Cache the response data
+        cache.set(cache_key, response.data, timeout=300)
+        
+        return response
 
 class PinMessageView(APIView):
     permission_classes = [IsAuthenticated]

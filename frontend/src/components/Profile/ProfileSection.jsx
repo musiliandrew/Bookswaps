@@ -1,16 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useUsers } from '../../hooks/useUsers';
-import UserProfileCard from './UserProfileCard';
-import ConnectionsSection from './ConnectionsSection';
-import DiscoverSection from './DiscoverSection';
+import UserProfileCard from '../Profile/UserProfile/UserProfileCard';
+import ConnectionsSection from '../Profile/UserProfile/ConnectionsSection';
+import DiscoverSection from '../Profile/UserProfile/DiscoverSection';
 import { toast } from 'react-toastify';
 
 const ProfileSection = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, profile } = useAuth();
+  const { profile } = useAuth();
   const {
     getUserProfile,
     followUser,
@@ -189,13 +187,6 @@ const ProfileSection = () => {
       fetchingRef.current.followStatus = false;
     }
   }, 300);
-
-  // Authentication check
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
 
   // Load initial data
   useEffect(() => {

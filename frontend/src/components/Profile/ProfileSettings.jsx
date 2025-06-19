@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import { AnimatePresence, motion } from 'framer-motion';
-import ProfileForm from './ProfileForm';
-import AccountSettingsForm from './AccountSettingsForm';
-import ChatPreferencesForm from './ChatPreferencesForm';
-import DeleteAccountModal from './DeleteAccountModal';
+import { useAuth } from '../../hooks/useAuth';
+import ProfileForm from '../Profile/Settings/ProfileForm';
+import AccountSettingsForm from '../Profile/Settings/AccountSettingsForm';
+import ChatPreferencesForm from '../Profile/Settings/ChatPreferencesForm';
+import DeleteAccountModal from '../Profile/Settings/DeleteAccountModal';
 import { toast } from 'react-toastify';
 
 const ProfileSettings = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, profile, isLoading: authLoading, error: authError, logout } = useAuth();
+  const { profile, isLoading: authLoading, error: authError, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,14 +52,6 @@ const ProfileSettings = () => {
   );
 
   useEffect(() => {
-    console.log('ProfileSettings: isAuthenticated=', isAuthenticated, 'profile=', !!profile);
-    if (!isAuthenticated) {
-      console.log('ProfileSettings: Redirecting to /');
-      navigate('/');
-    }
-  }, [isAuthenticated, profile, navigate]);
-
-  useEffect(() => {
     if (authError) {
       toast.error(authError || 'Failed to load settings.');
     }
@@ -71,7 +61,6 @@ const ProfileSettings = () => {
     try {
       await logout();
       toast.success('Logged out successfully!');
-      navigate('/');
     } catch {
       toast.error('Failed to log out.');
     }
