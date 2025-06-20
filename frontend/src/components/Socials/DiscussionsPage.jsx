@@ -48,6 +48,7 @@ const DiscussionsPage = () => {
     isLoading: isSocietiesLoading,
     error: societiesError,
     pagination: societiesPagination,
+    isSocietyWsConnected, // Add for SocietyDetail
   } = useSocieties();
 
   const [postFilters, setPostFilters] = useState({ type: '', book_id: '', tag: '' });
@@ -134,7 +135,10 @@ const DiscussionsPage = () => {
     <div className="container mx-auto p-4">
       <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
       {(discussionsError || societiesError) && (
-        <div className="text-red-500 mb-4">{discussionsError || societiesError}</div>
+        <div className="text-red-500 mb-4">
+          {discussionsError && <div>Discussions Error: {discussionsError}</div>}
+          {societiesError && <div>Societies Error: {societiesError}</div>}
+        </div>
       )}
       {postId && post && (
         <PostDetail
@@ -170,6 +174,7 @@ const DiscussionsPage = () => {
           newSocietyEvent={newSocietyEvent}
           setNewSocietyEvent={setNewSocietyEvent}
           handleCreateSocietyEvent={handleCreateSocietyEvent}
+          isSocietyWsConnected={isSocietyWsConnected}
         />
       )}
       {activeTab === 'posts' && !postId && (
@@ -200,8 +205,9 @@ const DiscussionsPage = () => {
           joinSociety={joinSociety}
           listSocieties={listSocieties}
           societyFilters={societyFilters}
-          setSocietyFilters={setSocietyFilters} // Explicitly pass setSocietyFilters
+          setSocietyFilters={setSocietyFilters}
           societiesPagination={societiesPagination}
+          societiesError={societiesError}
         />
       )}
     </div>

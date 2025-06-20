@@ -12,6 +12,8 @@ export function useAuth() {
   const [success, setSuccess] = useState(null);
   const navigate = useNavigate();
   const abortControllerRef = useRef(null);
+  const refreshInProgress = useRef(false);
+  const profileFetchRef = useRef(false); // Prevent redundant profile fetches
 
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('access_token');
@@ -19,81 +21,105 @@ export function useAuth() {
     localStorage.removeItem('user_profile');
     setIsAuthenticated(false);
     setProfile(null);
-  }, []);
+    setError(null);
+    navigate('/login', { replace: true });
+  }, [navigate]);
 
   const refreshToken = useCallback(async () => {
-    const refresh = localStorage.getItem('refresh_token');
-    if (!refresh) {
-      clearAuthState();
+    if (refreshInProgress.current) {
+      console.log('Refresh already in progress, skipping');
       return null;
     }
+
+    refreshInProgress.current = true;
+    const refresh = localStorage.getItem('refresh_token');
+    if (!refresh) {
+      console.warn('No refresh token found');
+      clearAuthState();
+      refreshInProgress.current = false;
+      return null;
+    }
+
     try {
       const response = await api.post('/users/token/refresh/', { refresh });
       localStorage.setItem('access_token', response.data.access);
       setIsAuthenticated(true);
-      return response.data;
+      refreshInProgress.current = false;
+      return response.data.access;
     } catch (err) {
-      console.warn('Token refresh failed:', err.response?.data?.detail || 'Unknown error');
+      console.warn('Token refresh failed:', err.response?.data?.detail || err);
       clearAuthState();
+      refreshInProgress.current = false;
+      toast.error('Session expired, please log in again');
       return null;
     }
   }, [clearAuthState]);
 
-  const getProfile = useCallback(async () => {
-    console.log('Fetching profile...');
-    const cachedProfile = localStorage.getItem('user_profile');
-    if (cachedProfile) {
-      const parsedProfile = JSON.parse(cachedProfile);
-      console.log('Using cached profile:', parsedProfile);
-      setProfile(parsedProfile);
-      setIsAuthenticated(true);
-      setIsLoading(false);
-      return parsedProfile;
-    }
+  const getProfile = useCallback(
+    async (forceFetch = false) => {
+      if (profileFetchRef.current && !forceFetch) {
+        console.log('Profile fetch skipped, already in progress or completed');
+        return profile;
+      }
 
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      console.log('No token found, redirecting to login');
-      setIsLoading(false);
-      setIsAuthenticated(false);
-      navigate('/login', { replace: true });
-      return null;
-    }
+      console.log('Fetching profile...');
+      if (!forceFetch) {
+        const cachedProfile = localStorage.getItem('user_profile');
+        if (cachedProfile) {
+          const parsedProfile = JSON.parse(cachedProfile);
+          console.log('Using cached profile:', parsedProfile);
+          setProfile(parsedProfile);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return parsedProfile;
+        }
+      }
 
-    setIsLoading(true);
-    setError(null);
-    
-    abortControllerRef.current = new AbortController();
-    
-    try {
-      const response = await api.get('/users/me/profile/', {
-        signal: abortControllerRef.current.signal
-      });
-      console.log('Profile fetched:', response.data);
-      setProfile(response.data);
-      localStorage.setItem('user_profile', JSON.stringify(response.data));
-      setIsAuthenticated(true);
-      return response.data;
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        console.log('Profile fetch aborted');
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        console.log('No access token found');
+        setIsLoading(false);
+        setIsAuthenticated(false);
         return null;
       }
-      
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
-      console.error('Profile fetch error:', errorMessage);
-      setError(errorMessage);
-      if (err.response?.status === 401) {
-        clearAuthState();
-        navigate('/login', { replace: true });
-      } else {
+
+      setIsLoading(true);
+      setError(null);
+      abortControllerRef.current = new AbortController();
+      profileFetchRef.current = true;
+
+      try {
+        const response = await api.get('/users/me/profile/', {
+          signal: abortControllerRef.current.signal,
+        });
+        console.log('Profile fetched:', response.data);
+        setProfile(response.data);
+        localStorage.setItem('user_profile', JSON.stringify(response.data));
+        setIsAuthenticated(true);
+        return response.data;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.log('Profile fetch aborted');
+          return null;
+        }
+        const errorMessage = err.response?.data?.detail || 'Failed to fetch profile';
+        console.error('Profile fetch error:', errorMessage);
+        setError(errorMessage);
+        if (err.response?.status === 401) {
+          const newToken = await refreshToken();
+          if (newToken) {
+            return await getProfile(true);
+          }
+        }
         toast.error(errorMessage);
+        return null;
+      } finally {
+        setIsLoading(false);
+        profileFetchRef.current = false;
       }
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate, clearAuthState]);
+    },
+    [refreshToken, profile]
+  );
 
   const checkAuthStatus = useCallback(async () => {
     setIsLoading(true);
@@ -110,39 +136,38 @@ export function useAuth() {
       try {
         const decoded = jwtDecode(token);
         if (decoded.exp * 1000 < Date.now()) {
+          console.log('Access token expired');
           if (refresh) {
-            const refreshResult = await refreshToken();
-            if (refreshResult) {
-              await getProfile();
-            } else {
-              clearAuthState();
+            const newToken = await refreshToken();
+            if (newToken) {
+              await getProfile(true);
             }
           } else {
             clearAuthState();
           }
-          setIsLoading(false);
-          return;
+        } else {
+          await getProfile();
         }
       } catch (err) {
         console.warn('Invalid token:', err);
-        clearAuthState();
-        setIsLoading(false);
-        return;
+        if (refresh) {
+          const newToken = await refreshToken();
+          if (newToken) {
+            await getProfile(true);
+          }
+        } else {
+          clearAuthState();
+        }
       }
-    }
-
-    if (!token && refresh) {
-      const refreshResult = await refreshToken();
-      if (refreshResult) {
-        await getProfile();
+    } else if (refresh) {
+      const newToken = await refreshToken();
+      if (newToken) {
+        await getProfile(true);
       } else {
         clearAuthState();
       }
-      setIsLoading(false);
-      return;
     }
 
-    await getProfile();
     setIsLoading(false);
   }, [refreshToken, clearAuthState, getProfile]);
 
@@ -167,9 +192,8 @@ export function useAuth() {
         }
         if (err.response?.status === 401) {
           originalRequest._retry = true;
-          const refreshResult = await refreshToken();
-          if (refreshResult) {
-            const newToken = localStorage.getItem('access_token');
+          const newToken = await refreshToken();
+          if (newToken) {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           } else {
@@ -181,11 +205,9 @@ export function useAuth() {
       }
     );
 
-    const handleAuthError = (e) => {
-      if (e.detail.status === 401) {
-        clearAuthState();
-        navigate('/login', { replace: true });
-      }
+    const handleAuthError = () => {
+      clearAuthState();
+      toast.error('Authentication error, redirecting to login');
     };
     window.addEventListener('auth:error', handleAuthError);
 
@@ -195,12 +217,11 @@ export function useAuth() {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
       window.removeEventListener('auth:error', handleAuthError);
-      
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [checkAuthStatus, refreshToken, clearAuthState, navigate]);
+  }, [checkAuthStatus, clearAuthState, refreshToken]);
 
   const login = useCallback(async (credentials) => {
     setIsLoading(true);
@@ -209,11 +230,11 @@ export function useAuth() {
       const response = await api.post('/users/login/', credentials);
       localStorage.setItem('access_token', response.data.access_token);
       localStorage.setItem('refresh_token', response.data.refresh_token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-      const profileData = await getProfile();
+      api.defaults.headers.Authorization = `Bearer ${response.data.access_token}`;
+      const profileData = await getProfile(true);
       if (profileData) {
         setIsAuthenticated(true);
-        toast.success('Logged in successfully!');
+        toast.success('Login successful!');
         return true;
       } else {
         clearAuthState();
@@ -221,7 +242,7 @@ export function useAuth() {
         return false;
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to login';
+      const errorMessage = err.response?.data?.error || 'Login failed';
       setError(errorMessage);
       toast.error(errorMessage);
       clearAuthState();
@@ -236,7 +257,7 @@ export function useAuth() {
     setError(null);
     try {
       const formData = new FormData();
-      Object.keys(userData).forEach(key => {
+      Object.keys(userData).forEach((key) => {
         if (key === 'genres' && Array.isArray(userData[key])) {
           formData.append(key, JSON.stringify(userData[key]));
         } else if (userData[key] instanceof File) {
@@ -246,11 +267,11 @@ export function useAuth() {
         }
       });
       const response = await api.post('/users/register/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      localStorage.setItem('access_token', response.data.token);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      await getProfile();
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      await getProfile(true);
       toast.success('Registered successfully!');
       navigate('/profile/me', { replace: true });
       return true;
@@ -330,7 +351,7 @@ export function useAuth() {
     setError(null);
     try {
       const formData = new FormData();
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         if (key === 'genres' && Array.isArray(data[key])) {
           formData.append(key, JSON.stringify(data[key]));
         } else if (data[key] instanceof File) {
@@ -340,7 +361,7 @@ export function useAuth() {
         }
       });
       const response = await api.patch('/users/me/profile/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setProfile(response.data);
       localStorage.setItem('user_profile', JSON.stringify(response.data));
@@ -359,7 +380,7 @@ export function useAuth() {
   const updateAccountSettings = useCallback(async (data) => {
     try {
       await api.patch('/users/me/settings/account/', data);
-      await getProfile();
+      await getProfile(true);
       return true;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Failed to update account settings';

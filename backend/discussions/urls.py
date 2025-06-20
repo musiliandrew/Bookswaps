@@ -19,5 +19,4 @@ urlpatterns = [
     path('posts/<uuid:discussion_id>/upvote/', UpvotePostView.as_view(), name='upvote_post'),
     path('posts/<uuid:discussion_id>/reprint/', ReprintPostView.as_view(), name='reprint_post'),
     path('top-posts/', ListTopPostsView.as_view(), name='top_posts'),
-    re_path(r'^ws/discussions/(?P<discussion_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', consumers.DiscussionConsumer.as_asgi()),
 ]

@@ -11,9 +11,9 @@ export function useWebSocket(userId = null, type = 'notification') {
   const wsRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const reconnectInterval = 30000; // Increased to 30s
-  const { isAuthenticated, profile } = useAuth();
-  const messageBuffer = useRef([]); // Buffer messages to batch updates
+  const reconnectInterval = 3000; // Reduced for faster retries
+  const { isAuthenticated, profile, refreshToken } = useAuth();
+  const messageBuffer = useRef([]);
   const bufferTimeout = useRef(null);
 
   const flushBuffer = useCallback(() => {
@@ -23,35 +23,48 @@ export function useWebSocket(userId = null, type = 'notification') {
     }
   }, []);
 
-  const connectWebSocket = useCallback(() => {
+  const connectWebSocket = useCallback(async () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected, skipping');
+      console.log('WebSocket already connected');
       return;
     }
-    
+
     if (reconnectAttempts.current >= maxReconnectAttempts) {
       toast.error('Max WebSocket reconnection attempts reached');
       return;
     }
-    
-    if (!isAuthenticated || !profile?.user?.id) {
-      console.log('WebSocket: Skipping connection, not authenticated or no user ID');
+
+    if (!isAuthenticated || (!userId && !profile?.user_id)) {
+      console.log('WebSocket: Not authenticated or no user ID', { isAuthenticated, profile, userId });
       return;
     }
-    
-    const wsUrl = `${import.meta.env.VITE_WS_URL}/${type}/${userId || profile?.user?.id}/`;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.log('No access token, attempting refresh');
+      const newToken = await refreshToken();
+      if (!newToken) {
+        toast.error('Authentication required for WebSocket');
+        return;
+      }
+    }
+
+    const effectiveUserId = userId || profile.user_id;
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    const wsUrl = `${wsBaseUrl}/ws/${type}/${effectiveUserId}/?token=${token}`;
+    console.log('Attempting WebSocket connection to:', wsUrl);
+
     wsRef.current = new WebSocket(wsUrl);
-    
+
     wsRef.current.onopen = () => {
       setIsConnected(true);
       reconnectAttempts.current = 0;
       console.log(`WebSocket connected for ${type} at ${wsUrl}`);
     };
-    
+
     wsRef.current.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        
         if (type === 'discussion') {
           setDiscussionData((prev) => ({
             notes: message.type === 'note_added' ? [...prev.notes, message.note] : prev.notes,
@@ -75,8 +88,7 @@ export function useWebSocket(userId = null, type = 'notification') {
         } else {
           messageBuffer.current.push(message);
         }
-        
-        // Batch updates every 500ms
+
         if (!bufferTimeout.current) {
           bufferTimeout.current = setTimeout(() => {
             flushBuffer();
@@ -87,40 +99,38 @@ export function useWebSocket(userId = null, type = 'notification') {
         console.error('WebSocket message error:', err);
       }
     };
-    
-    wsRef.current.onclose = () => {
+
+    wsRef.current.onclose = async (event) => {
       setIsConnected(false);
+      console.log(`WebSocket closed with code ${event.code}`);
       if (reconnectAttempts.current < maxReconnectAttempts) {
         const delay = reconnectInterval * Math.pow(2, reconnectAttempts.current);
-        console.log(`WebSocket closed, attempting reconnect ${reconnectAttempts.current + 1}/${maxReconnectAttempts} in ${delay}ms`);
+        console.log(`Attempting reconnect ${reconnectAttempts.current + 1}/${maxReconnectAttempts} in ${delay}ms`);
+        if (event.code === 4001) { // Unauthorized
+          const newToken = await refreshToken();
+          if (newToken) {
+            reconnectAttempts.current = 0; // Reset attempts on token refresh
+          }
+        }
         setTimeout(connectWebSocket, delay);
         reconnectAttempts.current += 1;
       } else {
         toast.error('WebSocket connection failed after max retries');
       }
     };
-    
+
     wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error, `for ${type} at ${wsUrl}`);
+      console.error('WebSocket error:', error);
       setIsConnected(false);
-      toast.error('WebSocket connection error, attempting to reconnect...');
-      if (wsRef.current.readyState !== WebSocket.OPEN) {
-        wsRef.current?.close();
+      let errorMessage = 'WebSocket connection error';
+      if (error.code === '4001') {
+        errorMessage = 'Authentication failed for WebSocket';
+      } else if (error.code === '4003') {
+        errorMessage = 'Access forbidden for WebSocket';
       }
+      toast.error(errorMessage);
     };
-  }, [
-    userId, 
-    isAuthenticated, 
-    profile?.user?.id, 
-    type, 
-    flushBuffer,
-    maxReconnectAttempts,
-    setIsConnected,
-    setDiscussionData,
-    setChatData,
-    setSocietyData,
-    reconnectInterval
-  ]);
+  }, [isAuthenticated, profile, userId, type, flushBuffer, refreshToken]);
 
   const disconnectWebSocket = useCallback(() => {
     if (wsRef.current) {
@@ -172,18 +182,19 @@ export function useWebSocket(userId = null, type = 'notification') {
 
   const reprintPost = useCallback((discussionId, comment = '') => {
     if (isConnected && wsRef.current) {
-      wsRef.current.send(JSON.stringify({ action: 'reprint_post', discussion_id: discussionId, comment }));
+      wsRef.current.send(JSON.stringify({ action: 'reprint_post', content: comment, discussion_id: discussionId }));
     }
   }, [isConnected]);
 
   useEffect(() => {
-    if (isAuthenticated && (userId || profile?.user?.id)) {
+    if (isAuthenticated && (userId || profile?.user_id)) {
       connectWebSocket();
     }
     return disconnectWebSocket;
-  }, [connectWebSocket, disconnectWebSocket, userId, isAuthenticated, profile?.user?.id]);
+  }, [connectWebSocket, disconnectWebSocket, isAuthenticated, userId, profile]);
 
   return {
+    connectWebSocket,
     isConnected,
     messages,
     discussionData,

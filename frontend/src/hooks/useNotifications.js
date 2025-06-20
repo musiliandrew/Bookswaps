@@ -14,9 +14,8 @@ export function useNotifications() {
     page: 1,
     totalPages: 1,
   });
-  const { isConnected } = useWebSocket('notification');
+  const { isConnected, messages } = useWebSocket(null, 'notification');
 
-  // Use useRef to store the debounced function
   const debouncedGetNotificationsRef = useRef(
     debounce(
       async (filters = {}, page = 1, { setIsLoading, setError, setNotifications, setPagination }) => {
@@ -45,12 +44,11 @@ export function useNotifications() {
           setIsLoading(false);
         }
       },
-      1000, // Increase debounce to 1000ms
+      1000,
       { leading: false, trailing: true }
     )
   );
 
-  // Memoized getNotifications function
   const getNotifications = useCallback(
     (filters = {}, page = 1) => {
       return debouncedGetNotificationsRef.current(filters, page, {
@@ -70,7 +68,7 @@ export function useNotifications() {
       await api.patch(`/swaps/notifications/${notificationId}/read/`);
       toast.success('Notification marked as read');
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+        prev.map((n) => (n.notification_id === notificationId ? { ...n, is_read: true } : n))
       );
       return true;
     } catch (err) {
@@ -84,33 +82,38 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
-    const debouncedFn = debouncedGetNotificationsRef.current;
+    getNotifications({ is_read: false });
+
     let interval;
+    const debounced = debouncedGetNotificationsRef.current; // Capture ref value at effect run
     if (!isConnected) {
-      getNotifications({ is_read: false });
       interval = setInterval(() => {
-        console.log('Polling notifications');
-        getNotifications({ is_read: false });
+        if (!isConnected) {
+          console.log('Polling notifications');
+          getNotifications({ is_read: false });
+        }
       }, 60000);
-    } else {
-      getNotifications({ is_read: false });
     }
+
     return () => {
       if (interval) clearInterval(interval);
-      if (debouncedFn) debouncedFn.cancel();
+      if (debounced && typeof debounced.cancel === 'function') {
+        debounced.cancel();
+      }
     };
   }, [getNotifications, isConnected]);
 
-  // Clean up debounced function on unmount
   useEffect(() => {
-    const debouncedFn = debouncedGetNotificationsRef.current;
-    
-    return () => {
-      if (debouncedFn) {
-        debouncedFn.cancel();
-      }
-    };
-  }, []);
+    if (messages.length > 0) {
+      const newNotifications = messages.map((msg) => ({
+        notification_id: msg.follow_id,
+        type: msg.type,
+        message: msg.message,
+        is_read: false,
+      }));
+      setNotifications((prev) => [...newNotifications, ...prev]);
+    }
+  }, [messages]);
 
   return {
     getNotifications,

@@ -17,7 +17,7 @@ export function useSocieties() {
   });
 
   const { notifications, isWebSocketConnected: isNotificationsConnected } = useNotifications();
-  const { data: wsData, isConnected: isSocietyWsConnected, sendMessage, addReaction } = useWebSocket(null, 'society');
+  const { societyData, isConnected: isSocietyWsConnected, sendMessage, addReaction } = useWebSocket(null, 'society');
 
   const createSociety = useCallback(async (data) => {
     setIsLoading(true);
@@ -137,10 +137,9 @@ export function useSocieties() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/chat/societies/${societyId}/messages/send/`, { content });
-      setSocietyMessages((prev) => [...prev, response.data]);
+      sendMessage(content, societyId); // Use WebSocket to send message
       toast.success('Message sent!');
-      return response.data;
+      return true;
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to send message';
       setError(errorMessage);
@@ -149,7 +148,7 @@ export function useSocieties() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sendMessage]);
 
   const editSocietyMessage = useCallback(async (societyId, messageId, data) => {
     setIsLoading(true);
@@ -213,16 +212,9 @@ export function useSocieties() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/chat/societies/${societyId}/messages/${messageId}/react/`, data);
-      setSocietyMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? { ...m, reactions: [...(m.reactions || []), response.data] }
-            : m
-        )
-      );
+      addReaction(messageId, data.reaction_type); // Use WebSocket to add reaction
       toast.success('Reaction added!');
-      return response.data;
+      return true;
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to add reaction';
       setError(errorMessage);
@@ -231,7 +223,7 @@ export function useSocieties() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [addReaction]);
 
   const listSocietyReactions = useCallback(async (societyId, messageId) => {
     setIsLoading(true);
@@ -295,31 +287,31 @@ export function useSocieties() {
 
   // Handle WebSocket messages for society
   useEffect(() => {
-    if (!isSocietyWsConnected || !wsData) return;
+    if (!isSocietyWsConnected || !societyData) return;
 
-    if (wsData.type === 'society_message') {
+    if (societyData.type === 'society_message') {
       setSocietyMessages((prev) => {
-        if (!prev.find((m) => m.id === wsData.message.id)) {
-          return [...prev, wsData.message];
+        if (!prev.find((m) => m.id === societyData.message.id)) {
+          return [...prev, societyData.message];
         }
         return prev;
       });
-    } else if (wsData.type === 'reaction_added') {
+    } else if (societyData.type === 'reaction_added') {
       setSocietyMessages((prev) =>
         prev.map((m) =>
-          m.id === wsData.reaction.message_id
-            ? { ...m, reactions: [...(m.reactions || []), wsData.reaction] }
+          m.id === societyData.reaction.message_id
+            ? { ...m, reactions: [...(m.reactions || []), societyData.reaction] }
             : m
         )
       );
-    } else if (wsData.type === 'message_pinned') {
+    } else if (societyData.type === 'message_pinned') {
       setSocietyMessages((prev) =>
         prev.map((m) =>
-          m.id === wsData.message_id ? { ...m, is_pinned: true } : m
+          m.id === societyData.message_id ? { ...m, is_pinned: true } : m
         )
       );
     }
-  }, [wsData, isSocietyWsConnected]);
+  }, [societyData, isSocietyWsConnected]);
 
   // Handle notifications for society updates
   useEffect(() => {
