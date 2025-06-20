@@ -43,13 +43,19 @@ const BookCard = ({ book, onUpdateAvailability, onRemove, onBookmark, onFavorite
         <div className="flex space-x-2">
           <button
             onClick={() => onBookmark(book.book_id, isBookmarked)}
-            className={`p-2 rounded-full ${isBookmarked ? 'bg-primary text-white' : 'bg-gray-200'}`}
+            className={`p-2 rounded-full transition-colors ${
+              isBookmarked ? 'bg-primary text-white hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+            title={isBookmarked ? 'Cancel Bookmark' : 'Bookmark'}
           >
             <BookmarkIcon className="w-5 h-5" />
           </button>
           <button
             onClick={() => onFavorite(book.book_id, isFavorited)}
-            className={`p-2 rounded-full ${isFavorited ? 'bg-error text-white' : 'bg-gray-200'}`}
+            className={`p-2 rounded-full transition-colors ${
+              isFavorited ? 'bg-error text-white hover:bg-red-600' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+            title={isFavorited ? 'Cancel Favorite' : 'Add to Favorites'}
           >
             <HeartIcon className="w-5 h-5" />
           </button>
@@ -57,7 +63,8 @@ const BookCard = ({ book, onUpdateAvailability, onRemove, onBookmark, onFavorite
         {onRemove && (
           <button
             onClick={() => onRemove(book.book_id)}
-            className="p-2 rounded-full bg-error text-white hover:bg-red-600"
+            className="p-2 rounded-full bg-error text-white hover:bg-red-600 transition-colors"
+            title="Remove Book"
           >
             <TrashIcon className="w-5 h-5" />
           </button>

@@ -23,7 +23,7 @@ const LibraryPage = () => {
   });
 
   const tabs = [
-    { id: 'my-books', label: 'My Books', icon: <BookOpenIcon className="w-4 h-4" /> },
+    { id: 'my-books', label: 'My Library', icon: <BookOpenIcon className="w-4 h-4" /> },
     { id: 'global', label: 'Browse', icon: <GlobeAltIcon className="w-4 h-4" /> },
   ];
 

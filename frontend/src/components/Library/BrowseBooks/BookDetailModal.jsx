@@ -2,7 +2,7 @@ import React from 'react';
 import Modal from '../../Common/Modal';
 import { BookmarkIcon, HeartIcon } from '@heroicons/react/24/outline';
 
-const BookDetailModal = ({ isOpen, onClose, book, onBookmark, onFavorite }) => {
+const BookDetailModal = ({ isOpen, onClose, book, onBookmark, onFavorite, isBookmarked = false, isFavorited = false }) => {
   if (!book) return null;
 
   return (
@@ -28,6 +28,7 @@ const BookDetailModal = ({ isOpen, onClose, book, onBookmark, onFavorite }) => {
         <p><strong>Owner:</strong> {book.user?.username || 'N/A'}</p>
         <p><strong>Original Owner:</strong> {book.original_owner?.username || 'N/A'}</p>
         <p><strong>Copy Count:</strong> {book.copy_count}</p>
+        
         {book.history && book.history.length > 0 && (
           <div>
             <h3 className="text-lg font-lora font-semibold text-primary">Recent History</h3>
@@ -42,20 +43,29 @@ const BookDetailModal = ({ isOpen, onClose, book, onBookmark, onFavorite }) => {
             </ul>
           </div>
         )}
+        
         <div className="flex space-x-4">
           <button
-            onClick={() => onBookmark(book.book_id, false)}
-            className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700"
+            onClick={() => onBookmark(book.book_id, isBookmarked)}
+            className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+              isBookmarked 
+                ? 'bg-gray-500 text-white hover:bg-gray-600' 
+                : 'bg-primary text-white hover:bg-blue-700'
+            }`}
           >
             <BookmarkIcon className="w-5 h-5 mr-2" />
-            Bookmark
+            {isBookmarked ? 'Cancel Bookmark' : 'Bookmark'}
           </button>
           <button
-            onClick={() => onFavorite(book.book_id, false)}
-            className="flex items-center px-4 py-2 bg-error text-white rounded-md hover:bg-red-600"
+            onClick={() => onFavorite(book.book_id, isFavorited)}
+            className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+              isFavorited 
+                ? 'bg-gray-500 text-white hover:bg-gray-600' 
+                : 'bg-error text-white hover:bg-red-600'
+            }`}
           >
             <HeartIcon className="w-5 h-5 mr-2" />
-            Favorite
+            {isFavorited ? 'Cancel Favorite' : 'Favorite'}
           </button>
         </div>
       </div>

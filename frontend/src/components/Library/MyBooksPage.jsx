@@ -4,10 +4,10 @@ import { toast } from 'react-toastify';
 import Pagination from '../Common/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
-import BookCard from '../Library/MyBooks/BookCard';
-import TabsNavigation from '../Library/MyBooks/TabsNavigation';
+import BookCard from '../Library/common/BookCard';
+import TabsNavigation from '../Library/common/TabsNavigation';
 import AddBookModal from '../Library/MyBooks/AddBookModal';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, BookOpenIcon, BookmarkIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const MyBooksPage = () => {
   const {
@@ -91,6 +91,7 @@ const MyBooksPage = () => {
         year: '',
         cover_image_url: '',
       });
+      toast.success('Book added successfully');
     } catch {
       toast.error('Failed to add book');
     }
@@ -99,6 +100,7 @@ const MyBooksPage = () => {
   const handleUpdateAvailability = async (bookId, data) => {
     try {
       await updateAvailability(bookId, data);
+      toast.success('Availability updated');
     } catch {
       toast.error('Failed to update availability');
     }
@@ -108,6 +110,7 @@ const MyBooksPage = () => {
     if (window.confirm('Are you sure you want to remove this book?')) {
       try {
         await removeBook(bookId);
+        toast.success('Book removed');
       } catch {
         toast.error('Failed to remove book');
       }
@@ -118,6 +121,7 @@ const MyBooksPage = () => {
     try {
       if (isBookmarked) await removeBookmark(bookId);
       else await bookmarkBook(bookId);
+      toast.success(isBookmarked ? 'Bookmark removed' : 'Book bookmarked');
     } catch {
       toast.error('Failed to update bookmark');
     }
@@ -127,29 +131,37 @@ const MyBooksPage = () => {
     try {
       if (isFavorited) await unfavoriteBook(bookId);
       else await favoriteBook(bookId);
+      toast.success(isFavorited ? 'Removed from favorites' : 'Added to favorites');
     } catch {
       toast.error('Failed to update favorite');
     }
   };
 
+  const tabs = [
+    { id: 'library', label: 'My Books', icon: <BookOpenIcon className="w-4 h-4" /> },
+    { id: 'bookmarks', label: 'Bookmarked', icon: <BookmarkIcon className="w-4 h-4" /> },
+    { id: 'favorites', label: 'Favorites', icon: <HeartIcon className="w-4 h-4" /> },
+    { id: 'history', label: 'History', icon: <ClockIcon className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-background font-open-sans text-text pt-16 pb-20" {...handlers}>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-lora font-bold text-primary mb-6">My Library</h1>
+        <h1 className="text-4xl font-lora font-bold text-gradient mb-2">My Library</h1>
+        <p className="font-open-sans text-text mb-6 opacity-80">
+          Manage your books, bookmarks, and reading history
+        </p>
 
-        <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} isSmallScreen={isSmallScreen} />
-
-        {activeTab === 'library' && (
-          <div className="flex justify-end mb-6">
-            <button
-              className="flex items-center px-4 py-2 bg-accent text-white rounded-md hover:bg-yellow-600"
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add Book
-            </button>
-          </div>
-        )}
+        <div className="flex justify-between items-center mb-6">
+          <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} isSmallScreen={isSmallScreen} />
+          <button
+            className="bookish-button-enhanced flex items-center px-4 py-2 rounded-md text-white"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Add Book
+          </button>
+        </div>
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -176,6 +188,9 @@ const MyBooksPage = () => {
                     isFavorited={favorites?.some((f) => f.book_id === entry.book_id) || false}
                   />
                 ))}
+                {(!userLibrary || userLibrary.length === 0) && (
+                  <p className="text-center text-gray-500">No books in your library</p>
+                )}
               </div>
             )}
 
@@ -191,6 +206,9 @@ const MyBooksPage = () => {
                     isFavorited={favorites?.some((f) => f.book_id === book.book_id) || false}
                   />
                 ))}
+                {(!bookmarks || bookmarks.length === 0) && (
+                  <p className="text-center text-gray-500">No bookmarked books</p>
+                )}
               </div>
             )}
 
@@ -206,15 +224,17 @@ const MyBooksPage = () => {
                     isFavorited={true}
                   />
                 ))}
+                {(!favorites || favorites.length === 0) && (
+                  <p className="text-center text-gray-500">No favorite books</p>
+                )}
               </div>
             )}
 
             {activeTab === 'history' && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="card-glass rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-lora font-bold text-primary mb-4">Book History</h2>
                 <div className="space-y-4">
                   {history?.map((item) => {
-                    // Guard against undefined book data
                     if (!item?.book) {
                       return (
                         <div key={item?.history_id || Math.random()} className="border-b pb-2">

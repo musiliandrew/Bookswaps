@@ -4,11 +4,12 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import Pagination from '../Common/Pagination';
-import BookCard from '../Library/BrowseBooks/BookCard';
-import TabsNavigation from '../Library/BrowseBooks/TabsNavigation';
+import BookCard from '../Library/common/BookCard';
+import TabsNavigation from '../Library/common/TabsNavigation';
 import SearchBar from '../Library/BrowseBooks/SearchBar';
 import Filters from '../Library/BrowseBooks/Filters';
 import BookDetailModal from '../Library/BrowseBooks/BookDetailModal';
+import { StarIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 
 const BrowseBooksPage = () => {
   const {
@@ -118,12 +119,20 @@ const BrowseBooksPage = () => {
     }
   };
 
+  const tabs = [
+    { id: 'recommended', label: 'Recommended Books', icon: <StarIcon className="w-4 h-4" /> },
+    { id: 'browse', label: 'Browse Books', icon: <BuildingLibraryIcon className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-background font-open-sans text-text pt-16 pb-20" {...handlers}>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-lora font-bold text-primary mb-6">Browse Books</h1>
+        <h1 className="text-4xl font-lora font-bold text-gradient mb-2">Browse Books</h1>
+        <p className="font-open-sans text-text mb-6 opacity-80">
+          Discover new books to read and exchange
+        </p>
 
-        <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} isSmallScreen={isSmallScreen} />
+        <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} isSmallScreen={isSmallScreen} />
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -154,8 +163,10 @@ const BrowseBooksPage = () => {
 
             {activeTab === 'browse' && (
               <>
-                <SearchBar searchQuery={searchQuery} onSearch={handleSearch} />
-                <Filters filters={filters} onFilterChange={handleFilterChange} />
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <SearchBar searchQuery={searchQuery} onSearch={handleSearch} />
+                  <Filters filters={filters} onFilterChange={handleFilterChange} />
+                </div>
                 {isLoading && <div className="text-center text-lg">Loading...</div>}
                 {error && <div className="text-center text-error text-lg">{error}</div>}
                 {(isSearching ? searchResults : books).length > 0 ? (
