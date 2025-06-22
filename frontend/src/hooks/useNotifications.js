@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { handleApiCallWithResult } from '../utils/apiUtils';
+import { API_ENDPOINTS } from '../utils/constants';
 import { useWebSocket } from './useWebSocket';
+import { useAuth } from './useAuth';
 import debounce from 'lodash/debounce';
 
 export function useNotifications() {
@@ -14,109 +17,94 @@ export function useNotifications() {
     page: 1,
     totalPages: 1,
   });
-  const { isConnected, messages } = useWebSocket(null, 'notification');
+  const { isAuthenticated, profile } = useAuth();
+  const { isConnected, messages } = useWebSocket(profile?.user_id, 'notification');
 
-  const debouncedGetNotificationsRef = useRef(
-    debounce(
-      async (filters = {}, page = 1, { setIsLoading, setError, setNotifications, setPagination }) => {
-        console.log('Fetching notifications:', filters, page);
-        setIsLoading(true);
-        setError(null);
-        try {
-          const params = new URLSearchParams({ page });
-          if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
-          if (filters.type) params.append('type', filters.type);
-          const response = await api.get(`/swaps/notifications/?${params.toString()}`);
-          setNotifications(response.data.results || []);
-          setPagination({
-            next: response.data.next,
-            previous: response.data.previous,
-            page,
-            totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-          });
-          return response.data;
-        } catch (err) {
-          const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch notifications';
-          setError(errorMessage);
-          toast.error(errorMessage);
-          return null;
-        } finally {
-          setIsLoading(false);
-        }
-      },
-      1000,
-      { leading: false, trailing: true }
-    )
-  );
+  const updatePagination = (data, page) => {
+    setPagination({
+      next: data.next,
+      previous: data.previous,
+      page,
+      totalPages: Math.ceil(data.count / (data.results?.length || 1)),
+    });
+  };
 
-  const getNotifications = useCallback(
-    (filters = {}, page = 1) => {
-      return debouncedGetNotificationsRef.current(filters, page, {
-        setIsLoading,
-        setError,
-        setNotifications,
-        setPagination,
-      });
-    },
-    []
+  const getNotifications = useCallback(async (filters = {}, page = 1) => {
+    const params = new URLSearchParams({ page });
+    if (filters.is_read !== undefined) params.append('is_read', filters.is_read);
+    if (filters.type) params.append('type', filters.type);
+
+    const result = await handleApiCallWithResult(
+      () => api.get(`${API_ENDPOINTS.GET_NOTIFICATIONS}?${params.toString()}`),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch notifications'
+    );
+    if (result) {
+      setNotifications(result.results || []);
+      updatePagination(result, page);
+    }
+    return result;
+  }, []);
+
+  const debouncedGetNotifications = useMemo(
+    () => debounce(getNotifications, 1000, { leading: false, trailing: true }),
+    [getNotifications]
   );
 
   const markNotificationRead = useCallback(async (notificationId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.patch(`/swaps/notifications/${notificationId}/read/`);
-      toast.success('Notification marked as read');
+    const result = await handleApiCallWithResult(
+      () => api.patch(API_ENDPOINTS.MARK_NOTIFICATION_READ(notificationId)),
+      setIsLoading,
+      setError,
+      'Notification marked as read',
+      'Mark notification read'
+    );
+    if (result) {
       setNotifications((prev) =>
         prev.map((n) => (n.notification_id === notificationId ? { ...n, is_read: true } : n))
       );
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to mark notification read';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
     }
+    return result;
   }, []);
 
   useEffect(() => {
-    getNotifications({ is_read: false });
+    if (!isAuthenticated) return;
+
+    debouncedGetNotifications({ is_read: false });
 
     let interval;
-    const debounced = debouncedGetNotificationsRef.current; // Capture ref value at effect run
     if (!isConnected) {
       interval = setInterval(() => {
-        if (!isConnected) {
-          console.log('Polling notifications');
-          getNotifications({ is_read: false });
-        }
+        debouncedGetNotifications({ is_read: false });
       }, 60000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
-      if (debounced && typeof debounced.cancel === 'function') {
-        debounced.cancel();
-      }
+      debouncedGetNotifications.cancel();
     };
-  }, [getNotifications, isConnected]);
+  }, [isAuthenticated, isConnected, debouncedGetNotifications]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      const newNotifications = messages.map((msg) => ({
-        notification_id: msg.follow_id,
-        type: msg.type,
-        message: msg.message,
-        is_read: false,
-      }));
-      setNotifications((prev) => [...newNotifications, ...prev]);
-    }
+    if (!messages.length) return;
+
+    const newNotifications = messages.map((msg) => ({
+      notification_id: msg.notification_id,
+      type: msg.type,
+      message: msg.message,
+      content_type: msg.content_type,
+      content_id: msg.content_id,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    }));
+    setNotifications((prev) => [...newNotifications, ...prev]);
+    toast.info('New notification received!');
   }, [messages]);
 
   return {
-    getNotifications,
+    getNotifications: debouncedGetNotifications,
     markNotificationRead,
     notifications,
     isLoading,

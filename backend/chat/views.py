@@ -6,6 +6,7 @@ from rest_framework import status
 from backend.discussions.models import Society, SocietyMember, SocietyMessage
 from backend.users.models import CustomUser, Follows
 from backend.swaps.models import Notification
+from backend.utils.websocket import send_notification_to_user
 from .serializers import (
     ChatSerializer, ChatReadStatusSerializer, SocietyCreateSerializer,
     SocietySerializer, SocietyMessageSerializer, MessageReactionSerializer
@@ -35,13 +36,32 @@ class SendMessageView(APIView):
         serializer = ChatSerializer(data=request.data, context={'sender': request.user})
         if serializer.is_valid():
             chat = serializer.save()
-            # Send WebSocket notification
+            # Send WebSocket notification for the chat message
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"chat_{chat.chat_id}",
                 {
                     "type": "chat_message",
                     "message": ChatSerializer(chat).data
+                }
+            )
+            # Also send a notification to the receiver's user group
+            notification = Notification.objects.create(
+                user=receiver,
+                type='message_received',
+                message=f"{request.user.username} sent you a message.",
+                content_type='chat',
+                content_id=chat.chat_id
+            )
+            send_notification_to_user(
+                receiver.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{request.user.username} sent you a message.",
+                    "type": "message_received",
+                    "content_type": "chat",
+                    "content_id": str(chat.chat_id),
+                    "follow_id": None
                 }
             )
             return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
@@ -59,12 +79,24 @@ class EditMessageView(APIView):
         serializer = ChatSerializer(chat, data=request.data, partial=True, context={'sender': request.user})
         if serializer.is_valid():
             chat = serializer.save()
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=chat.receiver,
                 type='message_edited',
                 message=f"{request.user.username} edited a message.",
                 content_type='chat',
                 content_id=chat.chat_id
+            )
+            # Send notification via WebSocket
+            send_notification_to_user(
+                chat.receiver.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{request.user.username} edited a message.",
+                    "type": "message_edited",
+                    "content_type": "chat",
+                    "content_id": str(chat.chat_id),
+                    "follow_id": None
+                }
             )
             return Response(ChatSerializer(chat).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -146,12 +178,24 @@ class MarkReadView(APIView):
         chat.status = 'READ'
         chat.save()
         serializer = ChatReadStatusSerializer(chat)
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=chat.sender,
             type='message_read',
             message=f"{request.user.username} read your message.",
             content_type='chat',
             content_id=chat.chat_id
+        )
+        # Send notification via WebSocket
+        send_notification_to_user(
+            chat.sender.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"{request.user.username} read your message.",
+                "type": "message_read",
+                "content_type": "chat",
+                "content_id": str(chat.chat_id),
+                "follow_id": None
+            }
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -242,12 +286,24 @@ class CreateSocietyView(APIView):
                 role='admin',
                 status='ACTIVE'
             )
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=request.user,
                 type='society_created',
                 message=f"You created a new society: {society.name}",
                 content_type='society',
                 content_id=society.society_id
+            )
+            # Send notification via WebSocket to the user's group
+            send_notification_to_user(
+                request.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"You created a new society: {society.name}",
+                    "type": "society_created",
+                    "content_type": "society",
+                    "content_id": str(society.society_id),
+                    "follow_id": None
+                }
             )
             return Response(SocietySerializer(society).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -268,15 +324,26 @@ class JoinSocietyView(APIView):
         if not created:
             return Response({"error": "Already a member."}, status=status.HTTP_400_BAD_REQUEST)
 
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=request.user,
             type='society_joined',
             message=f"You joined the society: {society.name}",
             content_type='society',
             content_id=society.society_id
         )
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You joined the society: {society.name}",
+                "type": "society_joined",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
         return Response(SocietySerializer(society).data, status=status.HTTP_201_CREATED)
-
 class LeaveSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -291,14 +358,27 @@ class LeaveSocietyView(APIView):
             return Response({"error": "Cannot leave as the only admin."}, status=status.HTTP_400_BAD_REQUEST)
 
         member.delete()
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=request.user,
             type='society_left',
             message=f"You left the society: {society.name}",
             content_type='society',
             content_id=society.society_id
         )
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You left the society: {society.name}",
+                "type": "society_left",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class SocietyListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -447,12 +527,24 @@ class PinMessageView(APIView):
             message = SocietyMessage.objects.get(message_id=message_id, society__society_id=society_id)
             message.is_pinned = True
             message.save()
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=message.user,
                 type='message_pinned',
                 message=f"Your message in {message.society.name} was pinned.",
                 content_type='society_message',
                 content_id=message.message_id
+            )
+            # Send notification via WebSocket to the message owner's group
+            send_notification_to_user(
+                message.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"Your message in {message.society.name} was pinned.",
+                    "type": "message_pinned",
+                    "content_type": "society_message",
+                    "content_id": str(message.message_id),
+                    "follow_id": None
+                }
             )
             return Response({
                 "message_id": str(message.message_id),

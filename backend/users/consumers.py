@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         token = self.scope['query_string'].decode().split('token=')[-1]
+        logger.info(f"WebSocket connection attempt with token: {token[:10]}...")
         if not token:
             logger.warning("WebSocket connection attempt without token")
-            await self.close()
+            await self.close(code=4001)
             return
 
         try:
@@ -24,10 +25,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 logger.info(f"WebSocket connected for user_id={user.user_id}")
             else:
                 logger.warning("WebSocket authentication failed")
-                await self.close()
+                await self.close(code=4001)
         except Exception as e:
             logger.error(f"WebSocket authentication error: {str(e)}")
-            await self.close()
+            await self.close(code=4001)
 
     @database_sync_to_async
     def authenticate_user(self, token):
@@ -36,17 +37,24 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             validated_token = jwt_auth.get_validated_token(token)
             user = jwt_auth.get_user(validated_token)
             return user
-        except Exception:
+        except Exception as e:
+            logger.error(f"JWT authentication failed: {str(e)}")
             return None
 
     async def disconnect(self, close_code):
         if hasattr(self, 'group_name'):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
-            logger.info(f"WebSocket disconnected for group={self.group_name}")
+            logger.info(f"WebSocket disconnected for group={self.group_name} with code={close_code}")
 
     async def notification(self, event):
-        await self.send(text_data=json.dumps({
-            'type': event['type'],
-            'message': event['message'],
-            'follow_id': event['follow_id']
-        }))
+        try:
+            await self.send(text_data=json.dumps({
+                'type': event['type'],
+                'message': event['message'],
+                'follow_id': event.get('follow_id'),
+                'notification_id': event.get('notification_id'),
+                'content_type': event.get('content_type'),
+                'content_id': event.get('content_id'),
+            }))
+        except Exception as e:
+            logger.error(f"Error sending notification: {str(e)}")

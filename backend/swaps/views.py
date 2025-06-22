@@ -21,6 +21,7 @@ from backend.library.models import Book
 from backend.users.models import Follows
 from django.conf import settings
 import uuid
+from backend.utils.websocket import send_notification_to_user
 
 def haversine(coord1, coord2):
     """Calculate distance (km) between two coordinates."""
@@ -64,11 +65,23 @@ class InitiateSwapView(APIView):
                     swap.receiver_book.locked_until = timezone.now() + timedelta(hours=24)
                     swap.receiver_book.save()
 
-                Notification.objects.create(
+                notification = Notification.objects.create(
                     user=swap.receiver,
                     swap=swap,
                     type='swap_proposed',
                     message=f"{request.user.username} requested a swap."
+                )
+                # Send notification via WebSocket to the receiver's group
+                send_notification_to_user(
+                    swap.receiver.user_id,
+                    {
+                        "notification_id": str(notification.notification_id),
+                        "message": f"{request.user.username} requested a swap.",
+                        "type": "swap_proposed",
+                        "content_type": "swap",
+                        "content_id": str(swap.swap_id),
+                        "follow_id": None
+                    }
                 )
 
             return Response(SwapSerializer(swap).data, status=status.HTTP_201_CREATED)
@@ -89,11 +102,23 @@ class AcceptSwapView(APIView):
             with transaction.atomic():
                 serializer.save(status='Accepted')
 
-                Notification.objects.create(
+                notification = Notification.objects.create(
                     user=swap.initiator,
                     swap=swap,
                     type='swap_accepted',
                     message=f"{request.user.username} accepted your swap."
+                )
+                # Send notification via WebSocket to the initiator's group
+                send_notification_to_user(
+                    swap.initiator.user_id,
+                    {
+                        "notification_id": str(notification.notification_id),
+                        "message": f"{request.user.username} accepted your swap.",
+                        "type": "swap_accepted",
+                        "content_type": "swap",
+                        "content_id": str(swap.swap_id),
+                        "follow_id": None
+                    }
                 )
 
             return Response(SwapSerializer(swap).data, status=status.HTTP_200_OK)
@@ -138,7 +163,7 @@ class ConfirmSwapView(APIView):
                         receiver_book.locked_until = None
                         receiver_book.save()
 
-                    Notification.objects.bulk_create([
+                    notifications = [
                         Notification(
                             user=swap.initiator,
                             swap=swap,
@@ -151,7 +176,22 @@ class ConfirmSwapView(APIView):
                             type='swap_completed',
                             message="Swap completed."
                         )
-                    ])
+                    ]
+                    Notification.objects.bulk_create(notifications)
+
+                    # Send notifications via WebSocket to both users' groups
+                    for notification in notifications:
+                        send_notification_to_user(
+                            notification.user.user_id,
+                            {
+                                "notification_id": str(notification.notification_id),
+                                "message": "Swap completed.",
+                                "type": "swap_completed",
+                                "content_type": "swap",
+                                "content_id": str(swap.swap_id),
+                                "follow_id": None
+                            }
+                        )
 
                     cache.delete(swap_confirm_key)
                     cache.delete(other_confirm_key)
@@ -183,11 +223,23 @@ class CancelSwapView(APIView):
                 swap.receiver_book.save()
 
             other_user = swap.receiver if request.user == swap.initiator else swap.initiator
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=other_user,
                 swap=swap,
                 type='swap_cancelled',
                 message=f"{request.user.username} cancelled the swap."
+            )
+            # Send notification via WebSocket to the other user's group
+            send_notification_to_user(
+                other_user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{request.user.username} cancelled the swap.",
+                    "type": "swap_cancelled",
+                    "content_type": "swap",
+                    "content_id": str(swap.swap_id),
+                    "follow_id": None
+                }
             )
 
             swap.save()

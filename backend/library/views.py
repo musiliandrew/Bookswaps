@@ -17,6 +17,7 @@ from .serializers import (
     BookHistorySerializer, BookmarkSerializer, FavoriteSerializer, PopularBookSerializer
 )
 from backend.swaps.models import Notification
+from backend.utils.websocket import send_notification_to_user
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
@@ -99,11 +100,23 @@ class AddUserBookView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         book = serializer.save()
 
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=book.user,
             book=book,
             type='book_added',
             message=f"You added {book.title} to your library."
+        )
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            book.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You added {book.title} to your library.",
+                "type": "book_added",
+                "content_type": "book",
+                "content_id": str(book.book_id),
+                "follow_id": None
+            }
         )
         return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
 
@@ -160,6 +173,19 @@ class BookAvailabilityUpdateView(generics.UpdateAPIView):
                 for bookmark in bookmarks
             ]
             Notification.objects.bulk_create(notifications)
+            # Send notifications via WebSocket to each bookmarking user's group
+            for notification in notifications:
+                send_notification_to_user(
+                    notification.user.user_id,
+                    {
+                        "notification_id": str(notification.notification_id),
+                        "message": f"{book.title} is now available for {'exchange' if book.available_for_exchange else 'borrowing'}.",
+                        "type": "book_available",
+                        "content_type": "book",
+                        "content_id": str(book.book_id),
+                        "follow_id": None
+                    }
+                )
 
         return Response(BookDetailSerializer(book).data, status=status.HTTP_200_OK)
 
@@ -201,12 +227,24 @@ class RemoveBookFromLibraryView(generics.DestroyAPIView):
                 notes=f"Book removed from {self.request.user.username}'s library"
             )
 
-        Notification.objects.create(
-            user=self.request.user,
-            book=book,
-            type='book_removed',
-            message=f"You removed {book.title} from your library."
-        )
+            notification = Notification.objects.create(
+                user=self.request.user,
+                book=book,
+                type='book_removed',
+                message=f"You removed {book.title} from your library."
+            )
+            # Send notification via WebSocket to the user's group
+            send_notification_to_user(
+                self.request.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"You removed {book.title} from your library.",
+                    "type": "book_removed",
+                    "content_type": "book",
+                    "content_id": str(book.book_id),
+                    "follow_id": None
+                }
+            )
 
 class BookHistoryView(generics.ListAPIView):
     serializer_class = BookHistorySerializer

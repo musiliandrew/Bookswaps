@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { handleApiCall, handleApiCallWithResult } from '../utils/apiUtils';
+import { API_ENDPOINTS } from '../utils/constants';
 import { useNotifications } from './useNotifications';
 import { useWebSocket } from './useWebSocket';
 
@@ -17,313 +19,265 @@ export function useSocieties() {
   });
 
   const { notifications, isWebSocketConnected: isNotificationsConnected } = useNotifications();
-  const { societyData, isConnected: isSocietyWsConnected, sendMessage, addReaction } = useWebSocket(null, 'society');
+  const { societyData, isConnected: isSocietyWsConnected, sendMessage, addReaction } = useWebSocket(
+    null,
+    'society'
+  );
+
+  const updatePagination = (data, key, page) => {
+    setPagination((prev) => ({
+      ...prev,
+      [key]: {
+        next: data.next,
+        previous: data.previous,
+        page,
+        totalPages: Math.ceil(data.count / (data.results?.length || 1)),
+      },
+    }));
+  };
 
   const createSociety = useCallback(async (data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post('/chat/societies/create/', data);
-      setSocieties((prev) => [...prev, response.data]);
-      toast.success('Society created!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to create society';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.CREATE_SOCIETY, data),
+      setIsLoading,
+      setError,
+      'Society created!',
+      'Create society'
+    );
+    if (result) setSocieties((prev) => [...prev, result]);
+    return result;
   }, []);
 
   const joinSociety = useCallback(async (societyId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/chat/societies/${societyId}/join/`);
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.JOIN_SOCIETY(societyId)),
+      setIsLoading,
+      setError,
+      'Joined society!',
+      'Join society'
+    );
+    if (result) {
       setSocieties((prev) =>
         prev.map((s) => (s.id === societyId ? { ...s, is_member: true } : s))
       );
-      toast.success('Joined society!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to join society';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    return result;
   }, []);
 
   const leaveSociety = useCallback(async (societyId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.delete(`/chat/societies/${societyId}/leave/`);
+    const result = await handleApiCallWithResult(
+      () => api.delete(API_ENDPOINTS.LEAVE_SOCIETY(societyId)),
+      setIsLoading,
+      setError,
+      'Left society!',
+      'Leave society'
+    );
+    if (result) {
       setSocieties((prev) =>
         prev.map((s) => (s.id === societyId ? { ...s, is_member: false } : s))
       );
-      toast.success('Left society!');
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to leave society';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
     }
+    return result;
   }, []);
 
   const listSocieties = useCallback(async (filters = {}, page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page });
-      if (filters.focus_type) params.append('focus_type', filters.focus_type);
-      if (filters.focus_id) params.append('focus_id', filters.focus_id);
-      if (filters.my_societies) params.append('my_societies', 'true');
-      const response = await api.get(`/chat/societies/?${params.toString()}`);
-      setSocieties(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        societies: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch societies';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
+    const params = new URLSearchParams({ page });
+    if (filters.focus_type) params.append('focus_type', filters.focus_type);
+    if (filters.focus_id) params.append('focus_id', filters.focus_id);
+    if (filters.my_societies) params.append('my_societies', 'true');
+
+    const result = await handleApiCall(
+      () => api.get(`${API_ENDPOINTS.LIST_SOCIETIES}?${params.toString()}`),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch societies'
+    );
+    if (result) {
+      setSocieties(result.results || []);
+      updatePagination(result, 'societies', page);
     }
+    return result;
   }, []);
 
   const getSocietyMessages = useCallback(async (societyId, page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/chat/societies/${societyId}/messages/?page=${page}`);
-      setSocietyMessages(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        messages: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch society messages';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
+    const result = await handleApiCall(
+      () => api.get(`${API_ENDPOINTS.GET_SOCIETY_MESSAGES(societyId)}?page=${page}`),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch society messages'
+    );
+    if (result) {
+      setSocietyMessages(result.results || []);
+      updatePagination(result, 'messages', page);
     }
+    return result;
   }, []);
 
-  const sendSocietyMessage = useCallback(async (societyId, content) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      sendMessage(content, societyId); // Use WebSocket to send message
-      toast.success('Message sent!');
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to send message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sendMessage]);
+  const sendSocietyMessage = useCallback(
+    async (societyId, content) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        await sendMessage(content, societyId); // Use WebSocket
+        toast.success('Message sent!');
+        return true;
+      } catch (err) {
+        const errorMessage = err.message || 'Failed to send message';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [sendMessage]
+  );
 
   const editSocietyMessage = useCallback(async (societyId, messageId, data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.patch(`/chat/societies/${societyId}/messages/${messageId}/edit/`, data);
+    const result = await handleApiCall(
+      () => api.patch(API_ENDPOINTS.EDIT_SOCIETY_MESSAGE(societyId, messageId), data),
+      setIsLoading,
+      setError,
+      'Message edited!',
+      'Edit message'
+    );
+    if (result) {
       setSocietyMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, ...response.data } : m))
+        prev.map((m) => (m.id === messageId ? { ...m, ...result } : m))
       );
-      toast.success('Message edited!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to edit message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    return result;
   }, []);
 
   const deleteSocietyMessage = useCallback(async (societyId, messageId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.delete(`/chat/societies/${societyId}/messages/${messageId}/delete/`);
-      setSocietyMessages((prev) => prev.filter((m) => m.id !== messageId));
-      toast.success('Message deleted!');
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to delete message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
+    const result = await handleApiCallWithResult(
+      () => api.delete(API_ENDPOINTS.DELETE_SOCIETY_MESSAGE(societyId, messageId)),
+      setIsLoading,
+      setError,
+      'Message deleted!',
+      'Delete message'
+    );
+    if (result) {
+      setSocietyMessages((prev) => prev.filter((p) => p.id !== messageId));
     }
+    return result;
   }, []);
 
   const pinSocietyMessage = useCallback(async (societyId, messageId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/chat/societies/${societyId}/messages/${messageId}/pin/`);
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.PIN_SOCIETY_MESSAGE(societyId, messageId)),
+      setIsLoading,
+      setError,
+      'Message pinned!',
+      'Success'
+    );
+    if (result) {
       setSocietyMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, is_pinned: true } : m))
       );
-      toast.success('Message pinned!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to pin message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
     }
+    return result;
   }, []);
 
-  const addSocietyReaction = useCallback(async (societyId, messageId, data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      addReaction(messageId, data.reaction_type); // Use WebSocket to add reaction
-      toast.success('Reaction added!');
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to add reaction';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addReaction]);
+  const addSocietyReaction = useCallback(
+    async (societyId, messageId, data) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        await addReaction(messageId, data); // Use WebSocket
+        toast.success('Reaction added!');
+        return true;
+      } catch (err) {
+        const errorMessage = err.message || 'Failed to add reaction';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addReaction]
+  );
 
-  const listSocietyReactions = useCallback(async (societyId, messageId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/chat/societies/${societyId}/messages/${messageId}/reactions/`);
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch reactions';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const listSocietyReactions = useCallback(
+    async (societyId, messageId) => {
+      return await handleApiCall(
+        () => api.get(API_ENDPOINTS.LIST_SOCIETY_REACTIONS(societyId, messageId)),
+        setIsLoading,
+        setError,
+        null,
+        'Fetch reactions'
+      );
+    },
+    []
+  );
 
   const createSocietyEvent = useCallback(async (societyId, data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/chat/societies/${societyId}/events/create/`, data);
-      setSocietyEvents((prev) => [...prev, response.data]);
-      toast.success('Event created!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to create event';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.CREATE_SOCIETY_EVENT(societyId), data),
+      setIsLoading,
+      setError,
+      'Event created successfully!',
+      'Create event'
+    );
+    if (result) setSocietyEvents((prev) => [...prev, result]);
+    return result;
   }, []);
 
   const listSocietyEvents = useCallback(async (societyId, page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/chat/societies/${societyId}/events/?page=${page}`);
-      setSocietyEvents(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        events: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch events';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
+    const result = await handleApiCall(
+      () => api.get(`${API_ENDPOINTS.LIST_SOCIETY_EVENTS(societyId)}?page=${page}`),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch events'
+    );
+    if (result) {
+      setSocietyEvents(result.results || []);
+      updatePagination(result, 'events', page);
     }
+    return result;
   }, []);
 
-  // Handle WebSocket messages for society
   useEffect(() => {
-    if (!isSocietyWsConnected || !societyData) return;
+  if (!isSocietyWsConnected || !societyData) return;
 
-    if (societyData.type === 'society_message') {
-      setSocietyMessages((prev) => {
-        if (!prev.find((m) => m.id === societyData.message.id)) {
-          return [...prev, societyData.message];
-        }
-        return prev;
-      });
-    } else if (societyData.type === 'reaction_added') {
-      setSocietyMessages((prev) =>
-        prev.map((m) =>
-          m.id === societyData.reaction.message_id
-            ? { ...m, reactions: [...(m.reactions || []), societyData.reaction] }
-            : m
-        )
-      );
-    } else if (societyData.type === 'message_pinned') {
-      setSocietyMessages((prev) =>
-        prev.map((m) =>
-          m.id === societyData.message_id ? { ...m, is_pinned: true } : m
-        )
-      );
-    }
-  }, [societyData, isSocietyWsConnected]);
+  if (societyData.type === 'society_message') {
+    setSocietyMessages((prev) => {
+      if (!prev.find((m) => m.id === societyData.message.id)) {
+        return [...prev, societyData.message];
+      }
+      return prev;
+    });
+  } else if (societyData.type === 'reaction_added') {
+    setSocietyMessages((prev) =>
+      prev.map((m) =>
+        m.id === societyData.reaction?.message_id
+          ? { ...m, reactions: [...(m.reactions || []), societyData.reaction] }
+          : m
+      )
+    );
+  } else if (societyData.type === 'message_pinned') {
+    setSocietyMessages((prev) =>
+      prev.map((m) =>
+        m.id === societyData.message_id ? { ...m, is_pinned: true } : m
+      )
+    );
+  }
+}, [societyData, isSocietyWsConnected]);
 
-  // Handle notifications for society updates
   useEffect(() => {
     if (!isNotificationsConnected || !notifications?.length) return;
 
     notifications.forEach(({ type, data }) => {
       if (type === 'society_joined' || type === 'society_left') {
         listSocieties();
-        toast.info(`Society ${type === 'society_joined' ? 'joined' : 'left'}: ${data.society_name}`);
-      } else if (type === 'society_event_created') {
+        toast.info(`Society ${type === 'society_joined' ? 'joined' : 'left'}: ${data?.society_name}`);
+      } else if (type === 'society_event_created' && data?.society_id) {
         listSocietyEvents(data.society_id);
-        toast.info(`New event in society: ${data.event_title}`);
+        toast.info(`New event in society: ${data?.event_title}`);
       }
     });
   }, [notifications, isNotificationsConnected, listSocieties, listSocietyEvents]);

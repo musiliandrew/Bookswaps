@@ -16,6 +16,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, Follows
+from backend.swaps.models import Notification
+from backend.utils.websocket import send_notification_to_user
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
@@ -261,23 +263,31 @@ class FollowUserView(APIView):
             
             follow = serializer.save()
             
+            # Create notification for the followed user
+            notification = Notification.objects.create(
+                user=followed_user,
+                type='user_followed',
+                message=f"{request.user.username} started following you.",
+                content_type='follow',
+                content_id=follow.follow_id
+            )
+            # Send notification via WebSocket to the followed user's group
+            send_notification_to_user(
+                followed_user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{request.user.username} started following you.",
+                    "type": "user_followed",
+                    "content_type": "follow",
+                    "content_id": str(follow.follow_id),
+                    "follow_id": str(follow.follow_id)
+                }
+            )
+            
             # Invalidate cache for both users
             redis = get_redis_connection('default')
             redis.delete(f'followers_count:{followed_user.user_id}')
             redis.delete(f'following_count:{request.user.user_id}')
-            
-            # WebSocket notification
-            channel_layer = get_channel_layer()
-            if channel_layer:
-                async_to_sync(channel_layer.group_send)(
-                    f"user_{follow.followed.user_id}",
-                    {
-                        'type': 'notification',
-                        'message': f"{request.user.username} started following you",
-                        'follow_id': str(follow.follow_id),
-                        'user_id': str(follow.followed.user_id)
-                    }
-                )
             
             return Response({
                 "follow_id": str(follow.follow_id),

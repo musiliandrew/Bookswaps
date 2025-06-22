@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   db:
     image: postgres:15
@@ -10,11 +11,15 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - app-network
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    networks:
+      - app-network
 
   minio:
     image: minio/minio:latest
@@ -33,6 +38,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - app-network
 
   backend:
     build:
@@ -53,18 +60,29 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    command: >
-      sh -c "while ! nc -z db 5432; do sleep 1; done &&
-             while ! nc -z minio 9000; do sleep 1; done &&
-             python manage.py migrate &&
-             daphne -b 0.0.0.0 -p 8000 backend.asgi:application"
+    command: /bin/sh -c "while ! nc -z db 5432; do sleep 1; done && while ! nc -z minio 9000; do sleep 1; done && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 backend.asgi:application"
+    networks:
+      - app-network
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    command: npm run dev -- --host
+    volumes:
+      - ./frontend:/app
+    env_file:
+      - .env
+    command: /bin/sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:

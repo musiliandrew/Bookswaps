@@ -1,6 +1,9 @@
+// useChat.js
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
+import { handleApiCall, handleApiCallWithResult } from '../utils/apiUtils';
+import { API_ENDPOINTS } from '../utils/constants';
 import { useNotifications } from './useNotifications';
 import { useWebSocket } from './useWebSocket';
 
@@ -13,154 +16,148 @@ export function useChat() {
   });
 
   const { notifications, isWebSocketConnected: isNotificationsConnected } = useNotifications();
-  const { data: wsData, isConnected: isChatWsConnected, sendMessage, addReaction } = useWebSocket(null, 'chat');
+  const { data: wsData, isConnected: isChatWsConnected, sendMessage, addReaction } = useWebSocket(
+    null,
+    'chat'
+  );
 
-  const sendDirectMessage = useCallback(async (data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post('/chat/messages/send/', data);
-      setMessages((prev) => [...prev, response.data]);
-      toast.success('Message sent!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to send message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const updatePagination = (data, key, page) => {
+    setPagination((prev) => ({
+      ...prev,
+      [key]: {
+        next: data.next,
+        previous: data.previous,
+        page,
+        totalPages: Math.ceil(data.count / (data.results?.length || 1)),
+      },
+    }));
+  };
 
-  const editMessage = useCallback(async (chatId, data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.patch(`/chat/messages/${chatId}/edit/`, data);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === chatId ? { ...m, ...response.data } : m))
+  const sendDirectMessage = useCallback(
+    async (data) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.SEND_MESSAGE, data),
+        setIsLoading,
+        setError,
+        'Message sent!',
+        'Message send'
       );
-      toast.success('Message edited!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to edit message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      if (result) setMessages((prev) => [...prev, result]);
+      return result;
+    },
+    []
+  );
 
-  const deleteMessage = useCallback(async (chatId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await api.delete(`/chat/messages/${chatId}/delete/`);
-      setMessages((prev) => prev.filter((m) => m.id !== chatId));
-      toast.success('Message deleted!');
-      return true;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to delete message';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const markRead = useCallback(async (chatId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.patch(`/chat/messages/${chatId}/read/`);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === chatId ? { ...m, status: 'READ' } : m))
+  const editMessage = useCallback(
+    async (chatId, data) => {
+      const result = await handleApiCall(
+        () => api.patch(API_ENDPOINTS.EDIT_MESSAGE(chatId), data),
+        setIsLoading,
+        setError,
+        'Message edited!',
+        'Message edit'
       );
-      toast.success('Message marked as read!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to mark message read';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      if (result) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === chatId ? { ...m, ...result } : m))
+        );
+      }
+      return result;
+    },
+    []
+  );
 
-  const addDirectReaction = useCallback(async (chatId, data) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/chat/messages/${chatId}/react/`, data);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === chatId
-            ? { ...m, reactions: [...(m.reactions || []), response.data] }
-            : m
-        )
+  const deleteMessage = useCallback(
+    async (chatId) => {
+      const result = await handleApiCallWithResult(
+        () => api.delete(API_ENDPOINTS.DELETE_MESSAGE(chatId)),
+        setIsLoading,
+        setError,
+        'Message deleted!',
+        'Message deletion'
       );
-      toast.success('Reaction added!');
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to add reaction';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      if (result) setMessages((prev) => prev.filter((m) => m.id !== chatId));
+      return result;
+    },
+    []
+  );
 
-  const listReactions = useCallback(async (chatId) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/chat/messages/${chatId}/reactions/`);
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch reactions';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const markRead = useCallback(
+    async (chatId) => {
+      const result = await handleApiCall(
+        () => api.patch(API_ENDPOINTS.MARK_READ(chatId)),
+        setIsLoading,
+        setError,
+        'Message marked as read!',
+        'Mark message read'
+      );
+      if (result) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === chatId ? { ...m, status: 'READ' } : m))
+        );
+      }
+      return result;
+    },
+    []
+  );
 
-  const listMessages = useCallback(async (filters = {}, page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  const addDirectReaction = useCallback(
+    async (chatId, data) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.ADD_REACTION(chatId), data),
+        setIsLoading,
+        setError,
+        'Reaction added!',
+        'Add reaction'
+      );
+      if (result) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === chatId ? { ...m, reactions: [...(m.reactions || []), result] } : m
+          )
+        );
+      }
+      return result;
+    },
+    []
+  );
+
+  const listReactions = useCallback(
+    async (chatId) => {
+      return await handleApiCall(
+        () => api.get(API_ENDPOINTS.LIST_REACTIONS(chatId)),
+        setIsLoading,
+        setError,
+        null,
+        'Fetch reactions'
+      );
+    },
+    []
+  );
+
+  const listMessages = useCallback(
+    async (filters = {}, page = 1) => {
       const params = new URLSearchParams({ page });
       if (filters.recipient_id) params.append('receiver_id', filters.recipient_id);
       if (filters.unread) params.append('unread', 'true');
-      const response = await api.get(`/chat/messages/?${params.toString()}`);
-      setMessages(response.data.results || []);
-      setPagination((prev) => ({
-        ...prev,
-        messages: {
-          next: response.data.next,
-          previous: response.data.previous,
-          page,
-          totalPages: Math.ceil(response.data.count / (response.data.results?.length || 1)),
-        },
-      }));
-      return response.data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch messages';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
-  // Handle WebSocket messages for chat
+      const result = await handleApiCall(
+        () => api.get(`${API_ENDPOINTS.LIST_MESSAGES}?${params.toString()}`),
+        setIsLoading,
+        setError,
+        null,
+        'Fetch messages'
+      );
+
+      if (result) {
+        setMessages(result.results || []);
+        updatePagination(result, 'messages', page);
+      }
+      return result;
+    },
+    []
+  );
+
   useEffect(() => {
     if (!isChatWsConnected || !wsData) return;
 
@@ -182,7 +179,6 @@ export function useChat() {
     }
   }, [wsData, isChatWsConnected]);
 
-  // Handle notifications for chat updates
   useEffect(() => {
     if (!isNotificationsConnected || !notifications?.length) return;
 

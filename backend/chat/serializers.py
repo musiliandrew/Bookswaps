@@ -3,6 +3,7 @@ from backend.discussions.models import Society, SocietyMember, SocietyMessage
 from backend.users.models import CustomUser
 from backend.library.models import Book
 from backend.swaps.models import Notification, Exchange
+from backend.utils.websocket import send_notification_to_user
 from .models import Chats, MessageReaction
 import bleach
 from markdown import markdown
@@ -38,12 +39,24 @@ class MessageReactionSerializer(serializers.ModelSerializer):
             **validated_data
         )
         target_user = chat.sender if chat else society_message.user
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=target_user,
             type='message_reaction',
             message=f"{user.username} reacted to your message.",
             content_type='chat' if chat else 'society_message',
             content_id=chat.chat_id if chat else society_message.message_id
+        )
+        # Send notification via WebSocket
+        send_notification_to_user(
+            target_user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"{user.username} reacted to your message.",
+                "type": "message_reaction",
+                "content_type": 'chat' if chat else 'society_message',
+                "content_id": str(chat.chat_id if chat else society_message.message_id),
+                "follow_id": None
+            }
         )
         return reaction
 class ChatSerializer(serializers.ModelSerializer):
@@ -118,12 +131,24 @@ class ChatSerializer(serializers.ModelSerializer):
             status='UNREAD',
             **validated_data
         )
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=receiver,
             type='message_received',
             message=f"{sender.username} sent you a message.",
             content_type='chat',
             content_id=chat.chat_id
+        )
+        # Send notification via WebSocket
+        send_notification_to_user(
+            receiver.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"{sender.username} sent you a message.",
+                "type": "message_received",
+                "content_type": "chat",
+                "content_id": str(chat.chat_id),
+                "follow_id": None
+            }
         )
         return chat
 
@@ -233,12 +258,24 @@ class SocietyMessageSerializer(serializers.ModelSerializer):
         )
         members = SocietyMember.objects.filter(society=society, status='ACTIVE').exclude(user=user)
         for member in members:
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=member.user,
                 type='society_message',
                 message=f"{user.username} posted in {society.name}.",
                 content_type='society_message',
                 content_id=message.message_id
+            )
+            # Send notification via WebSocket to the member's group
+            send_notification_to_user(
+                member.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{user.username} posted in {society.name}.",
+                    "type": "society_message",
+                    "content_type": "society_message",
+                    "content_id": str(message.message_id),
+                    "follow_id": None
+                }
             )
         return message
 

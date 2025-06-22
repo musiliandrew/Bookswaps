@@ -21,6 +21,7 @@ from .serializers import (
 from backend.users.models import Follows
 from backend.library.models import Bookmark
 from backend.swaps.models import Notification
+from backend.utils.websocket import send_notification_to_user
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -37,7 +38,7 @@ class CreateDiscussionView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         discussion = serializer.save()
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=self.request.user,
             type='discussion_created',
             message=f"You created a new discussion: {discussion.title}",
@@ -45,8 +46,17 @@ class CreateDiscussionView(generics.CreateAPIView):
             content_id=discussion.discussion_id
         )
         # Send WebSocket notification
-        from channels.layers import get_channel_layer
-        from asgiref.sync import async_to_sync
+        send_notification_to_user(
+            self.request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You created a new discussion: {discussion.title}",
+                "type": "discussion_created",
+                "content_type": "discussion",
+                "content_id": str(discussion.discussion_id),
+                "follow_id": None
+            }
+        )
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"discussion_{discussion.discussion_id}",
@@ -147,16 +157,27 @@ class DeletePostView(generics.DestroyAPIView):
         instance.status = 'deleted'
         instance.save(update_fields=['status'])  # Optimize save
         try:
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=self.request.user,
                 type='discussion_deleted',
-                message=f"You deleted your discussion: {instance.title}"[:500],  # Ensure within limit
+                message=f"You deleted your discussion: {instance.title}"[:500],
                 content_type='discussion',
                 content_id=instance.discussion_id
             )
+            # Send notification via WebSocket to the user's group
+            send_notification_to_user(
+                self.request.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"You deleted your discussion: {instance.title}"[:500],
+                    "type": "discussion_deleted",
+                    "content_type": "discussion",
+                    "content_id": str(instance.discussion_id),
+                    "follow_id": None
+                }
+            )
         except Exception as e:
             print(f"Notification creation failed: {str(e)}")
-            # Continue despite notification failure
 
 class AddNoteView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -174,12 +195,24 @@ class AddNoteView(generics.CreateAPIView):
         note = serializer.save()
 
         try:
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=discussion.user,
                 type='note_added',
                 message=f"{request.user.username} commented on your discussion: {discussion.title}"[:500],
                 content_type='note',
                 content_id=note.note_id
+            )
+            # Send notification via WebSocket to the user's group
+            send_notification_to_user(
+                discussion.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"{request.user.username} commented on your discussion: {discussion.title}"[:500],
+                    "type": "note_added",
+                    "content_type": "note",
+                    "content_id": str(note.note_id),
+                    "follow_id": None
+                }
             )
         except Exception as e:
             print(f"Notification creation failed: {str(e)}")
@@ -242,12 +275,24 @@ class LikeCommentView(generics.UpdateAPIView):
 
         if action == 'liked' and note.user != user:
             try:
-                Notification.objects.create(
+                notification = Notification.objects.create(
                     user=note.user,
                     type='note_liked',
                     message=f"{user.username} liked your comment on {note.discussion.title}"[:500],
                     content_type='note',
                     content_id=note.note_id
+                )
+                # Send notification via WebSocket to the note owner's group
+                send_notification_to_user(
+                    note.user.user_id,
+                    {
+                        "notification_id": str(notification.notification_id),
+                        "message": f"{user.username} liked your comment on {note.discussion.title}"[:500],
+                        "type": "note_liked",
+                        "content_type": "note",
+                        "content_id": str(note.note_id),
+                        "follow_id": None
+                    }
                 )
             except Exception as e:
                 print(f"Notification creation failed: {str(e)}")
@@ -264,7 +309,7 @@ class LikeCommentView(generics.UpdateAPIView):
             }
         )
         return Response(serializer.data)
-    
+
 class UpvotePostView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UpvoteResponseSerializer
@@ -291,12 +336,24 @@ class UpvotePostView(generics.UpdateAPIView):
 
         if action == 'upvoted' and discussion.user != user:
             try:
-                Notification.objects.create(
+                notification = Notification.objects.create(
                     user=discussion.user,
                     type='discussion_upvoted',
                     message=f"{user.username} upvoted your discussion: {discussion.title}"[:500],
                     content_type='discussion',
                     content_id=discussion.discussion_id
+                )
+                # Send notification via WebSocket to the user's group
+                send_notification_to_user(
+                    discussion.user.user_id,
+                    {
+                        "notification_id": str(notification.notification_id),
+                        "message": f"{user.username} upvoted your discussion: {discussion.title}"[:500],
+                        "type": "discussion_upvoted",
+                        "content_type": "discussion",
+                        "content_id": str(discussion.discussion_id),
+                        "follow_id": None
+                    }
                 )
             except Exception as e:
                 print(f"Notification creation failed: {str(e)}")
@@ -343,12 +400,24 @@ class ReprintPostView(generics.CreateAPIView):
 
             if discussion.user != request.user:
                 try:
-                    Notification.objects.create(
+                    notification = Notification.objects.create(
                         user=discussion.user,
                         type='discussion_reprinted',
                         message=f"{request.user.username} reposted your discussion: {discussion.title}"[:500],
                         content_type='reprint',
                         content_id=reprint.reprint_id
+                    )
+                    # Send notification via WebSocket to the user's group
+                    send_notification_to_user(
+                        discussion.user.user_id,
+                        {
+                            "notification_id": str(notification.notification_id),
+                            "message": f"{request.user.username} reposted your discussion: {discussion.title}"[:500],
+                            "type": "discussion_reprinted",
+                            "content_type": "reprint",
+                            "content_id": str(reprint.reprint_id),
+                            "follow_id": None
+                        }
                     )
                 except Exception as e:
                     print(f"Notification creation failed: {str(e)}")
@@ -418,14 +487,25 @@ class CreateSocietyView(generics.CreateAPIView):
             role='admin',
             joined_at=now()
         )
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=self.request.user,
             type='society_created',
             message=f"You created a new society: {society.name}",
             content_type='society',
             content_id=society.society_id
         )
-
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            self.request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You created a new society: {society.name}",
+                "type": "society_created",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
 
 class SocietyDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -461,12 +541,24 @@ class JoinSocietyView(generics.CreateAPIView):
             role='member',
             joined_at=now()
         )
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=request.user,
             type='society_joined',
             message=f"You joined the society: {society.name}",
             content_type='society',
             content_id=society.society_id
+        )
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You joined the society: {society.name}",
+                "type": "society_joined",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
         )
         return Response(SocietyMemberSerializer(member).data, status=status.HTTP_201_CREATED)
 
@@ -487,14 +579,25 @@ class LeaveSocietyView(generics.DestroyAPIView):
         if instance.role == 'admin' and SocietyMember.objects.filter(society=society, role='admin').count() == 1:
             raise PermissionDenied("Cannot leave as the only admin.")
         instance.delete()
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=self.request.user,
             type='society_left',
             message=f"You left the society: {society.name}",
             content_type='society',
             content_id=society.society_id
         )
-
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            self.request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You left the society: {society.name}",
+                "type": "society_left",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
 
 class CreateSocietyEventView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -513,12 +616,24 @@ class CreateSocietyEventView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data, context={'society': society, 'request': request})
         serializer.is_valid(raise_exception=True)
         event = serializer.save()
-        Notification.objects.create(
+        notification = Notification.objects.create(
             user=request.user,
             type='society_event_created',
             message=f"New event created in {society.name}: {event.title}",
             content_type='society_event',
             content_id=event.event_id
+        )
+        # Send notification via WebSocket to the user's group
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"New event created in {society.name}: {event.title}",
+                "type": "society_event_created",
+                "content_type": "society_event",
+                "content_id": str(event.event_id),
+                "follow_id": None
+            }
         )
         return Response(SocietyEventSerializer(event).data, status=status.HTTP_201_CREATED)
 
