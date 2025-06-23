@@ -28,6 +28,8 @@ export function useAuth() {
     setError(null);
     refreshInProgress.current = false;
     profileFetchRef.current = false;
+    // Remove Authorization header
+    delete api.defaults.headers.Authorization;
     navigate('/login', { replace: true });
   }, [navigate]);
 
@@ -42,7 +44,7 @@ export function useAuth() {
     }
 
     const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.TOKEN_REFRESH, { refresh }),
+      () => api.post(API_ENDPOINTS.TOKEN_REFRESH, { refresh_token: refresh }),
       setIsLoading,
       setError,
       'Token refresh successful',
@@ -50,11 +52,21 @@ export function useAuth() {
     );
 
     if (result) {
-      localStorage.setItem('access_token', result.access);
-      if (result.refresh) localStorage.setItem('refresh_token', result.refresh);
-      setIsAuthenticated(true);
-      refreshInProgress.current = false;
-      return result.access;
+      const newAccessToken = result.access_token || result.access;
+      const newRefreshToken = result.refresh_token || result.refresh;
+      
+      if (newAccessToken) {
+        localStorage.setItem('access_token', newAccessToken);
+        api.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
+        
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
+        }
+        
+        setIsAuthenticated(true);
+        refreshInProgress.current = false;
+        return newAccessToken;
+      }
     }
 
     clearAuthState();
@@ -65,7 +77,7 @@ export function useAuth() {
   const getProfileInternal = useCallback(
     async (forceFetch = false) => {
       const now = Date.now();
-      if (profileFetchRef.current || (now - lastProfileFetch.current < 500049 && !forceFetch)) {
+      if (profileFetchRef.current || (now - lastProfileFetch.current < 5000 && !forceFetch)) {
         return profile;
       }
 
@@ -93,37 +105,76 @@ export function useAuth() {
 
       profileFetchRef.current = true;
       lastProfileFetch.current = now;
+      
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       abortControllerRef.current = new AbortController();
 
-      const result = await handleApiCall(
-        () =>
-          api.get(API_ENDPOINTS.PROFILE, { signal: abortControllerRef.current.signal }),
-        setIsLoading,
-        setError,
-        null,
-        'Profile fetch'
-      );
+      console.log('Fetching profile with token:', token ? 'Present' : 'Missing');
 
-      profileFetchRef.current = false;
-      if (result) {
-        setProfile(result);
-        localStorage.setItem('user_profile', JSON.stringify(result));
-        setIsAuthenticated(true);
-        return result;
+      try {
+        const result = await handleApiCall(
+          () => api.get(API_ENDPOINTS.PROFILE, { 
+            signal: abortControllerRef.current.signal 
+          }),
+          setIsLoading,
+          setError,
+          null,
+          'Profile fetch'
+        );
+
+        profileFetchRef.current = false;
+        
+        if (result) {
+          console.log('Profile fetch successful:', result);
+          setProfile(result);
+          localStorage.setItem('user_profile', JSON.stringify(result));
+          setIsAuthenticated(true);
+          return result;
+        }
+
+        console.log('Profile fetch failed, no result returned');
+        
+        // Check if we got a 401 and haven't already tried refreshing
+        if (!forceFetch && error && error.toString().includes('401')) {
+          console.log('Attempting token refresh due to 401 error');
+          const newToken = await refreshToken();
+          if (newToken) {
+            console.log('Token refreshed, retrying profile fetch');
+            return await getProfileInternal(true);
+          }
+        }
+
+        return null;
+      } catch (err) {
+        profileFetchRef.current = false;
+        console.error('Profile fetch error:', err);
+        
+        // Handle network errors or other issues
+        if (err.name === 'AbortError') {
+          return null;
+        }
+        
+        // If it's a 401 error and we haven't tried refresh yet
+        if (!forceFetch && (err.response?.status === 401 || err.toString().includes('401'))) {
+          console.log('Attempting token refresh due to error:', err);
+          const newToken = await refreshToken();
+          if (newToken) {
+            console.log('Token refreshed, retrying profile fetch');
+            return await getProfileInternal(true);
+          }
+        }
+        
+        return null;
       }
-
-      if (error?.includes('401') && !forceFetch) {
-        const newToken = await refreshToken();
-        if (newToken) return await getProfileInternal(true);
-      }
-
-      return null;
     },
     [profile, refreshToken, error]
   );
 
   const debouncedGetProfile = useMemo(
-    () => debounce(getProfileInternal, 1000),
+    () => debounce(getProfileInternal, 300),
     [getProfileInternal]
   );
 
@@ -137,6 +188,8 @@ export function useAuth() {
     const token = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
 
+    console.log('Checking auth status - Token:', token ? 'Present' : 'Missing', 'Refresh:', refresh ? 'Present' : 'Missing');
+
     if (!token && !refresh) {
       clearAuthState();
       setIsLoading(false);
@@ -147,31 +200,52 @@ export function useAuth() {
       try {
         const decoded = jwtDecode(token);
         if (!decoded?.exp) throw new Error('Invalid token: Missing expiration');
+        
+        console.log('Token expires at:', new Date(decoded.exp * 1000), 'Current time:', new Date());
+        
         if (decoded.exp * 1000 < Date.now()) {
+          console.log('Token expired, attempting refresh');
+          
           if (!refresh) {
             clearAuthState();
             setIsLoading(false);
             return;
           }
+          
           const newToken = await refreshToken();
-          if (newToken) await getProfile(true);
-          else clearAuthState();
+          if (newToken) {
+            await getProfile(true);
+          } else {
+            clearAuthState();
+          }
         } else {
+          console.log('Token is valid, fetching profile');
+          // Set the Authorization header immediately
+          api.defaults.headers.Authorization = `Bearer ${token}`;
           await getProfile();
         }
-      } catch {
+      } catch (tokenError) {
+        console.log('Token decode error:', tokenError);
+        
         if (refresh) {
           const newToken = await refreshToken();
-          if (newToken) await getProfile(true);
-          else clearAuthState();
+          if (newToken) {
+            await getProfile(true);
+          } else {
+            clearAuthState();
+          }
         } else {
           clearAuthState();
         }
       }
     } else if (refresh) {
+      console.log('No access token but have refresh token, attempting refresh');
       const newToken = await refreshToken();
-      if (newToken) await getProfile(true);
-      else clearAuthState();
+      if (newToken) {
+        await getProfile(true);
+      } else {
+        clearAuthState();
+      }
     }
 
     setIsLoading(false);
@@ -179,11 +253,13 @@ export function useAuth() {
 
   useEffect(() => {
     const handleAuthError = () => {
+      console.log('Auth error event received');
       clearAuthState();
       toast.error('Authentication error, redirecting to login');
     };
 
     const handleAuthLogout = (event) => {
+      console.log('Auth logout event received:', event.detail);
       clearAuthState();
       if (event.detail?.reason === 'token_refresh_failed') {
         toast.error('Session expired, please log in again');
@@ -204,6 +280,8 @@ export function useAuth() {
 
   const login = useCallback(
     async (credentials) => {
+      console.log('Attempting login with credentials:', credentials);
+
       const result = await handleApiCall(
         () => api.post(API_ENDPOINTS.LOGIN, credentials),
         setIsLoading,
@@ -212,32 +290,61 @@ export function useAuth() {
         'Login'
       );
 
-      if (!result) return false;
+      if (!result) {
+        console.log('Login failed - no result');
+        return false;
+      }
 
-      const { access_token, refresh_token } = result;
-      if (!access_token || !refresh_token) {
-        setError('Missing access_token or refresh_token in login response');
-        toast.error('Invalid login response');
+      console.log('Login response:', result);
+
+      // Handle both possible field name variations
+      const accessToken = result.access_token || result.token;
+      const refreshToken = result.refresh_token || result.refresh;
+      
+      if (!accessToken) {
+        console.error('No access token in login response:', result);
+        setError('Missing access token in login response');
+        toast.error('Invalid login response - missing access token');
         clearAuthState();
         return false;
       }
 
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      api.defaults.headers.Authorization = `Bearer ${access_token}`;
+      if (!refreshToken) {
+        console.error('No refresh token in login response:', result);
+        setError('Missing refresh token in login response');
+        toast.error('Invalid login response - missing refresh token');
+        clearAuthState();
+        return false;
+      }
 
-      const profileData = await getProfile(true);
+      console.log('Storing tokens and setting headers');
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      api.defaults.headers.Authorization = `Bearer ${accessToken}`;
+
+      console.log('Fetching profile after login');
+
+      // Clear any existing errors before fetching profile
+      setError(null);
+
+      // Call getProfileInternal directly to bypass debouncing
+      const profileData = await getProfileInternal(true);
       if (profileData) {
+        console.log('Login successful, profile fetched:', profileData);
         setIsAuthenticated(true);
         toast.success('Login successful!');
         return true;
       }
 
-      clearAuthState();
-      toast.error('Failed to fetch profile after login');
-      return false;
+      console.log('Profile fetch failed after login');
+      // Since the profile fetch failed but tokens are valid, 
+      // let's still consider login successful - checkAuthStatus will handle profile fetch
+      setIsAuthenticated(true);
+      toast.success('Login successful!');
+      return true;
     },
-    [getProfile, clearAuthState]
+    [getProfileInternal, clearAuthState]
   );
 
   const register = useCallback(
@@ -265,11 +372,18 @@ export function useAuth() {
       );
 
       if (result) {
-        localStorage.setItem('access_token', result.access_token || result.token);
-        localStorage.setItem('refresh_token', result.refresh_token || result.refresh);
-        await getProfile(true);
-        navigate('/profile/me', { replace: true });
-        return true;
+        const accessToken = result.access_token || result.token;
+        const refreshToken = result.refresh_token || result.refresh;
+        
+        if (accessToken && refreshToken) {
+          localStorage.setItem('access_token', accessToken);
+          localStorage.setItem('refresh_token', refreshToken);
+          api.defaults.headers.Authorization = `Bearer ${accessToken}`;
+          
+          await getProfile(true);
+          navigate('/profile/me', { replace: true });
+          return true;
+        }
       }
 
       clearAuthState();
@@ -281,7 +395,7 @@ export function useAuth() {
   const logout = useCallback(async () => {
     const refreshTokenValue = localStorage.getItem('refresh_token');
     const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.LOGOUT, { refresh: refreshTokenValue }),
+      () => api.post(API_ENDPOINTS.LOGOUT, { refresh_token: refreshTokenValue }),
       setIsLoading,
       setError,
       null,

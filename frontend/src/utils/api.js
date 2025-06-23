@@ -4,7 +4,7 @@ import axios from 'axios';
 const isDev = import.meta.env.VITE_ENABLED === 'true';
 
 const createApi = (refreshTokenFn) => {
-  const baseURL = import.meta.env.VITE_API_URL || 'http://backend:8000/api/';
+  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
   const api = axios.create({
     baseURL,
     headers: {
@@ -154,20 +154,38 @@ const createApi = (refreshTokenFn) => {
   return api;
 };
 
-// Create an instance of the API
-// Since refreshTokenFn is required, you can pass a placeholder or define it in useAuth.js
-const api = createApi(async () => {
+// Updated refresh function to match your backend's token format
+const refreshTokenFunction = async () => {
   const refresh = localStorage.getItem('refresh_token');
   if (!refresh) return null;
+  
   try {
-    const response = await axios.post('http://localhost:8000/api/users/token/refresh/', { refresh });
-    const newAccessToken = response.data.access;
-    localStorage.setItem('access_token', newAccessToken);
-    return newAccessToken;
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'}users/token/refresh/`, 
+      { refresh_token: refresh } // Changed from 'refresh' to 'refresh_token'
+    );
+    
+    // Handle both possible response formats
+    const newAccessToken = response.data.access_token || response.data.access;
+    const newRefreshToken = response.data.refresh_token || response.data.refresh;
+    
+    if (newAccessToken) {
+      localStorage.setItem('access_token', newAccessToken);
+      if (newRefreshToken) {
+        localStorage.setItem('refresh_token', newRefreshToken);
+      }
+      return newAccessToken;
+    }
+    
+    console.error('No access token in refresh response:', response.data);
+    return null;
   } catch (error) {
     console.error('Token refresh failed:', error);
     return null;
   }
-});
+};
 
-export { createApi, api }; 
+// Create an instance of the API with the proper refresh function
+const api = createApi(refreshTokenFunction);
+
+export { createApi, api };

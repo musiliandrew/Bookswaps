@@ -64,6 +64,7 @@ const LoginForm = ({ className = '', onSubmit, error: externalError, isLoading: 
           placeholder="Enter your username or email"
           required
           error={fieldErrors.username}
+          autocomplete="username"
         />
         <div className="relative">
           <Input
@@ -75,6 +76,7 @@ const LoginForm = ({ className = '', onSubmit, error: externalError, isLoading: 
             placeholder="Enter your password"
             required
             error={fieldErrors.password}
+            autocomplete="current-password"
           />
           <motion.button
             type="button"

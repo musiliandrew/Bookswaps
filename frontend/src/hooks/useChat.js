@@ -1,4 +1,3 @@
-// useChat.js
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
