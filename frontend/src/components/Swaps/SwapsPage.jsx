@@ -129,15 +129,23 @@ const SwapsPage = () => {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
+      <motion.div
+        className="text-center py-20"
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <div className="text-6xl mb-4">😔</div>
+        <p className="text-xl font-semibold text-red-600 mb-4">{error}</p>
+        <motion.button
           onClick={() => getSwaps(filters, 1)}
-          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+          className="bookish-button-enhanced px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
+          whileHover={{ scale: 1.05, y: -2 }}
+          whileTap={{ scale: 0.95 }}
         >
-          Retry
-        </button>
-      </div>
+          Try Again
+        </motion.button>
+      </motion.div>
     );
   }
 
@@ -145,60 +153,114 @@ const SwapsPage = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      transition={{ duration: 0.6 }}
+      className="space-y-8"
     >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Book Swaps</h2>
-          <p className="text-[var(--text-secondary)] mt-1">
-            Exchange books with other readers in your community
-          </p>
+      {/* Enhanced Header */}
+      <motion.div
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-6 bookish-glass rounded-2xl border border-white/20"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.6 }}
+      >
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
+            <ArrowPathIcon className="w-8 h-8 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-lora font-bold text-primary">Book Swaps</h2>
+            <p className="text-primary/70 mt-1 text-lg">
+              Exchange books with other readers in your community
+            </p>
+          </div>
         </div>
-        
+
         <motion.button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 transition-colors"
-          whileHover={{ scale: 1.05 }}
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
+            showCreateForm
+              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700'
+              : 'bookish-button-enhanced text-white'
+          }`}
+          whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
         >
-          <PlusIcon className="w-4 h-4" />
+          <PlusIcon className={`w-5 h-5 transition-transform duration-300 ${showCreateForm ? 'rotate-45' : ''}`} />
           {showCreateForm ? 'Cancel' : 'Propose Swap'}
         </motion.button>
-      </div>
+      </motion.div>
 
-      {/* View Toggle */}
-      <div className="flex bg-[var(--secondary)] rounded-lg p-1">
+      {/* Enhanced View Toggle */}
+      <motion.div
+        className="flex gap-1 p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+      >
         {[
-          { id: 'active', label: 'Active Swaps' },
-          { id: 'history', label: 'History' }
-        ].map((view) => (
-          <button
+          { id: 'active', label: 'Active Swaps', icon: '🔄', description: 'Ongoing exchanges' },
+          { id: 'history', label: 'History', icon: '📚', description: 'Past swaps' }
+        ].map((view, index) => (
+          <motion.button
             key={view.id}
             onClick={() => setActiveView(view.id)}
-            className={`flex-1 px-4 py-2 text-sm rounded-md transition-colors ${
-              activeView === view.id 
-                ? 'bg-[var(--accent)] text-white' 
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            className={`relative flex-1 flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-300 font-medium ${
+              activeView === view.id
+                ? 'text-white shadow-lg'
+                : 'text-primary/70 hover:text-primary hover:bg-white/10'
             }`}
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 + 0.3, duration: 0.4 }}
           >
-            {view.label}
-          </button>
-        ))}
-      </div>
+            {/* Active Background */}
+            {activeView === view.id && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-xl"
+                layoutId="activeSwapView"
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
 
-      {/* Create Swap Form */}
+            {/* Content */}
+            <div className="relative z-10 flex items-center gap-3">
+              <span className="text-xl">{view.icon}</span>
+              <div className="text-left">
+                <div className="text-sm font-semibold">{view.label}</div>
+                <div className={`text-xs transition-all duration-300 ${
+                  activeView === view.id ? 'text-white/80' : 'text-primary/50'
+                }`}>
+                  {view.description}
+                </div>
+              </div>
+            </div>
+          </motion.button>
+        ))}
+      </motion.div>
+
+      {/* Enhanced Create Swap Form */}
       <AnimatePresence>
         {showCreateForm && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-[var(--card-bg)] p-6 rounded-lg border border-[var(--secondary)]"
+            initial={{ opacity: 0, height: 0, y: -20 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="bookish-glass p-8 rounded-2xl border border-white/20"
           >
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-              Propose a Book Swap
-            </h3>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="p-2 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
+                <PlusIcon className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-lora font-bold text-primary">
+                  Propose a Book Swap
+                </h3>
+                <p className="text-sm text-primary/70">Connect with fellow readers and exchange books</p>
+              </div>
+            </div>
             <SwapCreationForm
               onSubmit={handleCreateSwap}
               onCancel={() => setShowCreateForm(false)}

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import NotificationList from '../../components/Notifications/NotificationList';
 import SwapsPage from '../../components/Swaps/SwapsPage';
-import { BellIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { BellIcon, ArrowPathIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 
 const NotificationsPage = () => {
   const [activeTab, setActiveTab] = useState('notifications');
@@ -23,56 +23,99 @@ const NotificationsPage = () => {
   });
 
   const tabs = [
-    { id: 'notifications', label: 'Notifications', icon: <BellIcon className="w-4 h-4" /> },
-    { id: 'swaps', label: 'Swaps', icon: <ArrowPathIcon className="w-4 h-4" /> },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: <BellIcon className="w-5 h-5" />,
+      description: 'Stay updated'
+    },
+    {
+      id: 'swaps',
+      label: 'Swaps',
+      icon: <ArrowPathIcon className="w-5 h-5" />,
+      description: 'Exchange books'
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background font-open-sans text-text pt-16 pb-20" {...handlers}>
-      {/* Bottom Floating Navigation */}
-      <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-primary bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
+    <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
+      {/* Floating Background Elements */}
+      <div className="floating-elements fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
+        <div className="absolute bottom-40 left-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
+      </div>
+
+      {/* Enhanced Bottom Navigation */}
+      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
+            className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${
               activeTab === tab.id
-                ? 'text-accent underline'
-                : 'text-[#456A76] hover:text-accent'
+                ? 'text-white bg-gradient-to-br from-primary to-accent shadow-lg'
+                : 'text-primary/70 hover:text-primary hover:bg-white/10'
             }`}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >
-            {isSmallScreen ? (
-              tab.icon
-            ) : (
-              <span className="text-xs font-open-sans">{tab.label}</span>
+            <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`}>
+              {tab.icon}
+            </div>
+            {!isSmallScreen && (
+              <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
+                activeTab === tab.id ? 'text-white' : 'text-primary/70'
+              }`}>
+                {tab.label}
+              </span>
             )}
-            {!isSmallScreen && activeTab === tab.id && (
+            {activeTab === tab.id && (
               <motion.div
-                className="w-2 h-1 bg-accent rounded-full mt-1"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.3 }}
-              />
+                className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              >
+                <SparklesIcon className="w-2 h-2 text-white m-0.5" />
+              </motion.div>
             )}
           </motion.button>
         ))}
       </nav>
 
-      {/* Main Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, x: activeTab === 'notifications' ? 100 : -100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: activeTab === 'notifications' ? -100 : 100 }}
-          transition={{ duration: 0.3 }}
-          className="container mx-auto px-4 py-8"
-        >
-          {activeTab === 'notifications' ? <NotificationList /> : <SwapsPage />}
-        </motion.div>
-      </AnimatePresence>
+      {/* Main Content with Enhanced Animations */}
+      <div className="pt-20 pb-32">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{
+              opacity: 0,
+              x: activeTab === 'notifications' ? 100 : -100,
+              scale: 0.95
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              scale: 1
+            }}
+            exit={{
+              opacity: 0,
+              x: activeTab === 'notifications' ? -100 : 100,
+              scale: 0.95
+            }}
+            transition={{
+              duration: 0.4,
+              type: "spring",
+              stiffness: 300,
+              damping: 30
+            }}
+            className="container mx-auto px-4"
+          >
+            {activeTab === 'notifications' ? <NotificationList /> : <SwapsPage />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
