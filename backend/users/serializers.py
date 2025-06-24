@@ -9,51 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 import logging
 from datetime import date
-from django.conf import settings
-import boto3
-from botocore.exceptions import ClientError
+from backend.utils.minio_storage import upload_profile_picture, delete_file
 
 logger = logging.getLogger(__name__)
-
-def upload_to_minio(file, filename):
-    """Upload file to MinIO and return the URL, creating the bucket if it doesn't exist."""
-    s3_client = boto3.client(
-        's3',
-        endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_S3_REGION_NAME,
-        signature_version=settings.AWS_S3_SIGNATURE_VERSION
-    )
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-
-    # Check if bucket exists, create if it doesn't
-    try:
-        s3_client.head_bucket(Bucket=bucket_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            logger.info(f"Creating MinIO bucket: {bucket_name}")
-            try:
-                s3_client.create_bucket(Bucket=bucket_name)
-            except ClientError as create_error:
-                logger.error(f"Failed to create MinIO bucket: {str(create_error)}")
-                raise serializers.ValidationError("Failed to create storage bucket")
-        else:
-            logger.error(f"MinIO bucket check failed: {str(e)}")
-            raise serializers.ValidationError("Failed to access storage bucket")
-
-    # Upload file
-    try:
-        s3_client.upload_fileobj(
-            file,
-            bucket_name,
-            filename,
-            ExtraArgs={'ACL': 'public-read'}
-        )
-        return f"{settings.AWS_S3_ENDPOINT_URL}/{bucket_name}/{filename}"
-    except ClientError as e:
-        logger.error(f"MinIO upload failed: {str(e)}")
-        raise serializers.ValidationError("Failed to upload profile picture")
 
 class UserMiniSerializer(serializers.ModelSerializer):
     class Meta:
@@ -98,8 +56,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         profile_picture_url = None
 
         if profile_picture_file:
-            filename = f"profiles/{validated_data['username']}_{timezone.now().strftime('%Y%m%d%H%M%S')}.jpg"
-            profile_picture_url = upload_to_minio(profile_picture_file, filename)
+            profile_picture_url = upload_profile_picture(profile_picture_file, validated_data['username'])
 
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
@@ -231,8 +188,12 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
     def validate_profile_picture(self, value):
         if value:
-            filename = f"profiles/{self.instance.username}_{timezone.now().strftime('%Y%m%d%H%M%S')}.jpg"
-            url = upload_to_minio(value, filename)
+            # Delete old profile picture if it exists
+            if self.instance.profile_picture:
+                delete_file(self.instance.profile_picture)
+
+            # Upload new profile picture
+            url = upload_profile_picture(value, self.instance.username)
             return url
         return self.instance.profile_picture
 

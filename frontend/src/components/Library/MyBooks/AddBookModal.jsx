@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../../Common/Modal';
+import ImageUpload from '../../Common/ImageUpload';
 
 const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
   return (
@@ -56,9 +57,15 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
           onChange={(e) => setNewBook({ ...newBook, year: e.target.value })}
           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
         />
+        <ImageUpload
+          label="Book Cover Image"
+          onImageSelect={(file) => setNewBook({ ...newBook, cover_image: file })}
+          placeholder="Upload book cover image or drag and drop"
+          className="w-full"
+        />
         <input
           type="url"
-          placeholder="Cover Image URL"
+          placeholder="Cover Image URL (optional - use if you have a URL instead of uploading)"
           value={newBook.cover_image_url}
           onChange={(e) => setNewBook({ ...newBook, cover_image_url: e.target.value })}
           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"

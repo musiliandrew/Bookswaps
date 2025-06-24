@@ -114,8 +114,27 @@ export function useLibrary() {
   }, []);
 
   const addBook = useCallback(async (data) => {
+    // Create FormData if there's an image file
+    let requestData = data;
+    if (data.cover_image) {
+      requestData = new FormData();
+      Object.keys(data).forEach(key => {
+        if (data[key] !== null && data[key] !== undefined) {
+          if (key === 'cover_image' && data[key] instanceof File) {
+            requestData.append(key, data[key]);
+          } else if (typeof data[key] === 'boolean') {
+            requestData.append(key, data[key].toString());
+          } else {
+            requestData.append(key, data[key]);
+          }
+        }
+      });
+    }
+
     const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.ADD_BOOK, data),
+      () => api.post(API_ENDPOINTS.ADD_BOOK, requestData, {
+        headers: data.cover_image ? { 'Content-Type': 'multipart/form-data' } : {}
+      }),
       setIsLoading,
       setError,
       'Book added!',

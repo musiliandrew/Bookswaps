@@ -18,11 +18,19 @@ def validate_cover_image_url(value):
     """Sanitize cover image URL (HTTPS, valid domains)."""
     if not value:
         return
-    if not value.startswith('https://'):
-        raise ValidationError("Cover image URL must use HTTPS.")
-    allowed_domains = ['openlibrary.org', 'bookswap-bucket.s3.amazonaws.com']
+    if not value.startswith(('https://', 'http://')):
+        raise ValidationError("Cover image URL must use HTTP or HTTPS.")
+
+    from django.conf import settings
+    allowed_domains = [
+        'openlibrary.org',
+        'covers.openlibrary.org',
+        'bookswap-bucket.s3.amazonaws.com',  # Legacy AWS S3
+        settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')  # MinIO domain
+    ]
+
     if not any(domain in value for domain in allowed_domains):
-        raise ValidationError("Cover image URL must be from an allowed domain.")
+        raise ValidationError(f"Cover image URL must be from an allowed domain: {', '.join(allowed_domains)}")
     return value
 
 class Book(models.Model):
@@ -41,7 +49,7 @@ class Book(models.Model):
     )
     cover_image_url = models.URLField(
         max_length=500, blank=True, null=True,
-        validators=[validate_cover_image_url], db_comment='Cover image URL (Open Library or S3)'
+        validators=[validate_cover_image_url], db_comment='Cover image URL (Open Library or MinIO)'
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name='owned_books',
@@ -55,7 +63,7 @@ class Book(models.Model):
     )
     qr_code_url = models.URLField(
         max_length=500, unique=True, blank=True, null=True,
-        db_comment='S3 URL for QR code used in swaps'
+        db_comment='MinIO URL for QR code used in swaps'
     )
     available_for_exchange = models.BooleanField(
         default=True, db_comment='True if available for swapping'
