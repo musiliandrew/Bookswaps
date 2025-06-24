@@ -33,4 +33,7 @@ urlpatterns = [
     # Search and recommendations
     path('search/', views.SearchUsersView.as_view(), name='search_users'),
     path('recommended/', views.RecommendedUsersView.as_view(), name='recommended_users'),
+
+    # User library endpoint
+    path('<uuid:user_id>/library/', views.UserLibraryView.as_view(), name='user_library'),
 ]
