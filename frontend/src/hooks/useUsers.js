@@ -3,6 +3,7 @@ import { api } from '../utils/api';
 import { handleApiCall, handleApiCallWithResult } from '../utils/apiUtils';
 import { API_ENDPOINTS } from '../utils/constants';
 import { useNotifications } from './useNotifications';
+import { cachedApiCall, requestCache } from '../utils/requestCache';
 import debounce from 'lodash/debounce';
 
 export function useUsers() {
@@ -43,20 +44,32 @@ export function useUsers() {
   };
 
   const getUserProfile = useCallback(async (identifier) => {
-    const result = await handleApiCall(
-      () => api.get(API_ENDPOINTS.GET_USER_PROFILE(identifier)),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch user profile'
-    );
-    if (!result) {
-      console.error('Profile fetch failed:', error);
-    } else {
-      console.log('Profile fetched:', result);
-      setPublicProfile(result);
+    const cacheKey = `user_profile_${identifier}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(API_ENDPOINTS.GET_USER_PROFILE(identifier)),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch user profile'
+        ),
+        cacheKey,
+        60000 // Cache for 1 minute
+      );
+
+      if (!result) {
+        console.error('Profile fetch failed:', error);
+      } else {
+        console.log('Profile fetched:', result);
+        setPublicProfile(result);
+      }
+      return result;
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+      return null;
     }
-    return result;
   }, [error]);
 
   const followUser = useCallback(async (userId, source = 'Search') => {
@@ -127,65 +140,101 @@ export function useUsers() {
   }, []);
 
   const getFollowers = useCallback(async (userId, page = 1) => {
-    const result = await handleApiCall(
-      () => api.get(`${API_ENDPOINTS.GET_FOLLOWERS(userId)}?page=${page}`),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch followers'
-    );
-    if (result) {
-      setFollowers(result.results || []);
-      updatePagination(result, 'followers', page);
-      return {
-        results: result.results || [],
-        next: result.next,
-        previous: result.previous,
-        count: result.count || 0,
-      };
+    const cacheKey = `followers_${userId}_page_${page}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(`${API_ENDPOINTS.GET_FOLLOWERS(userId)}?page=${page}`),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch followers'
+        ),
+        cacheKey,
+        30000 // Cache for 30 seconds
+      );
+
+      if (result) {
+        setFollowers(result.results || []);
+        updatePagination(result, 'followers', page);
+        return {
+          results: result.results || [],
+          next: result.next,
+          previous: result.previous,
+          count: result.count || 0,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('Followers fetch error:', err);
+      return null;
     }
-    return null;
   }, []);
 
   const getFollowing = useCallback(async (userId, page = 1) => {
-    const result = await handleApiCall(
-      () => api.get(`${API_ENDPOINTS.GET_FOLLOWING(userId)}?page=${page}`),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch following'
-    );
-    if (result) {
-      setFollowing(result.results || []);
-      updatePagination(result, 'following', page);
-      return {
-        results: result.results || [],
-        next: result.next,
-        previous: result.previous,
-        count: result.count || 0,
-      };
+    const cacheKey = `following_${userId}_page_${page}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(`${API_ENDPOINTS.GET_FOLLOWING(userId)}?page=${page}`),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch following'
+        ),
+        cacheKey,
+        30000 // Cache for 30 seconds
+      );
+
+      if (result) {
+        setFollowing(result.results || []);
+        updatePagination(result, 'following', page);
+        return {
+          results: result.results || [],
+          next: result.next,
+          previous: result.previous,
+          count: result.count || 0,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('Following fetch error:', err);
+      return null;
     }
-    return null;
   }, []);
 
   const getRecommendedUsers = useCallback(async (page = 1) => {
-    const result = await handleApiCall(
-      () => api.get(`${API_ENDPOINTS.GET_RECOMMENDED_USERS}?page=${page}`),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch recommended users'
-    );
-    if (result) {
-      const results = Array.isArray(result) ? result : result.results || [];
-      const next = result.next || null;
-      const previous = result.previous || null;
-      const count = result.count || results.length || 0;
-      setRecommendedUsers(results);
-      updatePagination({ results, next, previous, count }, 'recommended', page);
-      return { results, next, previous, count };
+    const cacheKey = `recommended_users_page_${page}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(`${API_ENDPOINTS.GET_RECOMMENDED_USERS}?page=${page}`),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch recommended users'
+        ),
+        cacheKey,
+        120000 // Cache for 2 minutes (recommended users change less frequently)
+      );
+
+      if (result) {
+        const results = Array.isArray(result) ? result : result.results || [];
+        const next = result.next || null;
+        const previous = result.previous || null;
+        const count = result.count || results.length || 0;
+        setRecommendedUsers(results);
+        updatePagination({ results, next, previous, count }, 'recommended', page);
+        return { results, next, previous, count };
+      }
+      return null;
+    } catch (err) {
+      console.error('Recommended users fetch error:', err);
+      return null;
     }
-    return null;
   }, []);
 
   const searchUsers = useCallback(async (filters = {}, page = 1) => {
@@ -212,57 +261,14 @@ export function useUsers() {
     return null;
   }, []);
 
-  // Create debounced functions with useRef to avoid dependency issues
-  const debouncedGetFollowersRef = useRef(
-    debounce(async (id, page) => {
-      if (fetchingRef.current.followers) return;
-      fetchingRef.current.followers = true;
-      try {
-        await getFollowers(id, page);
-      } finally {
-        fetchingRef.current.followers = false;
-      }
-    }, 1000)
-  );
+  // Create stable debounced functions using useRef to avoid dependency issues
+  const debouncedGetFollowersRef = useRef(null);
+  const debouncedGetFollowingRef = useRef(null);
+  const debouncedGetRecommendedUsersRef = useRef(null);
+  const debouncedSearchUsersRef = useRef(null);
 
-  const debouncedGetFollowingRef = useRef(
-    debounce(async (id, page) => {
-      if (fetchingRef.current.following) return;
-      fetchingRef.current.following = true;
-      try {
-        await getFollowing(id, page);
-      } finally {
-        fetchingRef.current.following = false;
-      }
-    }, 1000)
-  );
-
-  const debouncedGetRecommendedUsersRef = useRef(
-    debounce(async (page) => {
-      if (fetchingRef.current.recommended) return;
-      fetchingRef.current.recommended = true;
-      try {
-        await getRecommendedUsers(page);
-      } finally {
-        fetchingRef.current.recommended = false;
-      }
-    }, 1000)
-  );
-
-  const debouncedSearchUsersRef = useRef(
-    debounce(async (query, page) => {
-      if (fetchingRef.current.search) return;
-      fetchingRef.current.search = true;
-      try {
-        await searchUsers({ query }, page);
-      } finally {
-        fetchingRef.current.search = false;
-      }
-    }, 1000)
-  );
-
-  // Update the debounced functions when dependencies change
-  useEffect(() => {
+  // Initialize debounced functions once
+  if (!debouncedGetFollowersRef.current) {
     debouncedGetFollowersRef.current = debounce(async (id, page) => {
       if (fetchingRef.current.followers) return;
       fetchingRef.current.followers = true;
@@ -272,9 +278,9 @@ export function useUsers() {
         fetchingRef.current.followers = false;
       }
     }, 1000);
-  }, [getFollowers]);
+  }
 
-  useEffect(() => {
+  if (!debouncedGetFollowingRef.current) {
     debouncedGetFollowingRef.current = debounce(async (id, page) => {
       if (fetchingRef.current.following) return;
       fetchingRef.current.following = true;
@@ -284,9 +290,9 @@ export function useUsers() {
         fetchingRef.current.following = false;
       }
     }, 1000);
-  }, [getFollowing]);
+  }
 
-  useEffect(() => {
+  if (!debouncedGetRecommendedUsersRef.current) {
     debouncedGetRecommendedUsersRef.current = debounce(async (page) => {
       if (fetchingRef.current.recommended) return;
       fetchingRef.current.recommended = true;
@@ -296,9 +302,9 @@ export function useUsers() {
         fetchingRef.current.recommended = false;
       }
     }, 1000);
-  }, [getRecommendedUsers]);
+  }
 
-  useEffect(() => {
+  if (!debouncedSearchUsersRef.current) {
     debouncedSearchUsersRef.current = debounce(async (query, page) => {
       if (fetchingRef.current.search) return;
       fetchingRef.current.search = true;
@@ -308,7 +314,10 @@ export function useUsers() {
         fetchingRef.current.search = false;
       }
     }, 1000);
-  }, [searchUsers]);
+  }
+
+  // Remove the problematic useEffect hooks that were causing infinite loops
+  // The debounced functions are now stable and don't need to be recreated
 
   useEffect(() => {
     if (!isWebSocketConnected || !notifications?.length) return;
@@ -320,7 +329,10 @@ export function useUsers() {
           ? { ...prev, is_following: true }
           : prev
       );
-      debouncedGetFollowersRef.current(lastNotification.user_id, 1);
+      // Only call if the debounced function exists
+      if (debouncedGetFollowersRef.current) {
+        debouncedGetFollowersRef.current(lastNotification.user_id, 1);
+      }
     }
   }, [notifications, isWebSocketConnected]);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useUsers } from './useUsers';
 import { useDebounce } from './useDebounce';
 
@@ -37,8 +37,10 @@ export const useProfileData = (userId) => {
     mutual: false,
   });
 
-  // Create debounced API calls
-  const debouncedGetFollowers = useDebounce(async (id, page) => {
+  const lastUserIdRef = useRef(null);
+
+  // Memoized API call functions to prevent recreation on every render
+  const memoizedGetFollowers = useCallback(async (id, page) => {
     if (fetchingRef.current.followers) return;
     fetchingRef.current.followers = true;
     try {
@@ -57,9 +59,9 @@ export const useProfileData = (userId) => {
     } finally {
       fetchingRef.current.followers = false;
     }
-  }, 300);
+  }, [getFollowers]);
 
-  const debouncedGetFollowing = useDebounce(async (id, page) => {
+  const memoizedGetFollowing = useCallback(async (id, page) => {
     if (fetchingRef.current.following) return;
     fetchingRef.current.following = true;
     try {
@@ -78,9 +80,9 @@ export const useProfileData = (userId) => {
     } finally {
       fetchingRef.current.following = false;
     }
-  }, 300);
+  }, [getFollowing]);
 
-  const debouncedGetMutualFollowers = useDebounce(async (id, page) => {
+  const memoizedGetMutualFollowers = useCallback(async (id, page) => {
     if (fetchingRef.current.mutual) return;
     fetchingRef.current.mutual = true;
     try {
@@ -104,9 +106,9 @@ export const useProfileData = (userId) => {
     } finally {
       fetchingRef.current.mutual = false;
     }
-  }, 300);
+  }, [getFollowers, getFollowing]);
 
-  const debouncedGetRecommendedUsers = useDebounce(async (page) => {
+  const memoizedGetRecommendedUsers = useCallback(async (page) => {
     if (fetchingRef.current.recommended) return;
     fetchingRef.current.recommended = true;
     try {
@@ -125,9 +127,9 @@ export const useProfileData = (userId) => {
     } finally {
       fetchingRef.current.recommended = false;
     }
-  }, 300);
+  }, [getRecommendedUsers]);
 
-  const debouncedSearchUsers = useDebounce(async (query, page) => {
+  const memoizedSearchUsers = useCallback(async (query, page) => {
     if (fetchingRef.current.search) return;
     fetchingRef.current.search = true;
     try {
@@ -146,24 +148,40 @@ export const useProfileData = (userId) => {
     } finally {
       fetchingRef.current.search = false;
     }
-  }, 300);
+  }, [searchUsers]);
 
-  // Load initial data
+  // Create debounced versions using useDebounce
+  const debouncedGetFollowers = useDebounce(memoizedGetFollowers, 300);
+  const debouncedGetFollowing = useDebounce(memoizedGetFollowing, 300);
+  const debouncedGetMutualFollowers = useDebounce(memoizedGetMutualFollowers, 300);
+  const debouncedGetRecommendedUsers = useDebounce(memoizedGetRecommendedUsers, 300);
+  const debouncedSearchUsers = useDebounce(memoizedSearchUsers, 300);
+
+  // Load initial data - only when userId changes
   useEffect(() => {
-  if (!userId || dataLoaded) return;
-  setDataLoaded(true); // Prevent duplicate fetches
+    if (!userId || userId === lastUserIdRef.current) return;
 
-  const fetchInitialData = async () => {
-    await Promise.all([
-      getUserProfile(userId),
-      debouncedGetFollowers(userId, 1),
-      debouncedGetFollowing(userId, 1),
-      debouncedGetMutualFollowers(userId, 1),
-      debouncedGetRecommendedUsers(1),
-    ]);
-  };
-  fetchInitialData();
-}, [userId, dataLoaded, getUserProfile, debouncedGetFollowers, debouncedGetFollowing, debouncedGetMutualFollowers, debouncedGetRecommendedUsers]);
+    lastUserIdRef.current = userId;
+    setDataLoaded(false);
+
+    const fetchInitialData = async () => {
+      try {
+        await Promise.all([
+          getUserProfile(userId),
+          memoizedGetFollowers(userId, 1),
+          memoizedGetFollowing(userId, 1),
+          memoizedGetMutualFollowers(userId, 1),
+          memoizedGetRecommendedUsers(1),
+        ]);
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Error fetching initial profile data:', error);
+        setDataLoaded(true); // Still set to true to prevent infinite retries
+      }
+    };
+
+    fetchInitialData();
+  }, [userId, getUserProfile, memoizedGetFollowers, memoizedGetFollowing, memoizedGetMutualFollowers, memoizedGetRecommendedUsers]);
 
   // Handle search
   const handleSearch = useCallback((e) => {
@@ -183,39 +201,60 @@ export const useProfileData = (userId) => {
     }
   }, [debouncedSearchUsers]);
 
-  // Handle page changes
-  const handlePageChange = useCallback((type, page) => {
+  // Handle page changes - memoized with stable dependencies
+  const handlePageChange = useCallback((type, page, forceRefresh = false) => {
     const maxPage = pagination[type]?.totalPages || 1;
     if (page > 0 && page <= maxPage) {
       setPagination((prev) => ({
         ...prev,
         [type]: { ...prev[type], page },
       }));
-      
+
       // Execute the appropriate API call
       switch (type) {
         case 'followers':
-          debouncedGetFollowers(userId, page);
+          if (forceRefresh) {
+            memoizedGetFollowers(userId, page);
+          } else {
+            debouncedGetFollowers(userId, page);
+          }
           break;
         case 'following':
-          debouncedGetFollowing(userId, page);
+          if (forceRefresh) {
+            memoizedGetFollowing(userId, page);
+          } else {
+            debouncedGetFollowing(userId, page);
+          }
           break;
         case 'mutual':
-          debouncedGetMutualFollowers(userId, page);
+          if (forceRefresh) {
+            memoizedGetMutualFollowers(userId, page);
+          } else {
+            debouncedGetMutualFollowers(userId, page);
+          }
           break;
         case 'recommended':
-          debouncedGetRecommendedUsers(page);
+          if (forceRefresh) {
+            memoizedGetRecommendedUsers(page);
+          } else {
+            debouncedGetRecommendedUsers(page);
+          }
           break;
         case 'search':
-          debouncedSearchUsers(searchQuery, page);
+          if (forceRefresh) {
+            memoizedSearchUsers(searchQuery, page);
+          } else {
+            debouncedSearchUsers(searchQuery, page);
+          }
           break;
       }
     }
-  }, [userId, searchQuery, pagination, debouncedGetFollowers, debouncedGetFollowing, debouncedGetMutualFollowers, debouncedGetRecommendedUsers, debouncedSearchUsers]);
+  }, [userId, searchQuery, pagination, memoizedGetFollowers, memoizedGetFollowing, memoizedGetMutualFollowers, memoizedGetRecommendedUsers, memoizedSearchUsers, debouncedGetFollowers, debouncedGetFollowing, debouncedGetMutualFollowers, debouncedGetRecommendedUsers, debouncedSearchUsers]);
 
   // Retry loading data
   const retryLoad = useCallback(() => {
     setDataLoaded(false);
+    lastUserIdRef.current = null; // Reset to force refetch
     fetchingRef.current = {
       followers: false,
       following: false,
