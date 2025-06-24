@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from .views import (
     CreateDiscussionView, PostListView, PostDetailView, DeletePostView,
-    AddNoteView, NotesListView, LikeCommentView, UpvotePostView, ReprintPostView,
+    AddNoteView, NotesListView, LikeCommentView, UpvotePostView, DownvotePostView, ReprintPostView,
     ListTopPostsView
 )
 from . import consumers
@@ -17,6 +17,7 @@ urlpatterns = [
     path('posts/<uuid:discussion_id>/notes/list/', NotesListView.as_view(), name='list_notes'),
     path('notes/<uuid:note_id>/like/', LikeCommentView.as_view(), name='like_note'),
     path('posts/<uuid:discussion_id>/upvote/', UpvotePostView.as_view(), name='upvote_post'),
+    path('posts/<uuid:discussion_id>/downvote/', DownvotePostView.as_view(), name='downvote_post'),
     path('posts/<uuid:discussion_id>/reprint/', ReprintPostView.as_view(), name='reprint_post'),
     path('top-posts/', ListTopPostsView.as_view(), name='top_posts'),
 ]

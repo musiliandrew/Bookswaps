@@ -181,6 +181,26 @@ export function useDiscussions() {
     [post]
   );
 
+  const downvoteDiscussionPost = useCallback(
+    async (discussionId) => {
+      const result = await handleApiCall(
+        () => api.patch(API_ENDPOINTS.DOWNVOTE_POST(discussionId)),
+        setIsLoading,
+        setError,
+        null,
+        'Downvote post'
+      );
+      if (result) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === discussionId ? { ...p, downvotes: result.downvotes } : p))
+        );
+        if (post?.id === discussionId) setPost((prev) => ({ ...prev, downvotes: result.downvotes }));
+      }
+      return result;
+    },
+    [post]
+  );
+
   const reprintDiscussionPost = useCallback(
     async (discussionId, data) => {
       return await handleApiCall(
@@ -301,6 +321,7 @@ export function useDiscussions() {
     listNotes,
     likeDiscussionNote,
     upvoteDiscussionPost,
+    downvoteDiscussionPost,
     reprintDiscussionPost,
     listTopPosts,
     posts,

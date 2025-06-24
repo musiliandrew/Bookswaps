@@ -11,7 +11,7 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.db import transaction
 import uuid
-from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent, Like, Upvote
+from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent, Like, Upvote, Downvote
 from .serializers import (
     CreateDiscussionSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer,
     NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer, ReprintSerializer,
@@ -366,6 +366,56 @@ class UpvotePostView(generics.UpdateAPIView):
             f"discussion_{discussion.discussion_id}",
             {
                 "type": "post_upvoted",
+                "discussion": serializer.data
+            }
+        )
+        return Response(serializer.data)
+
+
+class DownvotePostView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UpvoteResponseSerializer  # Reuse the same serializer
+    lookup_field = 'discussion_id'
+
+    def get_queryset(self):
+        return Discussion.objects.filter(status='active').annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        )
+
+    def update(self, request, *args, **kwargs):
+        discussion = self.get_object()
+        user = request.user
+
+        with transaction.atomic():
+            # Remove any existing upvote first (mutual exclusion)
+            Upvote.objects.filter(discussion=discussion, user=user).delete()
+
+            # Toggle downvote
+            downvote, created = Downvote.objects.get_or_create(
+                discussion=discussion,
+                user=user,
+                defaults={'created_at': timezone.now()}
+            )
+            if not created:
+                downvote.delete()
+                action = 'undownvoted'
+            else:
+                action = 'downvoted'
+
+        # Note: We don't send notifications for downvotes to avoid negativity
+
+        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+        serializer = self.get_serializer(discussion)
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"discussion_{discussion.discussion_id}",
+            {
+                "type": "post_downvoted",
                 "discussion": serializer.data
             }
         )

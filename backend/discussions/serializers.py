@@ -12,10 +12,11 @@ class DiscussionResponseSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
     upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
+    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes']
+        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes', 'downvotes']
 
 class CreateDiscussionSerializer(serializers.ModelSerializer):
     book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
@@ -163,10 +164,11 @@ class LikeResponseSerializer(serializers.ModelSerializer):
 class UpvoteResponseSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
+    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'user', 'title', 'upvotes']
+        fields = ['discussion_id', 'user', 'title', 'upvotes', 'downvotes']
 
 
 class ReprintSerializer(serializers.ModelSerializer):

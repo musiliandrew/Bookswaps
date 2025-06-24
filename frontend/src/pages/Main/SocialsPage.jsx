@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
-import DiscussionsPage from '../../components/Socials/DiscussionsPage';
+import EnhancedDiscussionsPage from '../../components/Socials/Discussions/EnhancedDiscussionsPage';
 import ChatPage from '../../components/Socials/ChatPage';
 import { ChatBubbleLeftRightIcon, UsersIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 
@@ -112,7 +112,7 @@ const SocialsPage = () => {
             }}
             className="container mx-auto px-4"
           >
-            {activeTab === 'discussions' ? <DiscussionsPage /> : <ChatPage />}
+            {activeTab === 'discussions' ? <EnhancedDiscussionsPage /> : <ChatPage />}
           </motion.div>
         </AnimatePresence>
       </div>
