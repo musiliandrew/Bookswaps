@@ -135,14 +135,59 @@ const DiscussionsPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-      {(discussionsError || societiesError) && (
-        <div className="text-red-500 mb-4">
-          {discussionsError && <div>Discussions Error: {discussionsError}</div>}
-          {societiesError && <div>Societies Error: {societiesError}</div>}
-        </div>
-      )}
+    <div className="min-h-screen font-open-sans text-text">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Header Section */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+            💬 Discussions
+            <motion.div
+              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+          </h1>
+          <motion.p
+            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Join vibrant discussions, share your thoughts, and connect with fellow book lovers
+          </motion.p>
+        </motion.div>
+
+        {/* Enhanced Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        </motion.div>
+
+        {/* Enhanced Error Display */}
+        {(discussionsError || societiesError) && (
+          <motion.div
+            className="mb-8 p-6 bookish-glass rounded-2xl border border-red-300/20 bg-red-50/10"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center space-x-3 text-red-600">
+              <div className="text-2xl">⚠️</div>
+              <div>
+                {discussionsError && <div className="font-medium">Discussions Error: {discussionsError}</div>}
+                {societiesError && <div className="font-medium">Societies Error: {societiesError}</div>}
+              </div>
+            </div>
+          </motion.div>
+        )}
       {postId && post && (
         <PostDetail
           postId={postId}
@@ -180,40 +225,78 @@ const DiscussionsPage = () => {
           isSocietyWsConnected={isSocietyWsConnected}
         />
       )}
-      {activeTab === 'posts' && !postId && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          <div className="md:col-span-2">
-            <PostCreationForm newPost={newPost} setNewPost={setNewPost} handleCreatePost={handleCreatePost} />
-            <PostFilters postFilters={postFilters} setPostFilters={setPostFilters} />
-            <PostFeed
-              posts={posts}
-              isDiscussionsLoading={isDiscussionsLoading}
-              listPosts={listPosts}
-              postFilters={postFilters}
-              discussionsPagination={discussionsPagination}
+        {/* Enhanced Posts Section */}
+        {activeTab === 'posts' && !postId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="grid grid-cols-1 lg:grid-cols-4 gap-8"
+          >
+            <div className="lg:col-span-3 space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+              >
+                <PostCreationForm newPost={newPost} setNewPost={setNewPost} handleCreatePost={handleCreatePost} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                <PostFilters postFilters={postFilters} setPostFilters={setPostFilters} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+              >
+                <PostFeed
+                  posts={posts}
+                  isDiscussionsLoading={isDiscussionsLoading}
+                  listPosts={listPosts}
+                  postFilters={postFilters}
+                  discussionsPagination={discussionsPagination}
+                />
+              </motion.div>
+            </div>
+
+            <motion.div
+              className="lg:col-span-1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.9, duration: 0.6 }}
+            >
+              <TopPostsSidebar topPosts={topPosts} />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Enhanced Societies Section */}
+        {activeTab === 'societies' && !societyId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            <SocietyList
+              societies={societies}
+              isSocietiesLoading={isSocietiesLoading}
+              joinSociety={joinSociety}
+              leaveSociety={leaveSociety}
+              listSocieties={listSocieties}
+              societyFilters={societyFilters}
+              setSocietyFilters={setSocietyFilters}
+              societiesPagination={societiesPagination}
+              societiesError={societiesError}
             />
-          </div>
-          <TopPostsSidebar topPosts={topPosts} />
-        </motion.div>
-      )}
-      {activeTab === 'societies' && !societyId && (
-        <SocietyList
-          societies={societies}
-          isSocietiesLoading={isSocietiesLoading}
-          joinSociety={joinSociety}
-          leaveSociety={leaveSociety}
-          listSocieties={listSocieties}
-          societyFilters={societyFilters}
-          setSocietyFilters={setSocietyFilters}
-          societiesPagination={societiesPagination}
-          societiesError={societiesError}
-        />
-      )}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
