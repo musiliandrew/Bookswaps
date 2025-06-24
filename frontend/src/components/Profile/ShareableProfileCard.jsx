@@ -1,60 +1,163 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import html2canvas from 'html2canvas';
-import { 
-  ShareIcon, 
-  DownloadIcon, 
-  BookOpenIcon, 
-  UsersIcon, 
-  StarIcon,
+import {
+  ShareIcon,
+  ArrowDownTrayIcon,
+  BookOpenIcon,
+  UsersIcon,
   SparklesIcon,
-  HeartIcon,
   QrCodeIcon
 } from '@heroicons/react/24/outline';
-import { 
+import {
   HeartIcon as HeartSolidIcon,
-  StarIcon as StarSolidIcon 
+  StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
 
-// Enhanced helper function to parse genres
+// Enhanced helper function to parse genres - handles multiple levels of encoding
 const parseGenres = (genres) => {
   if (!genres) return [];
 
+  // Debug: Log the raw genres data to understand the structure
+  console.log('Raw genres data:', genres, 'Type:', typeof genres);
+
+  // Helper function to clean a single genre string
+  const cleanGenre = (genre) => {
+    if (typeof genre !== 'string') return genre;
+
+    // Remove various quote and bracket combinations
+    let cleaned = genre
+      .replace(/^[[\\]"']+|[[\\]"']+$/g, '') // Remove leading/trailing brackets and quotes
+      .replace(/\\"/g, '"') // Unescape quotes
+      .replace(/\\'/g, "'") // Unescape single quotes
+      .trim();
+
+    return cleaned;
+  };
+
+  // If it's already an array, process each item
   if (Array.isArray(genres)) {
     return genres
       .map(genre => {
         if (typeof genre === 'string') {
-          let cleaned = genre;
-          cleaned = cleaned.replace(/^\["|"\]$/g, '');
-          cleaned = cleaned.replace(/^"|"$/g, '');
-          cleaned = cleaned.replace(/\\"/g, '"');
-          
-          if (cleaned.includes('","') || cleaned.includes('", "')) {
-            return cleaned.split(/",\s*"/).map(g => g.replace(/^"|"$/g, '').trim());
+          // Check if this string contains a JSON array
+          if (genre.includes('[') && genre.includes(']')) {
+            try {
+              // Try to parse as JSON
+              const parsed = JSON.parse(genre);
+              if (Array.isArray(parsed)) {
+                return parsed.map(cleanGenre);
+              }
+            } catch {
+              // If JSON parsing fails, manually extract genres
+              const match = genre.match(/\[(.*)\]/);
+              if (match) {
+                return match[1]
+                  .split(',')
+                  .map(g => cleanGenre(g))
+                  .filter(g => g && g.length > 0);
+              }
+            }
           }
-          
-          return cleaned.trim();
+
+          // Handle comma-separated genres in a single string
+          if (genre.includes(',')) {
+            return genre.split(',').map(cleanGenre);
+          }
+
+          return cleanGenre(genre);
         }
         return genre;
       })
-      .flat()
-      .filter(genre => genre && genre.length > 0)
-      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
+      .flat() // Flatten nested arrays
+      .filter(genre => genre && typeof genre === 'string' && genre.length > 0)
+      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize
   }
 
+  // If it's a string, try multiple parsing approaches
   if (typeof genres === 'string') {
-    try {
-      const parsed = JSON.parse(genres);
-      return parseGenres(parsed);
-    } catch {
-      let cleaned = genres;
-      cleaned = cleaned.replace(/[\[\]"\\]/g, '');
-      
-      return cleaned
-        .split(',')
-        .map(genre => genre.trim())
+    console.log('Processing string genres:', genres);
+
+    // Handle the specific case you're seeing: ["["Sci-fi"", ""Fiction""...]
+    // This appears to be a stringified array containing a stringified array
+
+    // Special handling for the exact pattern you described
+    if (genres.includes('["["') || genres.includes('""')) {
+      console.log('Detected malformed double-encoded pattern');
+
+      // Extract content between the outer brackets
+      let extracted = genres;
+      if (extracted.startsWith('[') && extracted.endsWith(']')) {
+        extracted = extracted.slice(1, -1);
+      }
+
+      // Remove the inner quotes and brackets
+      if (extracted.startsWith('"["') && extracted.endsWith('"]"')) {
+        extracted = extracted.slice(3, -3);
+      }
+
+      // Fix the double quotes issue
+      const genreArray = extracted
+        .split('""')
+        .map(genre => genre.replace(/^"|"$/g, '').trim())
+        .filter(genre => genre && genre.length > 0 && genre !== ',')
+        .map(genre => genre.replace(/,$/, '')) // Remove trailing commas
         .filter(genre => genre.length > 0)
         .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
+
+      console.log('Extracted genres:', genreArray);
+      return genreArray;
+    }
+
+    // First, try to clean up the malformed JSON structure
+    let cleanedString = genres;
+
+    // Remove outer array brackets if present
+    if (cleanedString.startsWith('[') && cleanedString.endsWith(']')) {
+      cleanedString = cleanedString.slice(1, -1);
+    }
+
+    // Remove quotes around the inner array
+    if (cleanedString.startsWith('"') && cleanedString.endsWith('"')) {
+      cleanedString = cleanedString.slice(1, -1);
+    }
+
+    // Handle escaped quotes and malformed structure
+    cleanedString = cleanedString
+      .replace(/\\"/g, '"') // Unescape quotes
+      .replace(/""/g, '"') // Fix double quotes
+      .replace(/"\s*,\s*"/g, '", "') // Fix spacing around commas
+      .replace(/^"/, '') // Remove leading quote
+      .replace(/"$/, ''); // Remove trailing quote
+
+    console.log('Cleaned string:', cleanedString);
+
+    // Now try to parse as JSON array
+    try {
+      // If it looks like an array, wrap it properly
+      if (!cleanedString.startsWith('[')) {
+        cleanedString = `[${cleanedString}]`;
+      }
+      const parsed = JSON.parse(cleanedString);
+      console.log('Parsed as JSON:', parsed);
+      return parseGenres(parsed);
+    } catch (e) {
+      console.log('JSON parsing failed:', e.message);
+
+      // Manual extraction as fallback
+      // Split by comma and clean each genre
+      const manualParsed = cleanedString
+        .split(',')
+        .map(genre => {
+          return genre
+            .replace(/^[[\\]"'\s]+|[[\\]"'\s]+$/g, '') // Remove brackets, quotes, spaces
+            .trim();
+        })
+        .filter(genre => genre && genre.length > 0)
+        .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
+
+      console.log('Manual parsing result:', manualParsed);
+      return manualParsed;
     }
   }
 
@@ -138,7 +241,7 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <DownloadIcon className="w-5 h-5" />
+              <ArrowDownTrayIcon className="w-5 h-5" />
             </motion.button>
             <motion.button
               onClick={onClose}

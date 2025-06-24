@@ -331,6 +331,8 @@ const ProfileSettings = () => {
           onClose={() => setShowDeleteModal(false)}
         />
       </main>
+      {/* Add the missing closing div for min-h-screen */}
+      </div>
     </div>
   );
 };

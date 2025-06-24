@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -14,8 +14,6 @@ import {
   UsersIcon,
   MagnifyingGlassIcon,
   BookOpenIcon,
-  HeartIcon,
-  ChatBubbleLeftRightIcon,
   ShareIcon,
   PencilIcon,
   CameraIcon,
@@ -31,55 +29,99 @@ import {
   StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
 
-// Enhanced helper function to parse genres that might be double-encoded
+// Enhanced helper function to parse genres - handles multiple levels of encoding
 const parseGenres = (genres) => {
   if (!genres) return [];
 
-  // If it's already an array, clean each item
+  // Helper function to clean a single genre string
+  const cleanGenre = (genre) => {
+    if (typeof genre !== 'string') return genre;
+
+    // Remove various quote and bracket combinations
+    let cleaned = genre
+      .replace(/^[[\\]"']+|[[\\]"']+$/g, '') // Remove leading/trailing brackets and quotes
+      .replace(/\\"/g, '"') // Unescape quotes
+      .replace(/\\'/g, "'") // Unescape single quotes
+      .trim();
+
+    return cleaned;
+  };
+
+  // If it's already an array, process each item
   if (Array.isArray(genres)) {
     return genres
       .map(genre => {
         if (typeof genre === 'string') {
-          // Handle double-encoded strings like ["[\"Sci-fi\"", "\"Fiction\""]
-          let cleaned = genre;
-
-          // Remove outer brackets and quotes
-          cleaned = cleaned.replace(/^\["|"\]$/g, '');
-          cleaned = cleaned.replace(/^"|"$/g, '');
-          cleaned = cleaned.replace(/\\"/g, '"');
-
-          // Split by comma if it contains multiple genres
-          if (cleaned.includes('","') || cleaned.includes('", "')) {
-            return cleaned.split(/",\s*"/).map(g => g.replace(/^"|"$/g, '').trim());
+          // Check if this string contains a JSON array
+          if (genre.includes('[') && genre.includes(']')) {
+            try {
+              // Try to parse as JSON
+              const parsed = JSON.parse(genre);
+              if (Array.isArray(parsed)) {
+                return parsed.map(cleanGenre);
+              }
+            } catch {
+              // If JSON parsing fails, manually extract genres
+              const match = genre.match(/\[(.*)\]/);
+              if (match) {
+                return match[1]
+                  .split(',')
+                  .map(g => cleanGenre(g))
+                  .filter(g => g && g.length > 0);
+              }
+            }
           }
 
-          return cleaned.trim();
+          // Handle comma-separated genres in a single string
+          if (genre.includes(',')) {
+            return genre.split(',').map(cleanGenre);
+          }
+
+          return cleanGenre(genre);
         }
         return genre;
       })
-      .flat() // Flatten in case we split any strings
-      .filter(genre => genre && genre.length > 0) // Remove empty strings
-      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize first letter
+      .flat() // Flatten nested arrays
+      .filter(genre => genre && typeof genre === 'string' && genre.length > 0)
+      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize
   }
 
-  // If it's a string, try to parse it
+  // If it's a string, try multiple parsing approaches
   if (typeof genres === 'string') {
+    // First, try direct JSON parsing
     try {
-      // Try to parse as JSON first
       const parsed = JSON.parse(genres);
-      return parseGenres(parsed); // Recursively parse the result
+      return parseGenres(parsed); // Recursively parse
     } catch {
-      // If parsing fails, clean up the string manually
-      let cleaned = genres;
+      // If that fails, try to extract from the string manually
 
-      // Remove brackets and quotes
-      cleaned = cleaned.replace(/[\[\]"\\]/g, '');
+      // Handle cases like: ["[\"Sci-fi\", \"Fiction\"]"]
+      if (genres.includes('[') && genres.includes(']')) {
+        // Extract everything between the outermost brackets
+        const match = genres.match(/\[(.*)\]/);
+        if (match) {
+          const innerContent = match[1];
 
-      // Split by comma and clean each item
-      return cleaned
+          // Try to parse the inner content as JSON
+          try {
+            const innerParsed = JSON.parse(`[${innerContent}]`);
+            return parseGenres(innerParsed);
+          } catch {
+            // Manual parsing - split by comma and clean
+            return innerContent
+              .split(',')
+              .map(cleanGenre)
+              .filter(genre => genre && genre.length > 0)
+              .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
+          }
+        }
+      }
+
+      // Fallback: treat as comma-separated string
+      return genres
         .split(',')
-        .map(genre => genre.trim())
-        .filter(genre => genre.length > 0)
+        .map(cleanGenre)
+        .filter(genre => genre && genre.length > 0)
         .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
     }
   }
@@ -93,7 +135,6 @@ const ProfileSection = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [activeStatsTab, setActiveStatsTab] = useState('books');
 
   // Custom hook for managing profile data and pagination
   const {
@@ -128,7 +169,7 @@ const ProfileSection = () => {
   });
 
   // Fetch real user statistics
-  const { stats: userStats, isLoading: statsLoading, refreshStats } = useUserStats();
+  const { stats: userStats } = useUserStats();
 
   // Process stats for display
   const profileStats = userStats ? {
@@ -251,8 +292,6 @@ const ProfileSection = () => {
         {showStatsModal && (
           <StatsModal
             stats={profileStats}
-            activeTab={activeStatsTab}
-            onTabChange={setActiveStatsTab}
             onClose={() => setShowStatsModal(false)}
           />
         )}
@@ -297,6 +336,7 @@ const ProfileSection = () => {
           />
         )}
       </div>
+      </div>
     </div>
   );
 };
@@ -335,7 +375,7 @@ const UserProfileView = ({
 );
 
 // Enhanced Stats Modal Component
-const StatsModal = ({ stats, activeTab, onTabChange, onClose }) => (
+const StatsModal = ({ stats, onClose }) => (
   <motion.div
     className="fixed inset-0 z-50 flex items-center justify-center p-4"
     initial={{ opacity: 0 }}
@@ -549,7 +589,6 @@ const EnhancedMainProfileView = ({
     >
       <TabContent
         activeTab={activeTab}
-        profile={profile}
         publicProfile={publicProfile}
         followers={followers}
         following={following}
@@ -573,7 +612,7 @@ const EnhancedMainProfileView = ({
 };
 
 // Enhanced Profile Header Component
-const EnhancedProfileHeader = ({ profile, stats, isExpanded, onToggleExpanded, onShowStats }) => (
+const EnhancedProfileHeader = ({ profile, stats, onShowStats }) => (
   <motion.div
     className="relative mb-6 bookish-glass rounded-2xl overflow-hidden border border-white/20"
     initial={{ opacity: 0, y: -20 }}
@@ -783,7 +822,6 @@ const EnhancedTabNavigation = ({ tabs, activeTab, onTabChange }) => (
 // Tab content component
 const TabContent = ({
   activeTab,
-  profile,
   publicProfile,
   followers,
   following,
