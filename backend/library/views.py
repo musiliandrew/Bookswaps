@@ -9,7 +9,8 @@ from django.core.cache import cache
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
-from django.db import transaction
+from django.db import transaction, IntegrityError
+import logging
 from .models import Book, Library, Bookmark, Favorite, BookHistory, PopularBook
 from .serializers import (
     LibraryBookSerializer, BookDetailSerializer, BookMiniSerializer,
@@ -18,6 +19,8 @@ from .serializers import (
 )
 from backend.swaps.models import Notification
 from backend.utils.websocket import send_notification_to_user
+
+logger = logging.getLogger(__name__)
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
@@ -96,29 +99,56 @@ class AddUserBookView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        book = serializer.save()
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            book = serializer.save()
 
-        notification = Notification.objects.create(
-            user=book.user,
-            book=book,
-            type='book_added',
-            message=f"You added {book.title} to your library."
-        )
-        # Send notification via WebSocket to the user's group
-        send_notification_to_user(
-            book.user.user_id,
-            {
-                "notification_id": str(notification.notification_id),
-                "message": f"You added {book.title} to your library.",
-                "type": "book_added",
-                "content_type": "book",
-                "content_id": str(book.book_id),
-                "follow_id": None
-            }
-        )
-        return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
+            notification = Notification.objects.create(
+                user=book.user,
+                book=book,
+                type='book_added',
+                message=f"You added {book.title} to your library."
+            )
+            # Send notification via WebSocket to the user's group
+            send_notification_to_user(
+                book.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"You added {book.title} to your library.",
+                    "type": "book_added",
+                    "content_type": "book",
+                    "content_id": str(book.book_id),
+                    "follow_id": None
+                }
+            )
+            return Response(BookDetailSerializer(book).data, status=status.HTTP_201_CREATED)
+
+        except ValidationError as e:
+            # Handle validation errors (including duplicate ISBN)
+            error_detail = e.detail if hasattr(e, 'detail') else str(e)
+            return Response(
+                {"error": "Validation failed", "details": error_detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except IntegrityError as e:
+            # Handle database constraint violations
+            if 'isbn' in str(e).lower():
+                return Response(
+                    {"error": "A book with this ISBN already exists in the system"},
+                    status=status.HTTP_409_CONFLICT
+                )
+            return Response(
+                {"error": "Database constraint violation", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Handle unexpected errors
+            logger.error(f"Unexpected error adding book: {str(e)}")
+            return Response(
+                {"error": "An unexpected error occurred while adding the book"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class UserLibraryListView(generics.ListAPIView):
     serializer_class = UserLibraryBookSerializer

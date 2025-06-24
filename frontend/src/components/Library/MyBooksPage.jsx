@@ -7,6 +7,7 @@ import { useSwipeable } from 'react-swipeable';
 import BookCard from '../Library/common/BookCard';
 import TabsNavigation from '../Library/common/TabsNavigation';
 import AddBookModal from '../Library/MyBooks/AddBookModal';
+import DuplicateBookModal from '../Common/DuplicateBookModal';
 import { PlusIcon, BookOpenIcon, BookmarkIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const MyBooksPage = () => {
@@ -32,6 +33,8 @@ const MyBooksPage = () => {
   } = useLibrary();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateBookInfo, setDuplicateBookInfo] = useState(null);
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
@@ -76,26 +79,61 @@ const MyBooksPage = () => {
     trackMouse: true,
   });
 
+  const resetBookForm = () => {
+    setNewBook({
+      title: '',
+      author: '',
+      genre: '',
+      isbn: '',
+      condition: 'new',
+      synopsis: '',
+      available_for_exchange: true,
+      available_for_borrow: true,
+      year: '',
+      cover_image_url: '',
+      cover_image: null,
+    });
+  };
+
   const handleAddBook = async () => {
     try {
-      await addBook(newBook);
-      setIsAddModalOpen(false);
-      setNewBook({
-        title: '',
-        author: '',
-        genre: '',
-        isbn: '',
-        condition: 'new',
-        synopsis: '',
-        available_for_exchange: true,
-        available_for_borrow: true,
-        year: '',
-        cover_image_url: '',
-        cover_image: null,
-      });
-      toast.success('Book added successfully');
-    } catch {
-      toast.error('Failed to add book');
+      const result = await addBook(newBook);
+      if (result) {
+        setIsAddModalOpen(false);
+        resetBookForm();
+        toast.success('📚 Book added successfully to your library!');
+      }
+    } catch (error) {
+      // Handle duplicate book error
+      if (error.type === 'DUPLICATE_BOOK') {
+        setDuplicateBookInfo(error.existingBook);
+        setIsDuplicateModalOpen(true);
+      } else {
+        console.error('Book addition failed:', error);
+      }
+    }
+  };
+
+  const handleViewExistingBook = (bookId) => {
+    setIsDuplicateModalOpen(false);
+    // Navigate to book details or implement view logic
+    toast.info('Feature coming soon: View existing book details');
+  };
+
+  const handleAddAnyway = async () => {
+    try {
+      // Remove ISBN to avoid duplicate constraint
+      const bookWithoutISBN = { ...newBook, isbn: '' };
+      const result = await addBook(bookWithoutISBN);
+      if (result) {
+        setIsAddModalOpen(false);
+        setIsDuplicateModalOpen(false);
+        resetBookForm();
+        setDuplicateBookInfo(null);
+        toast.success('📚 Your copy has been added to your library!');
+      }
+    } catch (error) {
+      console.error('Failed to add book anyway:', error);
     }
   };
 
@@ -495,6 +533,17 @@ const MyBooksPage = () => {
           newBook={newBook}
           setNewBook={setNewBook}
           onAddBook={handleAddBook}
+        />
+
+        <DuplicateBookModal
+          isOpen={isDuplicateModalOpen}
+          onClose={() => {
+            setIsDuplicateModalOpen(false);
+            setDuplicateBookInfo(null);
+          }}
+          duplicateInfo={duplicateBookInfo}
+          onViewExisting={handleViewExistingBook}
+          onAddAnyway={handleAddAnyway}
         />
       </div>
     </div>

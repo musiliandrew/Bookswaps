@@ -99,8 +99,19 @@ class AddBookSerializer(serializers.ModelSerializer):
         cleaned_isbn = re.sub(r'[- ]', '', value)
         if not re.match(r'^(?:97[89][0-9]{10}|[0-9]{9}[0-9X])$', cleaned_isbn):
             raise ValidationError("Invalid ISBN-10 or ISBN-13 format.")
-        if Book.objects.filter(isbn=cleaned_isbn).exists():
-            raise ValidationError("A book with this ISBN already exists.")
+
+        # Check for existing book with same ISBN
+        existing_book = Book.objects.filter(isbn=cleaned_isbn).first()
+        if existing_book:
+            raise ValidationError({
+                "isbn": f"A book with this ISBN already exists: '{existing_book.title}' by {existing_book.author}",
+                "existing_book": {
+                    "id": str(existing_book.book_id),
+                    "title": existing_book.title,
+                    "author": existing_book.author,
+                    "owner": existing_book.user.username if existing_book.user else "Unknown"
+                }
+            })
         return cleaned_isbn
 
     def validate_cover_image_url(self, value):
@@ -136,48 +147,59 @@ class AddBookSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        from backend.utils.error_handlers import log_book_operation
+
         user = self.context['request'].user
         condition = validated_data.pop('condition')
         cover_image_file = validated_data.pop('cover_image', None)
 
-        # Generate book ID first
-        book_id = uuid.uuid4()
+        try:
+            # Generate book ID first
+            book_id = uuid.uuid4()
 
-        # Handle cover image upload
-        if cover_image_file:
-            from backend.utils.minio_storage import upload_book_cover
-            validated_data['cover_image_url'] = upload_book_cover(cover_image_file, book_id)
+            # Handle cover image upload
+            if cover_image_file:
+                from backend.utils.minio_storage import upload_book_cover
+                validated_data['cover_image_url'] = upload_book_cover(cover_image_file, book_id)
 
-        # Generate QR code URL using MinIO
-        from backend.utils.minio_storage import get_minio_url
-        qr_id = uuid.uuid4()
-        qr_code_url = get_minio_url(f"qr-codes/{qr_id}.png")
-        now = timezone.now()
+            # Generate QR code URL using MinIO
+            from backend.utils.minio_storage import get_minio_url
+            qr_id = uuid.uuid4()
+            qr_code_url = get_minio_url(f"qr-codes/{qr_id}.png")
+            now = timezone.now()
 
-        with transaction.atomic():
-            book = Book.objects.create(
-                **validated_data,
-                book_id=book_id,
-                user=user,
-                original_owner=user,
-                qr_code_url=qr_code_url,
-                condition=condition,
-                created_at=now
-            )
-            Library.objects.create(
-                user=user,
-                book=book,
-                status='owned',
-                added_at=now
-            )
-            BookHistory.objects.create(
-                book=book,
-                user=user,
-                status='added',
-                start_date=now,
-                notes="Book added to library"
-            )
-        return book
+            with transaction.atomic():
+                book = Book.objects.create(
+                    **validated_data,
+                    book_id=book_id,
+                    user=user,
+                    original_owner=user,
+                    qr_code_url=qr_code_url,
+                    condition=condition,
+                    created_at=now
+                )
+                Library.objects.create(
+                    user=user,
+                    book=book,
+                    status='owned',
+                    added_at=now
+                )
+                BookHistory.objects.create(
+                    book=book,
+                    user=user,
+                    status='added',
+                    start_date=now,
+                    notes="Book added to library"
+                )
+
+            # Log successful operation
+            log_book_operation('add_book', validated_data, user, success=True)
+            return book
+
+        except Exception as e:
+            # Log failed operation
+            log_book_operation('add_book', validated_data, user, success=False, error=e)
+            raise
 
 class UserLibraryBookSerializer(serializers.ModelSerializer):
     book_id = serializers.UUIDField(source='book.book_id', read_only=True)

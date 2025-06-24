@@ -131,15 +131,46 @@ export function useLibrary() {
       });
     }
 
-    const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.ADD_BOOK, requestData, {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await api.post(API_ENDPOINTS.ADD_BOOK, requestData, {
         headers: data.cover_image ? { 'Content-Type': 'multipart/form-data' } : {}
-      }),
-      setIsLoading,
-      setError,
-      'Book added!',
-      'Add book'
-    );
+      });
+
+      const result = response.data;
+      if (result) {
+        setUserLibrary((prev) => [result, ...prev]);
+        toast.success('📚 Book added successfully to your library!');
+      }
+      return result;
+
+    } catch (error) {
+      const errorData = error.response?.data;
+
+      // Handle duplicate ISBN error specifically
+      if (error.response?.status === 400 && errorData?.details?.isbn) {
+        const duplicateError = errorData.details.isbn;
+        if (typeof duplicateError === 'object' && duplicateError.existing_book) {
+          // This is a structured duplicate book error
+          throw {
+            type: 'DUPLICATE_BOOK',
+            message: duplicateError.isbn || 'Book already exists',
+            existingBook: duplicateError.existing_book
+          };
+        }
+      }
+
+      // Handle other errors with improved messaging
+      const errorMessage = errorData?.error || errorData?.detail || 'Failed to add book';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw error;
+
+    } finally {
+      setIsLoading(false);
+    }
     if (result) {
       setBook(result.data || result);
       await getUserLibrary();
