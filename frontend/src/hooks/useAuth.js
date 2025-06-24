@@ -77,11 +77,14 @@ export function useAuth() {
   const getProfileInternal = useCallback(
     async (forceFetch = false) => {
       const now = Date.now();
-      if (profileFetchRef.current || (now - lastProfileFetch.current < 5000 && !forceFetch)) {
+
+      // If already fetching or recently fetched (and not forcing), return existing profile
+      if (profileFetchRef.current || (now - lastProfileFetch.current < 10000 && !forceFetch && profile)) {
         return profile;
       }
 
-      if (!forceFetch) {
+      // Try cached profile first (only if not forcing fetch)
+      if (!forceFetch && !profile) {
         const cachedProfile = localStorage.getItem('user_profile');
         if (cachedProfile) {
           try {
@@ -105,7 +108,7 @@ export function useAuth() {
 
       profileFetchRef.current = true;
       lastProfileFetch.current = now;
-      
+
       // Cancel any existing request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -116,8 +119,8 @@ export function useAuth() {
 
       try {
         const result = await handleApiCall(
-          () => api.get(API_ENDPOINTS.PROFILE, { 
-            signal: abortControllerRef.current.signal 
+          () => api.get(API_ENDPOINTS.PROFILE, {
+            signal: abortControllerRef.current.signal
           }),
           setIsLoading,
           setError,
@@ -126,7 +129,7 @@ export function useAuth() {
         );
 
         profileFetchRef.current = false;
-        
+
         if (result) {
           console.log('Profile fetch successful:', result);
           setProfile(result);
@@ -136,7 +139,7 @@ export function useAuth() {
         }
 
         console.log('Profile fetch failed, no result returned');
-        
+
         // Check if we got a 401 and haven't already tried refreshing
         if (!forceFetch && error && error.toString().includes('401')) {
           console.log('Attempting token refresh due to 401 error');
@@ -151,12 +154,12 @@ export function useAuth() {
       } catch (err) {
         profileFetchRef.current = false;
         console.error('Profile fetch error:', err);
-        
+
         // Handle network errors or other issues
         if (err.name === 'AbortError') {
           return null;
         }
-        
+
         // If it's a 401 error and we haven't tried refresh yet
         if (!forceFetch && (err.response?.status === 401 || err.toString().includes('401'))) {
           console.log('Attempting token refresh due to error:', err);
@@ -166,7 +169,7 @@ export function useAuth() {
             return await getProfileInternal(true);
           }
         }
-        
+
         return null;
       }
     },
