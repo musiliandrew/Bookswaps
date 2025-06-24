@@ -110,7 +110,12 @@ const EnhancedPostCard = ({
                 <span className="text-gray-400">•</span>
                 <span className="text-sm text-gray-500 flex items-center space-x-1">
                   <ClockIcon className="w-3 h-3" />
-                  <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                  <span>
+                    {post.created_at && !isNaN(new Date(post.created_at).getTime())
+                      ? formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
+                      : 'Recently'
+                    }
+                  </span>
                 </span>
               </div>
               

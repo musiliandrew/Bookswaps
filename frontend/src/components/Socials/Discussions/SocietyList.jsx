@@ -220,7 +220,12 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Created:</span>
-                <span>{new Date(selectedSociety.created_at).toLocaleDateString()}</span>
+                <span>
+                  {selectedSociety.created_at && !isNaN(new Date(selectedSociety.created_at).getTime())
+                    ? new Date(selectedSociety.created_at).toLocaleDateString()
+                    : 'Unknown'
+                  }
+                </span>
               </div>
             </div>
 

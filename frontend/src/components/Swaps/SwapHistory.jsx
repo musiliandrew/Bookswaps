@@ -141,13 +141,19 @@ const SwapHistory = ({
             <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <CalendarIcon className="w-4 h-4" />
               <span>
-                Created {formatDistanceToNow(new Date(swap.created_at), { addSuffix: true })}
+                Created {swap.created_at && !isNaN(new Date(swap.created_at).getTime())
+                  ? formatDistanceToNow(new Date(swap.created_at), { addSuffix: true })
+                  : 'recently'
+                }
               </span>
               {swap.updated_at !== swap.created_at && (
                 <>
                   <span>•</span>
                   <span>
-                    {swap.status.toLowerCase()} {formatDistanceToNow(new Date(swap.updated_at), { addSuffix: true })}
+                    {swap.status.toLowerCase()} {swap.updated_at && !isNaN(new Date(swap.updated_at).getTime())
+                      ? formatDistanceToNow(new Date(swap.updated_at), { addSuffix: true })
+                      : 'recently'
+                    }
                   </span>
                 </>
               )}

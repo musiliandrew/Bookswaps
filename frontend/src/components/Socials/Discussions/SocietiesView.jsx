@@ -165,7 +165,10 @@ const SocietiesView = () => {
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        📅 Created {new Date(society.created_at).toLocaleDateString()}
+                        📅 Created {society.created_at && !isNaN(new Date(society.created_at).getTime())
+                          ? new Date(society.created_at).toLocaleDateString()
+                          : 'Unknown'
+                        }
                       </span>
                     </div>
                   </div>
@@ -252,7 +255,10 @@ const SocietiesView = () => {
               <p><strong>Visibility:</strong> {selectedSociety.visibility}</p>
               <p><strong>Members:</strong> {selectedSociety.member_count || 0}</p>
               <p><strong>Focus:</strong> {selectedSociety.focus_type || 'General'}</p>
-              <p><strong>Created:</strong> {new Date(selectedSociety.created_at).toLocaleDateString()}</p>
+              <p><strong>Created:</strong> {selectedSociety.created_at && !isNaN(new Date(selectedSociety.created_at).getTime())
+                ? new Date(selectedSociety.created_at).toLocaleDateString()
+                : 'Unknown'
+              }</p>
             </div>
             <div className="flex gap-2 mt-6">
               <button

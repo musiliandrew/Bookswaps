@@ -31,7 +31,7 @@ const EnhancedDiscussionsPage = () => {
   // Load posts on component mount
   useEffect(() => {
     listPosts(filters, 1);
-  }, []);
+  }, [listPosts, filters]);
 
   const handleCreatePost = async (postData) => {
     try {
@@ -81,6 +81,7 @@ const EnhancedDiscussionsPage = () => {
 
   const handleBookmark = async (postId) => {
     // Implement bookmark logic
+    console.log('Bookmarking post:', postId);
     toast.info('Bookmark feature coming soon!');
   };
 
@@ -97,11 +98,6 @@ const EnhancedDiscussionsPage = () => {
   };
 
   const handleQuickCreate = (postType) => {
-    setSelectedPostType(postType);
-    setIsCreateModalOpen(true);
-  };
-
-  const openCreateModal = (postType = 'Article') => {
     setSelectedPostType(postType);
     setIsCreateModalOpen(true);
   };
@@ -158,7 +154,6 @@ const EnhancedDiscussionsPage = () => {
 
       {/* Quick Create Button */}
       <QuickCreateButton
-        onCreatePost={handleCreatePost}
         onOpenModal={handleQuickCreate}
       />
 

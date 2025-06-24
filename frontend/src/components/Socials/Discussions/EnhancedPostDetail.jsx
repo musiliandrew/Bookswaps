@@ -48,7 +48,7 @@ const EnhancedPostDetail = () => {
       getPost(postId);
       listNotes(postId);
     }
-  }, [postId]);
+  }, [postId, getPost, listNotes]);
 
   const handleAddComment = async (e, parentNoteId = null) => {
     e.preventDefault();
@@ -182,7 +182,12 @@ const EnhancedPostDetail = () => {
                     <span className="text-gray-400">•</span>
                     <span className="text-sm text-gray-500 flex items-center space-x-1">
                       <ClockIcon className="w-4 h-4" />
-                      <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                      <span>
+                        {post.created_at && !isNaN(new Date(post.created_at).getTime())
+                          ? formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
+                          : 'Recently'
+                        }
+                      </span>
                     </span>
                   </div>
                   
@@ -354,7 +359,10 @@ const EnhancedPostDetail = () => {
                           {note.user?.username || 'Anonymous'}
                         </span>
                         <span className="text-sm text-gray-500">
-                          {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+                          {note.created_at && !isNaN(new Date(note.created_at).getTime())
+                            ? formatDistanceToNow(new Date(note.created_at), { addSuffix: true })
+                            : 'Recently'
+                          }
                         </span>
                       </div>
                       <p className="text-gray-700">{note.content}</p>

@@ -8,7 +8,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-const QuickCreateButton = ({ onCreatePost, onOpenModal }) => {
+const QuickCreateButton = ({ onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const quickActions = [
