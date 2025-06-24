@@ -109,11 +109,95 @@ export function useNotifications() {
       'Notification marked as read',
       'Mark notification read'
     );
-    
+
     if (result && mountedRef.current) {
       setNotifications((prev) =>
         prev.map((n) => (n.notification_id === notificationId ? { ...n, is_read: true } : n))
       );
+    }
+    return result;
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    if (!mountedRef.current) return null;
+
+    const result = await handleApiCallWithResult(
+      () => api.post(API_ENDPOINTS.MARK_ALL_NOTIFICATIONS_READ),
+      setIsLoading,
+      setError,
+      'All notifications marked as read',
+      'Mark all notifications read'
+    );
+
+    if (result && mountedRef.current) {
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, is_read: true }))
+      );
+    }
+    return result;
+  }, []);
+
+  const deleteNotification = useCallback(async (notificationId) => {
+    if (!mountedRef.current) return null;
+
+    const result = await handleApiCallWithResult(
+      () => api.delete(API_ENDPOINTS.DELETE_NOTIFICATION(notificationId)),
+      setIsLoading,
+      setError,
+      'Notification deleted',
+      'Delete notification'
+    );
+
+    if (result && mountedRef.current) {
+      setNotifications((prev) =>
+        prev.filter((n) => n.notification_id !== notificationId)
+      );
+    }
+    return result;
+  }, []);
+
+  const bulkNotificationOperations = useCallback(async (notificationIds, operation) => {
+    if (!mountedRef.current || !notificationIds.length) return null;
+
+    const endpoint = operation === 'delete'
+      ? API_ENDPOINTS.BULK_NOTIFICATION_OPERATIONS
+      : API_ENDPOINTS.BULK_NOTIFICATION_OPERATIONS;
+
+    const method = operation === 'delete' ? 'delete' : 'patch';
+    const data = operation === 'delete'
+      ? { notification_ids: notificationIds }
+      : { notification_ids: notificationIds, operation };
+
+    const result = await handleApiCallWithResult(
+      () => api[method](endpoint, data),
+      setIsLoading,
+      setError,
+      `Bulk operation completed`,
+      'Bulk notification operation'
+    );
+
+    if (result && mountedRef.current) {
+      if (operation === 'delete') {
+        setNotifications((prev) =>
+          prev.filter((n) => !notificationIds.includes(n.notification_id))
+        );
+      } else if (operation === 'mark_read') {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            notificationIds.includes(n.notification_id)
+              ? { ...n, is_read: true }
+              : n
+          )
+        );
+      } else if (operation === 'mark_unread') {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            notificationIds.includes(n.notification_id)
+              ? { ...n, is_read: false }
+              : n
+          )
+        );
+      }
     }
     return result;
   }, []);
@@ -191,10 +275,50 @@ export function useNotifications() {
     };
   }, [debouncedGetNotifications]);
 
+  // Computed values
+  const unreadCount = useMemo(() =>
+    notifications.filter(n => !n.is_read).length,
+    [notifications]
+  );
+
+  const groupedNotifications = useMemo(() => {
+    const groups = {
+      today: [],
+      yesterday: [],
+      thisWeek: [],
+      older: []
+    };
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    notifications.forEach(notification => {
+      const createdAt = new Date(notification.created_at);
+      if (createdAt >= today) {
+        groups.today.push(notification);
+      } else if (createdAt >= yesterday) {
+        groups.yesterday.push(notification);
+      } else if (createdAt >= thisWeek) {
+        groups.thisWeek.push(notification);
+      } else {
+        groups.older.push(notification);
+      }
+    });
+
+    return groups;
+  }, [notifications]);
+
   return {
     getNotifications: debouncedGetNotifications,
     markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
+    bulkNotificationOperations,
     notifications,
+    unreadCount,
+    groupedNotifications,
     isLoading,
     error,
     pagination,

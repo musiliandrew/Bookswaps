@@ -5,9 +5,8 @@ import { BellIcon } from '@heroicons/react/24/solid';
 import Tilt from 'react-parallax-tilt';
 
 const NotificationBadge = ({ className = '' }) => {
-  const { notifications, getNotifications } = useNotifications();
+  const { notifications, getNotifications, unreadCount } = useNotifications();
   const [showDropdown, setShowDropdown] = useState(false);
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   useEffect(() => {
     getNotifications({ is_read: false }); // Fetch only on mount
