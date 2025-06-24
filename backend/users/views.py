@@ -18,7 +18,7 @@ from django.conf import settings
 from .models import CustomUser, Follows
 from backend.swaps.models import Notification
 from backend.utils.websocket import send_notification_to_user
-from backend.library.models import UserBook
+from backend.library.models import Library
 from backend.library.serializers import UserLibraryBookSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
@@ -568,8 +568,8 @@ class UserLibraryView(APIView):
         if not user.profile_public and request.user != user:
             return Response({"detail": "User's library is private"}, status=status.HTTP_403_FORBIDDEN)
 
-        # Get user's books - only show books available for exchange/borrow if not the owner
-        queryset = UserBook.objects.filter(user=user).select_related('user')
+        # Get user's library entries - only show books available for exchange/borrow if not the owner
+        queryset = Library.objects.filter(user=user).select_related('user', 'book')
 
         if request.user != user:
             # For other users, only show books available for exchange or borrow
@@ -579,6 +579,7 @@ class UserLibraryView(APIView):
             )
 
         # Apply pagination
+        from backend.utils.pagination import CustomPagination
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = UserLibraryBookSerializer(result_page, many=True, context={'request': request})
