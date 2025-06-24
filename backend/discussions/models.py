@@ -206,3 +206,18 @@ class Upvote(models.Model):
 
     def __str__(self):
         return f"{self.user.username} upvoted {self.discussion.title}"
+
+class Downvote(models.Model):
+    downvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='downvotes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'downvotes'
+        db_table_comment = 'Stores discussion downvotes'
+        unique_together = (('discussion', 'user'),)
+        indexes = [models.Index(fields=['discussion', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} downvoted {self.discussion.title}"

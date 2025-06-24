@@ -13,6 +13,7 @@ import LibraryPage from './pages/Main/LibraryPage';
 import ProfilePage from './pages/Main/ProfilePage';
 import SocialsPage from './pages/Main/SocialsPage';
 import NotificationsPage from './pages/Main/NotificationsPage';
+import EnhancedPostDetail from './components/Socials/Discussions/EnhancedPostDetail';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -116,6 +117,16 @@ function App() {
             element={
               isAuthenticated ? (
                 <SocialsPage />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/socials/discussions/post/:postId"
+            element={
+              isAuthenticated ? (
+                <EnhancedPostDetail />
               ) : (
                 <Navigate to="/" replace />
               )

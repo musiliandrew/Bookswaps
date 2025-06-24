@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   LIST_NOTES: (discussionId) => `/discussions/posts/${discussionId}/notes/list/`,
   LIKE_NOTE: (noteId) => `/discussions/notes/${noteId}/like/`,
   UPVOTE_POST: (discussionId) => `/discussions/posts/${discussionId}/upvote/`,
+  DOWNVOTE_POST: (discussionId) => `/discussions/posts/${discussionId}/downvote/`,
   REPRINT_POST: (discussionId) => `/discussions/posts/${discussionId}/reprint/`,
   LIST_TOP_POSTS: '/discussions/top-posts/',
   GET_BOOK: (bookId) => `/library/books/${bookId}/`,
