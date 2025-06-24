@@ -18,6 +18,8 @@ from django.conf import settings
 from .models import CustomUser, Follows
 from backend.swaps.models import Notification
 from backend.utils.websocket import send_notification_to_user
+from backend.library.models import UserBook
+from backend.library.serializers import UserLibraryBookSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
@@ -550,3 +552,35 @@ class RecommendedUsersView(APIView):
             
         serializer = UserSearchSerializer(recommended, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserLibraryView(APIView):
+    """Get a specific user's library (public books only unless it's the user's own library)"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user = CustomUser.objects.get(user_id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if profile is public or if it's the user's own library
+        if not user.profile_public and request.user != user:
+            return Response({"detail": "User's library is private"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get user's books - only show books available for exchange/borrow if not the owner
+        queryset = UserBook.objects.filter(user=user).select_related('user')
+
+        if request.user != user:
+            # For other users, only show books available for exchange or borrow
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(available_for_exchange=True) | Q(available_for_borrow=True)
+            )
+
+        # Apply pagination
+        paginator = CustomPagination()
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer = UserLibraryBookSerializer(result_page, many=True, context={'request': request})
+
+        return paginator.get_paginated_response(serializer.data)
