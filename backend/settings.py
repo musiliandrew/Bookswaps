@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'channels',
+    'storages',
     'axes',
     'django_extensions',
     'backend.users.apps.UsersConfig',
@@ -227,11 +228,26 @@ CHANNEL_LAYERS = {
 ASGI_APPLICATION = 'backend.asgi.application'
 
 # MinIO Configuration
-AWS_ACCESS_KEY_ID = os.getenv('MINIO_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = os.getenv('MINIO_SECRET_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
-AWS_S3_ENDPOINT_URL = os.getenv('MINIO_ENDPOINT_URL')
-AWS_S3_REGION_NAME = os.getenv('MINIO_REGION')
+AWS_ACCESS_KEY_ID = os.getenv('MINIO_ACCESS_KEY', 'minioadmin')
+AWS_SECRET_ACCESS_KEY = os.getenv('MINIO_SECRET_KEY', 'minioadmin')
+AWS_STORAGE_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME', 'bookswaps')
+AWS_S3_ENDPOINT_URL = os.getenv('MINIO_ENDPOINT_URL', 'http://minio:9000')
+AWS_S3_REGION_NAME = os.getenv('MINIO_REGION', 'us-east-1')
 AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_USE_SSL = False  # Set to True if using HTTPS
+AWS_S3_VERIFY = False   # Set to True if using SSL certificates
+AWS_S3_CUSTOM_DOMAIN = None
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+# Storage Configuration
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+
+# Media files configuration
+MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
+MEDIA_ROOT = ''
 
 CORS_ALLOW_CREDENTIALS = True

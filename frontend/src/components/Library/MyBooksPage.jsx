@@ -43,6 +43,7 @@ const MyBooksPage = () => {
     available_for_borrow: true,
     year: '',
     cover_image_url: '',
+    cover_image: null,
   });
   const [activeTab, setActiveTab] = useState('library');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
@@ -90,6 +91,7 @@ const MyBooksPage = () => {
         available_for_borrow: true,
         year: '',
         cover_image_url: '',
+        cover_image: null,
       });
       toast.success('Book added successfully');
     } catch {

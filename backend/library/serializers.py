@@ -84,12 +84,13 @@ class AddBookSerializer(serializers.ModelSerializer):
         choices=Book.condition.field.choices, write_only=True
     )
     isbn = serializers.CharField(required=False, allow_blank=True)
+    cover_image = serializers.ImageField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Book
         fields = [
             'title', 'author', 'genre', 'isbn', 'condition', 'synopsis',
-            'available_for_exchange', 'available_for_borrow', 'year', 'cover_image_url'
+            'available_for_exchange', 'available_for_borrow', 'year', 'cover_image_url', 'cover_image'
         ]
 
     def validate_isbn(self, value):
@@ -105,11 +106,19 @@ class AddBookSerializer(serializers.ModelSerializer):
     def validate_cover_image_url(self, value):
         if not value:
             return value
-        if not value.startswith('https://'):
-            raise ValidationError("Cover image URL must use HTTPS.")
-        allowed_domains = ['openlibrary.org', 'bookswap-bucket.s3.amazonaws.com']
+        if not value.startswith(('https://', 'http://')):
+            raise ValidationError("Cover image URL must use HTTP or HTTPS.")
+
+        from django.conf import settings
+        allowed_domains = [
+            'openlibrary.org',
+            'covers.openlibrary.org',
+            'bookswap-bucket.s3.amazonaws.com',  # Legacy AWS S3
+            settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')  # MinIO domain
+        ]
+
         if not any(domain in value for domain in allowed_domains):
-            raise ValidationError("Cover image URL must be from an allowed domain.")
+            raise ValidationError(f"Cover image URL must be from an allowed domain: {', '.join(allowed_domains)}")
         return value
 
     def validate(self, data):
@@ -129,13 +138,26 @@ class AddBookSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         condition = validated_data.pop('condition')
-        qr_code_url = f"https://bookswap-bucket.s3.amazonaws.com/qr/{uuid.uuid4()}.png"
+        cover_image_file = validated_data.pop('cover_image', None)
+
+        # Generate book ID first
+        book_id = uuid.uuid4()
+
+        # Handle cover image upload
+        if cover_image_file:
+            from backend.utils.minio_storage import upload_book_cover
+            validated_data['cover_image_url'] = upload_book_cover(cover_image_file, book_id)
+
+        # Generate QR code URL using MinIO
+        from backend.utils.minio_storage import get_minio_url
+        qr_id = uuid.uuid4()
+        qr_code_url = get_minio_url(f"qr-codes/{qr_id}.png")
         now = timezone.now()
 
         with transaction.atomic():
             book = Book.objects.create(
                 **validated_data,
-                book_id=uuid.uuid4(),
+                book_id=book_id,
                 user=user,
                 original_owner=user,
                 qr_code_url=qr_code_url,
