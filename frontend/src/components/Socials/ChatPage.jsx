@@ -153,6 +153,11 @@ const ChatPage = () => {
     }
   };
 
+  const handleSocietySelect = (society) => {
+    // Navigate to the society chat
+    navigate(`/chat/society/${society.id}`);
+  };
+
   return (
     <div className="min-h-screen font-open-sans text-text">
       <div className="container mx-auto px-4 py-8">
@@ -204,43 +209,48 @@ const ChatPage = () => {
             </div>
           </motion.div>
         )}
-      {chatId && activeTab === 'direct' && (
-        <DirectChatView
-          chatId={chatId}
-          messages={messages}
-          isChatLoading={isChatLoading}
-          newDirectMessage={newDirectMessage}
-          setNewDirectMessage={setNewDirectMessage}
-          handleSendDirectMessage={handleSendDirectMessage}
-          handleEditMessage={handleEditMessage}
-          handleDeleteMessage={handleDeleteMessage}
-          handleAddReaction={handleAddReaction}
-          editingMessageId={editingMessageId}
-          setEditingMessageId={setEditingMessageId}
-          editContent={editContent}
-          setEditContent={setEditContent}
-          markRead={markRead}
-        />
-      )}
-      {societyId && activeTab === 'societies' && (
-        <SocietyChatView
-          societyId={societyId}
-          societies={societies}
-          societyMessages={societyMessages}
-          isSocietiesLoading={isSocietiesLoading}
-          newSocietyMessage={newSocietyMessage}
-          setNewSocietyMessage={setNewSocietyMessage}
-          sendSocietyMessage={sendSocietyMessage}
-          handleEditMessage={handleEditMessage}
-          handleDeleteMessage={handleDeleteMessage}
-          handleAddReaction={handleAddReaction}
-          handlePinMessage={handlePinMessage}
-          editingMessageId={editingMessageId}
-          setEditingMessageId={setEditingMessageId}
-          editContent={editContent}
-          setEditContent={setEditContent}
-        />
-      )}
+
+        {/* Direct Chat View */}
+        {chatId && activeTab === 'direct' && (
+          <DirectChatView
+            chatId={chatId}
+            messages={messages}
+            isChatLoading={isChatLoading}
+            newDirectMessage={newDirectMessage}
+            setNewDirectMessage={setNewDirectMessage}
+            handleSendDirectMessage={handleSendDirectMessage}
+            handleEditMessage={handleEditMessage}
+            handleDeleteMessage={handleDeleteMessage}
+            handleAddReaction={handleAddReaction}
+            editingMessageId={editingMessageId}
+            setEditingMessageId={setEditingMessageId}
+            editContent={editContent}
+            setEditContent={setEditContent}
+            markRead={markRead}
+          />
+        )}
+
+        {/* Society Chat View */}
+        {societyId && activeTab === 'societies' && (
+          <SocietyChatView
+            societyId={societyId}
+            societies={societies}
+            societyMessages={societyMessages}
+            isSocietiesLoading={isSocietiesLoading}
+            newSocietyMessage={newSocietyMessage}
+            setNewSocietyMessage={setNewSocietyMessage}
+            sendSocietyMessage={sendSocietyMessage}
+            handleEditMessage={handleEditMessage}
+            handleDeleteMessage={handleDeleteMessage}
+            handleAddReaction={handleAddReaction}
+            handlePinMessage={handlePinMessage}
+            editingMessageId={editingMessageId}
+            setEditingMessageId={setEditingMessageId}
+            editContent={editContent}
+            setEditContent={setEditContent}
+          />
+        )}
+
         {/* Enhanced Direct Chats Section */}
         {activeTab === 'direct' && !chatId && !societyId && (
           <motion.div
@@ -310,12 +320,13 @@ const ChatPage = () => {
                   isSocietiesLoading={isSocietiesLoading}
                   listSocieties={listSocieties}
                   societiesPagination={societiesPagination}
-                  onSocietySelect={(society) => toast.info(`Selected society: ${society.name}. Chat functionality coming soon!`)}
+                  onSocietySelect={handleSocietySelect}
                 />
               </motion.div>
             </div>
           </motion.div>
         )}
+      </div>
     </div>
   );
 };
