@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserStats } from '../../../hooks/useUserStats';
+import ShareableProfileCard from '../ShareableProfileCard';
 import {
   HeartIcon,
   ChatBubbleLeftRightIcon,
@@ -19,34 +20,56 @@ import {
   BookmarkIcon as BookmarkSolidIcon
 } from '@heroicons/react/24/solid';
 
-// Helper function to parse genres that might be double-encoded
+// Enhanced helper function to parse genres that might be double-encoded
 const parseGenres = (genres) => {
   if (!genres) return [];
 
-  // If it's already an array, return it
+  // If it's already an array, clean each item
   if (Array.isArray(genres)) {
-    return genres.map(genre => {
-      // Handle double-encoded strings
-      if (typeof genre === 'string' && genre.startsWith('[') && genre.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(genre);
-          return Array.isArray(parsed) ? parsed.join(', ') : parsed;
-        } catch {
-          return genre.replace(/[\[\]"\\]/g, '');
+    return genres
+      .map(genre => {
+        if (typeof genre === 'string') {
+          // Handle double-encoded strings like ["[\"Sci-fi\"", "\"Fiction\""]
+          let cleaned = genre;
+
+          // Remove outer brackets and quotes
+          cleaned = cleaned.replace(/^\["|"\]$/g, '');
+          cleaned = cleaned.replace(/^"|"$/g, '');
+          cleaned = cleaned.replace(/\\"/g, '"');
+
+          // Split by comma if it contains multiple genres
+          if (cleaned.includes('","') || cleaned.includes('", "')) {
+            return cleaned.split(/",\s*"/).map(g => g.replace(/^"|"$/g, '').trim());
+          }
+
+          return cleaned.trim();
         }
-      }
-      return genre;
-    });
+        return genre;
+      })
+      .flat() // Flatten in case we split any strings
+      .filter(genre => genre && genre.length > 0) // Remove empty strings
+      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize first letter
   }
 
   // If it's a string, try to parse it
   if (typeof genres === 'string') {
     try {
+      // Try to parse as JSON first
       const parsed = JSON.parse(genres);
-      return Array.isArray(parsed) ? parsed : [parsed];
+      return parseGenres(parsed); // Recursively parse the result
     } catch {
-      // If parsing fails, clean up the string
-      return [genres.replace(/[\[\]"\\]/g, '')];
+      // If parsing fails, clean up the string manually
+      let cleaned = genres;
+
+      // Remove brackets and quotes
+      cleaned = cleaned.replace(/[\[\]"\\]/g, '');
+
+      // Split by comma and clean each item
+      return cleaned
+        .split(',')
+        .map(genre => genre.trim())
+        .filter(genre => genre.length > 0)
+        .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
     }
   }
 
@@ -64,6 +87,7 @@ const UserProfileCard = ({
   const [localUser, setLocalUser] = useState(user);
   const [localFollowStatus, setLocalFollowStatus] = useState(followStatus);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   // Fetch user statistics
   const { stats: userStats, isLoading: statsLoading } = useUserStats(user?.user_id);
@@ -410,9 +434,11 @@ const UserProfileCard = ({
                 </motion.button>
 
                 <motion.button
+                  onClick={() => setShowShareCard(true)}
                   className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  title="Share Profile"
                 >
                   <ShareIcon className="w-4 h-4" />
                 </motion.button>
@@ -446,6 +472,17 @@ const UserProfileCard = ({
           </motion.div>
         )}
       </div>
+
+      {/* Shareable Profile Card Modal */}
+      <AnimatePresence>
+        {showShareCard && (
+          <ShareableProfileCard
+            user={localUser}
+            stats={profileStats}
+            onClose={() => setShowShareCard(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

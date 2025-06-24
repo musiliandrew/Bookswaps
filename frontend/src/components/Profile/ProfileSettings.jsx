@@ -116,20 +116,53 @@ const ProfileSettings = () => {
   const activeSessionInfo = sections.find(s => s.id === activeSection);
 
   return (
-    <div className="min-h-screen pt-16 pb-20 bg-bookish-gradient">
-      <main className="max-w-4xl mx-auto px-4">
-        {/* Header Section */}
+    <div className="min-h-screen font-open-sans text-text">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Header Section */}
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="mb-8"
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-['Lora'] text-[var(--primary)] mb-2">Settings</h1>
-            <p className="text-[var(--secondary)] font-['Open_Sans']">
-              Manage your account and preferences
-            </p>
-          </div>
+          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+            ⚙️ Settings
+            <motion.div
+              className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full opacity-20"
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 360, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+          </h1>
+          <motion.p
+            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Customize your BookSwaps experience and manage your account
+          </motion.p>
+        </motion.div>
+
+        <main className="max-w-5xl mx-auto">{/* Search Bar */}
+          <motion.div
+            className="relative max-w-md mx-auto mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search settings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bookish-input rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
+              />
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary/60">
+                🔍
+              </div>
+            </div>
+          </motion.div>
 
           {/* Search Bar */}
           <div className="relative max-w-md mx-auto mb-6">
@@ -146,53 +179,66 @@ const ProfileSettings = () => {
           </div>
         </motion.div>
 
-        {/* Enhanced Navigation */}
-        <motion.nav
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredSections.map((section, index) => (
-              <motion.button
-                key={section.id}
-                onClick={() => handleSectionChange(section.id)}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className={`relative p-4 rounded-xl text-left transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
-                  activeSection === section.id
-                    ? 'bookish-glass border-2 border-[var(--accent)] shadow-lg'
-                    : 'bookish-glass border border-[var(--secondary)]/20 hover:border-[var(--accent)]/50'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">{section.icon}</div>
-                  <div className="flex-1">
-                    <h3 className={`font-['Open_Sans'] font-semibold mb-1 ${
-                      activeSection === section.id ? 'text-[var(--accent)]' : 'text-[var(--text)]'
+          {/* Enhanced Navigation */}
+          <motion.nav
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mb-12"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredSections.map((section, index) => (
+                <motion.button
+                  key={section.id}
+                  onClick={() => handleSectionChange(section.id)}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 + index * 0.1, duration: 0.4 }}
+                  className={`relative p-6 rounded-2xl text-left transition-all duration-300 group ${
+                    activeSection === section.id
+                      ? 'bookish-glass border-2 border-accent shadow-xl scale-105'
+                      : 'bookish-glass border border-white/20 hover:border-accent/50 hover:scale-102'
+                  }`}
+                  whileHover={{ y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`text-3xl transition-transform duration-300 ${
+                      activeSection === section.id ? 'scale-110' : 'group-hover:scale-110'
                     }`}>
-                      {section.label}
-                    </h3>
-                    <p className="text-sm text-[var(--secondary)]/70 line-clamp-2">
-                      {section.description}
-                    </p>
+                      {section.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className={`font-lora font-bold mb-2 text-lg ${
+                        activeSection === section.id ? 'text-accent' : 'text-primary group-hover:text-accent'
+                      }`}>
+                        {section.label}
+                      </h3>
+                      <p className="text-sm text-primary/70 leading-relaxed">
+                        {section.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                
-                {/* Active indicator */}
-                {activeSection === section.id && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute inset-0 rounded-xl border-2 border-[var(--accent)] pointer-events-none"
-                    transition={{ type: "spring", duration: 0.5 }}
-                  />
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </motion.nav>
+
+                  {/* Active indicator */}
+                  {activeSection === section.id && (
+                    <motion.div
+                      layoutId="activeSettingsIndicator"
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 pointer-events-none"
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+
+                  {/* Hover glow effect */}
+                  <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 pointer-events-none ${
+                    activeSection === section.id
+                      ? 'opacity-100 bg-gradient-to-br from-accent/5 to-primary/5'
+                      : 'opacity-0 group-hover:opacity-100 bg-gradient-to-br from-white/5 to-white/10'
+                  }`} />
+                </motion.button>
+              ))}
+            </div>
+          </motion.nav>
 
         {/* Content Section with Enhanced Animation */}
         <AnimatePresence mode="wait">

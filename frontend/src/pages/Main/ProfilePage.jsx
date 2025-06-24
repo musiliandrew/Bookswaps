@@ -4,7 +4,7 @@ import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../hooks/useAuth';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
-import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const ProfilePage = () => {
@@ -54,15 +54,17 @@ const ProfilePage = () => {
   });
 
   const tabs = [
-    { 
-      id: 'my-profile', 
-      label: 'My Profile', 
-      icon: <UserIcon className="w-4 h-4" /> 
+    {
+      id: 'my-profile',
+      label: 'My Profile',
+      icon: <UserIcon className="w-5 h-5" />,
+      description: 'Your reading journey'
     },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: <Cog6ToothIcon className="w-4 h-4" /> 
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: <Cog6ToothIcon className="w-5 h-5" />,
+      description: 'Customize your experience'
     },
   ];
 
@@ -71,13 +73,41 @@ const ProfilePage = () => {
     getProfile();
   }, [getProfile]);
 
-  // Loading state
+  // Enhanced Loading state
   if (authLoading || !profile) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-bookish-gradient">
-        <div className="flex items-center space-x-3">
-          <div className="bookish-spinner w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-lg font-medium text-[var(--text)]">Loading profile...</span>
+      <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden">
+        {/* Flying Books Background */}
+        <div className="floating-elements fixed inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
+          <div className="absolute bottom-40 left-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
+
+          {/* Flying Books */}
+          <div className="absolute top-1/4 left-1/4 text-6xl opacity-20 animate-bounce" style={{ animationDelay: '0s' }}>📚</div>
+          <div className="absolute top-1/3 right-1/3 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '1s' }}>📖</div>
+          <div className="absolute bottom-1/3 left-1/2 text-5xl opacity-10 animate-bounce" style={{ animationDelay: '2s' }}>📕</div>
+          <div className="absolute top-1/2 right-1/4 text-3xl opacity-20 animate-bounce" style={{ animationDelay: '3s' }}>📘</div>
+          <div className="absolute bottom-1/4 right-1/2 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
+        </div>
+
+        <div className="flex flex-col justify-center items-center h-screen relative z-10">
+          <motion.div
+            className="flex flex-col items-center space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
+              className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="text-center">
+              <h2 className="text-2xl font-lora font-bold text-primary mb-2">Loading Your Profile</h2>
+              <p className="text-primary/70">Preparing your reading journey...</p>
+            </div>
+          </motion.div>
         </div>
       </div>
     );
@@ -104,77 +134,99 @@ const ProfilePage = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-bookish-gradient pt-16 pb-12" {...handlers}>
-        {/* Bottom Navigation */}
-        <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md bg-[var(--primary)] bookish-glass rounded-xl p-2 flex justify-around items-center z-10 shadow-lg">
+      <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
+        {/* Flying Books Background */}
+        <div className="floating-elements fixed inset-0 pointer-events-none">
+          <div className="absolute top-20 right-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute top-40 left-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
+          <div className="absolute bottom-40 right-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
+
+          {/* Flying Books */}
+          <div className="absolute top-1/4 left-1/4 text-6xl opacity-20 animate-bounce" style={{ animationDelay: '0s' }}>📚</div>
+          <div className="absolute top-1/3 right-1/3 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '1s' }}>📖</div>
+          <div className="absolute bottom-1/3 left-1/2 text-5xl opacity-10 animate-bounce" style={{ animationDelay: '2s' }}>📕</div>
+          <div className="absolute top-1/2 right-1/4 text-3xl opacity-20 animate-bounce" style={{ animationDelay: '3s' }}>📘</div>
+          <div className="absolute bottom-1/4 right-1/2 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
+        </div>
+
+        {/* Enhanced Bottom Navigation */}
+        <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
+              className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'text-[var(--accent)]'
-                  : 'text-[#456A76] hover:text-[var(--accent)]'
+                  ? 'text-white bg-gradient-to-br from-primary to-accent shadow-lg'
+                  : 'text-primary/70 hover:text-primary hover:bg-white/10'
               }`}
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               aria-label={tab.label}
               role="tab"
               aria-selected={activeTab === tab.id}
             >
-              <div className="flex flex-col items-center">
-                {isSmallScreen ? (
-                  tab.icon
-                ) : (
-                  <span className="text-xs font-['Open_Sans'] font-medium">
-                    {tab.label}
-                  </span>
-                )}
-                
-                {/* Active indicator */}
-                {activeTab === tab.id && (
-                  <motion.div
-                    className="w-2 h-1 bg-[var(--accent)] rounded-full mt-1"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
+              <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`}>
+                {tab.icon}
               </div>
+              {!isSmallScreen && (
+                <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
+                  activeTab === tab.id ? 'text-white' : 'text-primary/70'
+                }`}>
+                  {tab.label}
+                </span>
+              )}
+              {activeTab === tab.id && (
+                <motion.div
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                >
+                  <SparklesIcon className="w-2 h-2 text-white m-0.5" />
+                </motion.div>
+              )}
             </motion.button>
           ))}
         </nav>
 
-        {/* Main Content with Tab Animation */}
-        <div className="max-w-3xl mx-auto px-4">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ 
-                opacity: 0, 
-                x: activeTab === 'my-profile' ? 100 : -100 
-              }}
-              animate={{ 
-                opacity: 1, 
-                x: 0 
-              }}
-              exit={{ 
-                opacity: 0, 
-                x: activeTab === 'my-profile' ? -100 : 100 
-              }}
-              transition={{ 
-                duration: 0.3,
-                ease: 'easeInOut'
-              }}
-              className="w-full"
-            >
-              {activeTab === 'my-profile' ? (
-                <ProfileSection />
-              ) : (
-                <ProfileSettings />
-              )}
-            </motion.div>
-          </AnimatePresence>
+        {/* Enhanced Main Content with Tab Animation */}
+        <div className="pt-20 pb-32">
+          <div className="max-w-4xl mx-auto px-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{
+                  opacity: 0,
+                  x: activeTab === 'my-profile' ? 100 : -100,
+                  scale: 0.95
+                }}
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                  scale: 1
+                }}
+                exit={{
+                  opacity: 0,
+                  x: activeTab === 'my-profile' ? -100 : 100,
+                  scale: 0.95
+                }}
+                transition={{
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30
+                }}
+                className="w-full"
+              >
+                {activeTab === 'my-profile' ? (
+                  <ProfileSection />
+                ) : (
+                  <ProfileSettings />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </ErrorBoundary>
