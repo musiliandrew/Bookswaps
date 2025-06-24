@@ -330,6 +330,82 @@ class MarkNotificationReadView(APIView):
         notification.save()
         return Response(NotificationSerializer(notification).data, status=status.HTTP_200_OK)
 
+class MarkAllNotificationsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Mark all notifications as read for the authenticated user"""
+        updated_count = Notification.objects.filter(
+            user=request.user,
+            is_read=False
+        ).update(is_read=True)
+
+        return Response({
+            'message': f'Marked {updated_count} notifications as read',
+            'updated_count': updated_count
+        }, status=status.HTTP_200_OK)
+
+class DeleteNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, notification_id):
+        """Delete a single notification"""
+        notification = get_object_or_404(Notification, notification_id=notification_id, user=request.user)
+        notification.delete()
+        return Response({
+            'message': 'Notification deleted successfully'
+        }, status=status.HTTP_200_OK)
+
+class BulkNotificationOperationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        """Bulk operations on notifications (mark as read, archive, etc.)"""
+        notification_ids = request.data.get('notification_ids', [])
+        operation = request.data.get('operation')  # 'mark_read', 'mark_unread', 'archive'
+
+        if not notification_ids:
+            return Response({'error': 'No notification IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not operation:
+            return Response({'error': 'No operation specified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        notifications = Notification.objects.filter(
+            notification_id__in=notification_ids,
+            user=request.user
+        )
+
+        if operation == 'mark_read':
+            updated_count = notifications.update(is_read=True)
+        elif operation == 'mark_unread':
+            updated_count = notifications.update(is_read=False)
+        elif operation == 'archive':
+            updated_count = notifications.update(is_archived=True)
+        else:
+            return Response({'error': 'Invalid operation'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'message': f'Successfully {operation} {updated_count} notifications',
+            'updated_count': updated_count
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        """Bulk delete notifications"""
+        notification_ids = request.data.get('notification_ids', [])
+
+        if not notification_ids:
+            return Response({'error': 'No notification IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = Notification.objects.filter(
+            notification_id__in=notification_ids,
+            user=request.user
+        ).delete()
+
+        return Response({
+            'message': f'Successfully deleted {deleted_count} notifications',
+            'deleted_count': deleted_count
+        }, status=status.HTTP_200_OK)
+
 class ShareView(APIView):
     permission_classes = [IsAuthenticated]
 
