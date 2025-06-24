@@ -255,13 +255,29 @@ try:
     host = parsed.hostname or 'minio'
     port = parsed.port or 9000
 
-    # Quick connectivity check with short timeout
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)  # 1 second timeout
-    result = sock.connect_ex((host, port))
-    sock.close()
+    # For Docker environments, try the service name first
+    if host == 'minio' or 'minio' in AWS_S3_ENDPOINT_URL:
+        # In Docker, try connecting to the service name
+        test_hosts = ['minio', host]
+    else:
+        test_hosts = [host]
 
-    if result == 0:  # Connection successful
+    # Quick connectivity check with short timeout
+    connection_successful = False
+    for test_host in test_hosts:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)  # 1 second timeout
+            result = sock.connect_ex((test_host, port))
+            sock.close()
+            if result == 0:
+                connection_successful = True
+                print(f"✅ MinIO connection successful to {test_host}:{port}")
+                break
+        except Exception as e:
+            continue
+
+    if connection_successful:  # Connection successful
         DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
         STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
         MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'

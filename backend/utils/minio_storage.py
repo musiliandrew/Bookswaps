@@ -23,9 +23,23 @@ class MinIOStorage:
         """Lazy initialization of MinIO client."""
         if self.client is None:
             try:
+                endpoint_url = settings.AWS_S3_ENDPOINT_URL
+
+                # Debug logging
+                logger.info(f"Initializing MinIO client with endpoint: {endpoint_url}")
+                logger.info(f"Bucket name: {self.bucket_name}")
+                logger.info(f"Access key: {settings.AWS_ACCESS_KEY_ID}")
+                logger.info(f"Region: {settings.AWS_S3_REGION_NAME}")
+
+                # Ensure we're using the correct endpoint for Docker
+                if endpoint_url and 'localhost' in endpoint_url:
+                    # Replace localhost with minio for Docker environments
+                    endpoint_url = endpoint_url.replace('localhost', 'minio')
+                    logger.info(f"Adjusted endpoint for Docker: {endpoint_url}")
+
                 self.client = boto3.client(
                     's3',
-                    endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                    endpoint_url=endpoint_url,
                     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                     region_name=settings.AWS_S3_REGION_NAME,
@@ -33,7 +47,7 @@ class MinIOStorage:
                     use_ssl=getattr(settings, 'AWS_S3_USE_SSL', False),
                     verify=getattr(settings, 'AWS_S3_VERIFY', False)
                 )
-                logger.info("MinIO client initialized successfully")
+                logger.info(f"MinIO client initialized successfully with endpoint: {endpoint_url}")
             except Exception as e:
                 logger.error(f"Failed to initialize MinIO client: {str(e)}")
                 raise ValidationError(f"MinIO connection failed: {str(e)}")
