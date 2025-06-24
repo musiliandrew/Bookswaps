@@ -11,7 +11,8 @@ import {
   EyeIcon,
   EyeSlashIcon,
   CheckCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 
 const NotificationList = ({ className = '' }) => {
@@ -23,16 +24,14 @@ const NotificationList = ({ className = '' }) => {
     deleteNotification,
     bulkNotificationOperations,
     unreadCount,
-    groupedNotifications,
     isLoading,
     error,
     pagination
   } = useNotifications();
-  const { profile } = useAuth();
+  useAuth();
   const [filter, setFilter] = useState('all');
   const [selectedNotifications, setSelectedNotifications] = useState(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grouped'
   const observerRef = useRef();
   const lastNotificationRef = useRef();
 
@@ -117,6 +116,10 @@ const NotificationList = ({ className = '' }) => {
     await bulkNotificationOperations(notificationIds, operation);
     setSelectedNotifications(new Set());
     setShowBulkActions(false);
+  };
+
+  const handleRetry = () => {
+    getNotifications({ is_read: filter === 'unread' ? false : undefined });
   };
 
   const getNotificationIcon = (type) => {
@@ -257,7 +260,7 @@ const NotificationList = ({ className = '' }) => {
                   </motion.button>
                 )}
               </div>
-        </div>
+            </div>
 
             {/* Enhanced Bulk actions toolbar */}
             <AnimatePresence>
@@ -341,7 +344,8 @@ const NotificationList = ({ className = '' }) => {
                 </label>
               </motion.div>
             )}
-      </div>
+          </div>
+
           {/* Enhanced Notifications content */}
           <div className="p-6">
             {isLoading && filteredNotifications.length === 0 ? (
@@ -363,7 +367,7 @@ const NotificationList = ({ className = '' }) => {
                 <div className="text-6xl mb-4">😔</div>
                 <p className="text-xl font-semibold text-red-600 mb-4">{error}</p>
                 <motion.button
-                  onClick={fetchNotifications}
+                  onClick={handleRetry}
                   className="bookish-button-enhanced px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
