@@ -243,11 +243,44 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 
 # Storage Configuration
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+# Only use MinIO storage if it's available, fallback to local storage for development
+try:
+    # Test if MinIO endpoint is reachable (basic check)
+    import urllib.request
+    import socket
 
-# Media files configuration
-MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
-MEDIA_ROOT = ''
+    # Parse endpoint URL to get host and port
+    from urllib.parse import urlparse
+    parsed = urlparse(AWS_S3_ENDPOINT_URL)
+    host = parsed.hostname or 'minio'
+    port = parsed.port or 9000
+
+    # Quick connectivity check with short timeout
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)  # 1 second timeout
+    result = sock.connect_ex((host, port))
+    sock.close()
+
+    if result == 0:  # Connection successful
+        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+        MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
+        MEDIA_ROOT = ''
+        print(f"✅ MinIO storage configured at {AWS_S3_ENDPOINT_URL}")
+    else:
+        # Fallback to local storage
+        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+        STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        MEDIA_URL = '/media/'
+        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+        print(f"⚠️  MinIO not available, using local storage. Start MinIO with: docker-compose up minio")
+
+except Exception as e:
+    # Fallback to local storage if any error occurs
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    print(f"⚠️  MinIO check failed ({str(e)}), using local storage")
 
 CORS_ALLOW_CREDENTIALS = True
