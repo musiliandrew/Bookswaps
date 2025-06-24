@@ -135,7 +135,9 @@ const ChatPage = () => {
     const response = await createSociety(newSociety);
     if (response) {
       setNewSociety({ name: '', description: '', visibility: 'public', focus_type: '', focus_id: '' });
-      navigate(`/chat/society/${response.id}`);
+      // Instead of navigating, just refresh the societies list and show success
+      toast.success('Society created successfully!');
+      listSocieties({}, 1); // Refresh the societies list
     }
   };
 
@@ -145,13 +147,15 @@ const ChatPage = () => {
     const response = await sendDirectMessage(data);
     if (response) {
       setNewChat({ recipient_id: '', book_id: '' });
-      navigate(`/chat/direct/${newChat.recipient_id}`);
+      // Instead of navigating, just show success and refresh messages
+      toast.success('Message sent successfully!');
+      listMessages(chatFilters, 1); // Refresh the messages list
     }
   };
 
   return (
     <div className="container mx-auto p-4">
-      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       {(chatError || societiesError) && (
         <div className="text-red-500 mb-4">{chatError || societiesError}</div>
       )}
@@ -226,6 +230,7 @@ const ChatPage = () => {
               isSocietiesLoading={isSocietiesLoading}
               listSocieties={listSocieties}
               societiesPagination={societiesPagination}
+              onSocietySelect={(society) => toast.info(`Selected society: ${society.name}. Chat functionality coming soon!`)}
             />
           </div>
         </motion.div>

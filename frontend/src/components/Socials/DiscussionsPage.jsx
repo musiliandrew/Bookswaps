@@ -3,6 +3,7 @@ import { useDiscussions } from '../../hooks/useDiscussions';
 import { useSocieties } from '../../hooks/useSocieties';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import NavigationTabs from '../Socials/Discussions/NavigationTabs';
 import PostDetail from '../Socials/Discussions/PostDetail';
 import SocietyDetail from '../Socials/Discussions/SocietyDetail';
@@ -104,7 +105,9 @@ const DiscussionsPage = () => {
     const response = await createDiscussion(data);
     if (response) {
       setNewPost({ title: '', content: '', type: 'Article', book_id: '', tags: '', media_urls: '', spoiler: false });
-      navigate('/discussions');
+      // Instead of navigating, just refresh the posts list and show success
+      toast.success('Discussion created successfully!');
+      listPosts(postFilters, 1); // Refresh the posts list
     }
   };
 
@@ -133,7 +136,7 @@ const DiscussionsPage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       {(discussionsError || societiesError) && (
         <div className="text-red-500 mb-4">
           {discussionsError && <div>Discussions Error: {discussionsError}</div>}
@@ -203,6 +206,7 @@ const DiscussionsPage = () => {
           societies={societies}
           isSocietiesLoading={isSocietiesLoading}
           joinSociety={joinSociety}
+          leaveSociety={leaveSociety}
           listSocieties={listSocieties}
           societyFilters={societyFilters}
           setSocietyFilters={setSocietyFilters}

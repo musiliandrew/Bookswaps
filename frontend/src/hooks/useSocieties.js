@@ -186,7 +186,21 @@ export function useSocieties() {
       try {
         setIsLoading(true);
         setError(null);
-        await addReaction(messageId, data); // Use WebSocket
+
+        // Try WebSocket first, fallback to API
+        if (addReaction) {
+          await addReaction(messageId, data);
+        } else {
+          // Fallback to API call
+          await handleApiCall(
+            () => api.post(API_ENDPOINTS.ADD_SOCIETY_REACTION(societyId, messageId), data),
+            setIsLoading,
+            setError,
+            'Reaction added!',
+            'Add reaction'
+          );
+        }
+
         toast.success('Reaction added!');
         return true;
       } catch (err) {
