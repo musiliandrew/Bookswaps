@@ -36,4 +36,8 @@ urlpatterns = [
 
     # User library endpoint
     path('<uuid:user_id>/library/', views.UserLibraryView.as_view(), name='user_library'),
+
+    # User statistics endpoints
+    path('me/stats/', views.UserStatsView.as_view(), name='my_stats'),
+    path('<uuid:user_id>/stats/', views.UserStatsView.as_view(), name='user_stats'),
 ]

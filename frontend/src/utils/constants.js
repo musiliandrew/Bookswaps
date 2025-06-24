@@ -81,6 +81,8 @@ export const API_ENDPOINTS = {
   GET_RECOMMENDED_USERS: '/users/recommended/',
   SEARCH_USERS: '/users/search/',
   GET_USER_LIBRARY: (userId) => `/users/${userId}/library/`,
+  GET_MY_STATS: '/users/me/stats/',
+  GET_USER_STATS: (userId) => `/users/${userId}/stats/`,
 };
 
 // WebSocket endpoints

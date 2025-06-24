@@ -19,9 +19,11 @@ from .models import CustomUser, Follows
 from backend.swaps.models import Notification
 from backend.utils.websocket import send_notification_to_user
 
-from backend.library.models import Library
-
-from backend.library.models import UserBook
+from backend.library.models import Library, Book, BookHistory, Favorite, Bookmark
+from backend.swaps.models import Swap
+from backend.discussions.models import Discussion, Like
+from django.db.models import Count, Q
+from datetime import datetime, timedelta
 
 from backend.library.serializers import UserLibraryBookSerializer
 from django.shortcuts import get_object_or_404
@@ -572,17 +574,14 @@ class UserLibraryView(APIView):
         if not user.profile_public and request.user != user:
             return Response({"detail": "User's library is private"}, status=status.HTTP_403_FORBIDDEN)
 
-        # Get user's library entries - only show books available for exchange/borrow if not the owner
+        # Get user's library entries
         queryset = Library.objects.filter(user=user).select_related('user', 'book')
-
-        # Get user's books - only show books available for exchange/borrow if not the owner
-        queryset = UserBook.objects.filter(user=user).select_related('user')
 
         if request.user != user:
             # For other users, only show books available for exchange or borrow
             from django.db.models import Q
             queryset = queryset.filter(
-                Q(available_for_exchange=True) | Q(available_for_borrow=True)
+                Q(book__available_for_exchange=True) | Q(book__available_for_borrow=True)
             )
 
 
@@ -593,3 +592,205 @@ class UserLibraryView(APIView):
         serializer = UserLibraryBookSerializer(result_page, many=True, context={'request': request})
 
         return paginator.get_paginated_response(serializer.data)
+
+
+class UserStatsView(APIView):
+    """Get comprehensive user statistics"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id=None):
+        # If no user_id provided, use current user
+        if user_id:
+            try:
+                user = CustomUser.objects.get(user_id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if profile is public or if it's the user's own stats
+            if not user.profile_public and request.user != user:
+                return Response({"detail": "User's profile is private"}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            user = request.user
+
+        # Calculate statistics
+        stats = self._calculate_user_stats(user)
+
+        return Response(stats, status=status.HTTP_200_OK)
+
+    def _calculate_user_stats(self, user):
+        """Calculate comprehensive user statistics"""
+
+        # Books in library (owned books)
+        books_owned = Library.objects.filter(user=user, status='owned').count()
+
+        # Books shared (completed swaps where user was initiator)
+        books_shared = Swap.objects.filter(
+            initiator=user,
+            status='Completed'
+        ).count()
+
+        # Books received (completed swaps where user was receiver)
+        books_received = Swap.objects.filter(
+            receiver=user,
+            status='Completed'
+        ).count()
+
+        # Total books read (owned + received)
+        books_read = books_owned + books_received
+
+        # Reviews written (discussions created by user)
+        reviews_written = Discussion.objects.filter(user=user).count()
+
+        # Likes received on user's discussions (through notes on discussions)
+        likes_received = Like.objects.filter(
+            note__discussion__user=user
+        ).count()
+
+        # Bookmarks made
+        bookmarks_count = Bookmark.objects.filter(user=user, active=True).count()
+
+        # Favorites count
+        favorites_count = Favorite.objects.filter(user=user, active=True).count()
+
+        # Active swaps
+        active_swaps = Swap.objects.filter(
+            Q(initiator=user) | Q(receiver=user),
+            status__in=['Requested', 'Accepted', 'Confirmed']
+        ).count()
+
+        # Calculate reading streak (simplified - days since last book activity)
+        last_activity = BookHistory.objects.filter(user=user).order_by('-start_date').first()
+        reading_streak = 0
+        if last_activity:
+            days_since = (datetime.now().date() - last_activity.start_date.date()).days
+            reading_streak = max(0, 30 - days_since)  # Simple streak calculation
+
+        # Join date
+        join_date = user.created_at.date()
+
+        # Days as member
+        days_as_member = (datetime.now().date() - join_date).days
+
+        # Calculate followers and following counts
+        followers_count = Follows.objects.filter(followed=user, active=True).count()
+        following_count = Follows.objects.filter(follower=user, active=True).count()
+
+        # Calculate achievements
+        achievements = self._calculate_achievements(
+            books_read, books_shared, reviews_written,
+            likes_received, followers_count
+        )
+
+        return {
+            'books_owned': books_owned,
+            'books_read': books_read,
+            'books_shared': books_shared,
+            'books_received': books_received,
+            'reviews_written': reviews_written,
+            'likes_received': likes_received,
+            'bookmarks_count': bookmarks_count,
+            'favorites_count': favorites_count,
+            'active_swaps': active_swaps,
+            'reading_streak': reading_streak,
+            'join_date': join_date.isoformat(),
+            'days_as_member': days_as_member,
+            'followers_count': followers_count,
+            'following_count': following_count,
+            'achievements': achievements,
+            'last_active': user.last_active.isoformat() if user.last_active else None,
+        }
+
+    def _calculate_achievements(self, books_read, books_shared, reviews_written, likes_received, followers_count):
+        """Calculate user achievements based on stats"""
+        achievements = []
+
+        # Reading achievements
+        if books_read >= 100:
+            achievements.append({
+                'id': 'bookworm_master',
+                'name': 'Bookworm Master',
+                'description': 'Read 100+ books',
+                'icon': 'BookOpenIcon',
+                'color': 'text-blue-500',
+                'earned_at': datetime.now().isoformat()
+            })
+        elif books_read >= 50:
+            achievements.append({
+                'id': 'avid_reader',
+                'name': 'Avid Reader',
+                'description': 'Read 50+ books',
+                'icon': 'BookOpenIcon',
+                'color': 'text-blue-400',
+                'earned_at': datetime.now().isoformat()
+            })
+        elif books_read >= 10:
+            achievements.append({
+                'id': 'bookworm',
+                'name': 'Bookworm',
+                'description': 'Read 10+ books',
+                'icon': 'BookOpenIcon',
+                'color': 'text-blue-300',
+                'earned_at': datetime.now().isoformat()
+            })
+
+        # Sharing achievements
+        if books_shared >= 50:
+            achievements.append({
+                'id': 'generous_sharer',
+                'name': 'Generous Sharer',
+                'description': 'Shared 50+ books',
+                'icon': 'ShareIcon',
+                'color': 'text-green-500',
+                'earned_at': datetime.now().isoformat()
+            })
+        elif books_shared >= 10:
+            achievements.append({
+                'id': 'book_sharer',
+                'name': 'Book Sharer',
+                'description': 'Shared 10+ books',
+                'icon': 'ShareIcon',
+                'color': 'text-green-400',
+                'earned_at': datetime.now().isoformat()
+            })
+
+        # Social achievements
+        if followers_count >= 100:
+            achievements.append({
+                'id': 'social_butterfly',
+                'name': 'Social Butterfly',
+                'description': '100+ followers',
+                'icon': 'UsersIcon',
+                'color': 'text-purple-500',
+                'earned_at': datetime.now().isoformat()
+            })
+        elif followers_count >= 50:
+            achievements.append({
+                'id': 'social_reader',
+                'name': 'Social Reader',
+                'description': '50+ followers',
+                'icon': 'UsersIcon',
+                'color': 'text-purple-400',
+                'earned_at': datetime.now().isoformat()
+            })
+
+        # Review achievements
+        if reviews_written >= 50:
+            achievements.append({
+                'id': 'top_reviewer',
+                'name': 'Top Reviewer',
+                'description': 'Written 50+ reviews',
+                'icon': 'StarIcon',
+                'color': 'text-yellow-500',
+                'earned_at': datetime.now().isoformat()
+            })
+        elif reviews_written >= 10:
+            achievements.append({
+                'id': 'reviewer',
+                'name': 'Reviewer',
+                'description': 'Written 10+ reviews',
+                'icon': 'StarIcon',
+                'color': 'text-yellow-400',
+                'earned_at': datetime.now().isoformat()
+            })
+
+        return achievements

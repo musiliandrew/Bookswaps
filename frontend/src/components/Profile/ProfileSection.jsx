@@ -1,18 +1,77 @@
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
+import { useUserStats } from '../../hooks/useUserStats';
 import UserProfileCard from '../Profile/UserProfile/UserProfileCard';
 import ConnectionsSection from '../Profile/UserProfile/ConnectionsSection';
 import DiscoverSection from '../Profile/UserProfile/DiscoverSection';
 import LoadingSpinner from '../Common/LoadingSpinner';
 import ErrorDisplay from '../Common/ErrorDisplay';
+import {
+  UserIcon,
+  UsersIcon,
+  MagnifyingGlassIcon,
+  BookOpenIcon,
+  HeartIcon,
+  ChatBubbleLeftRightIcon,
+  ShareIcon,
+  PencilIcon,
+  CameraIcon,
+  SparklesIcon,
+  TrophyIcon,
+  CalendarIcon,
+  MapPinIcon,
+  LinkIcon
+} from '@heroicons/react/24/outline';
+import {
+  HeartIcon as HeartSolidIcon,
+  BookmarkIcon as BookmarkSolidIcon,
+  StarIcon as StarSolidIcon
+} from '@heroicons/react/24/solid';
+
+// Helper function to parse genres that might be double-encoded
+const parseGenres = (genres) => {
+  if (!genres) return [];
+
+  // If it's already an array, return it
+  if (Array.isArray(genres)) {
+    return genres.map(genre => {
+      // Handle double-encoded strings
+      if (typeof genre === 'string' && genre.startsWith('[') && genre.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(genre);
+          return Array.isArray(parsed) ? parsed.join(', ') : parsed;
+        } catch {
+          return genre.replace(/[\[\]"\\]/g, '');
+        }
+      }
+      return genre;
+    });
+  }
+
+  // If it's a string, try to parse it
+  if (typeof genres === 'string') {
+    try {
+      const parsed = JSON.parse(genres);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      // If parsing fails, clean up the string
+      return [genres.replace(/[\[\]"\\]/g, '')];
+    }
+  }
+
+  return [];
+};
 
 const ProfileSection = () => {
   const { profile } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [activeStatsTab, setActiveStatsTab] = useState('books');
 
   // Custom hook for managing profile data and pagination
   const {
@@ -46,6 +105,44 @@ const ProfileSection = () => {
     }
   });
 
+  // Fetch real user statistics
+  const { stats: userStats, isLoading: statsLoading, refreshStats } = useUserStats();
+
+  // Process stats for display
+  const profileStats = userStats ? {
+    booksRead: userStats.books_read || 0,
+    booksOwned: userStats.books_owned || 0,
+    booksShared: userStats.books_shared || 0,
+    booksReceived: userStats.books_received || 0,
+    reviewsWritten: userStats.reviews_written || 0,
+    likesReceived: userStats.likes_received || 0,
+    bookmarksCount: userStats.bookmarks_count || 0,
+    favoritesCount: userStats.favorites_count || 0,
+    activeSwaps: userStats.active_swaps || 0,
+    joinDate: userStats.join_date || profile?.created_at,
+    readingStreak: userStats.reading_streak || 0,
+    daysAsMember: userStats.days_as_member || 0,
+    favoriteGenres: parseGenres(profile?.genres),
+    achievements: userStats.achievements || [],
+    lastActive: userStats.last_active
+  } : {
+    booksRead: 0,
+    booksOwned: 0,
+    booksShared: 0,
+    booksReceived: 0,
+    reviewsWritten: 0,
+    likesReceived: 0,
+    bookmarksCount: 0,
+    favoritesCount: 0,
+    activeSwaps: 0,
+    joinDate: profile?.created_at,
+    readingStreak: 0,
+    daysAsMember: 0,
+    favoriteGenres: parseGenres(profile?.genres),
+    achievements: [],
+    lastActive: null
+  };
+
   // Handle viewing another user's profile
   const handleViewUserProfile = useCallback(async (userId) => {
     const userProfile = await viewUserProfile(userId);
@@ -59,11 +156,29 @@ const ProfileSection = () => {
     setSelectedUser(null);
   }, []);
 
-  // Tab configuration
+  // Tab configuration with enhanced design
   const tabs = [
-    { id: 'profile', label: 'Profile' },
-    { id: 'connections', label: 'Connections' },
-    { id: 'discover', label: 'Discover' },
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: UserIcon,
+      gradient: 'from-[var(--primary)] to-[var(--accent)]',
+      description: 'Your reading journey'
+    },
+    {
+      id: 'connections',
+      label: 'Community',
+      icon: UsersIcon,
+      gradient: 'from-[var(--accent)] to-[var(--primary)]',
+      description: 'Your book network'
+    },
+    {
+      id: 'discover',
+      label: 'Discover',
+      icon: MagnifyingGlassIcon,
+      gradient: 'from-[var(--primary)] to-[var(--accent)]',
+      description: 'Find new readers'
+    },
   ];
 
   // Loading state
@@ -82,40 +197,87 @@ const ProfileSection = () => {
   }
 
   return (
-    <div className="pt-4">
-      {selectedUser ? (
-        <UserProfileView
-          user={selectedUser}
-          currentUserId={profile.user_id}
-          followStatus={userFollowStatuses[selectedUser.user_id]}
-          onBack={handleBackToMain}
-          onFollow={handleFollow}
-          onUnfollow={handleUnfollow}
+    <div className="relative min-h-screen">
+      {/* Floating Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-[var(--accent)]/10 to-[var(--primary)]/10 rounded-full blur-xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         />
-      ) : (
-        <MainProfileView
-          activeTab={activeSubTab}
-          tabs={tabs}
-          onTabChange={setActiveSubTab}
-          profile={profile}
-          publicProfile={publicProfile}
-          followers={followers}
-          following={following}
-          mutualFollowers={mutualFollowers}
-          recommendedUsers={recommendedUsers}
-          searchResults={searchResults}
-          searchQuery={searchQuery}
-          pagination={pagination}
-          userFollowStatuses={userFollowStatuses}
-          isLoading={isLoading}
-          onSearch={handleSearch}
-          onPageChange={handlePageChange}
-          onViewProfile={handleViewUserProfile}
-          onFollow={handleFollow}
-          onUnfollow={handleUnfollow}
-          onRemoveFollower={handleRemoveFollower}
+        <motion.div
+          className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/10 rounded-full blur-xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
         />
-      )}
+      </div>
+
+      {/* Stats Modal */}
+      <AnimatePresence>
+        {showStatsModal && (
+          <StatsModal
+            stats={profileStats}
+            activeTab={activeStatsTab}
+            onTabChange={setActiveStatsTab}
+            onClose={() => setShowStatsModal(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-10 pt-4">
+        {selectedUser ? (
+          <UserProfileView
+            user={selectedUser}
+            currentUserId={profile.user_id}
+            followStatus={userFollowStatuses[selectedUser.user_id]}
+            onBack={handleBackToMain}
+            onFollow={handleFollow}
+            onUnfollow={handleUnfollow}
+          />
+        ) : (
+          <EnhancedMainProfileView
+            activeTab={activeSubTab}
+            tabs={tabs}
+            onTabChange={setActiveSubTab}
+            profile={profile}
+            publicProfile={publicProfile}
+            profileStats={profileStats}
+            followers={followers}
+            following={following}
+            mutualFollowers={mutualFollowers}
+            recommendedUsers={recommendedUsers}
+            searchResults={searchResults}
+            searchQuery={searchQuery}
+            pagination={pagination}
+            userFollowStatuses={userFollowStatuses}
+            isLoading={isLoading}
+            isProfileExpanded={isProfileExpanded}
+            onToggleExpanded={() => setIsProfileExpanded(!isProfileExpanded)}
+            onShowStats={() => setShowStatsModal(true)}
+            onSearch={handleSearch}
+            onPageChange={handlePageChange}
+            onViewProfile={handleViewUserProfile}
+            onFollow={handleFollow}
+            onUnfollow={handleUnfollow}
+            onRemoveFollower={handleRemoveFollower}
+          />
+        )}
+      </div>
     </div>
   );
 };
@@ -153,13 +315,177 @@ const UserProfileView = ({
   </motion.div>
 );
 
-// Separate component for main profile view with tabs
-const MainProfileView = ({
+// Enhanced Stats Modal Component
+const StatsModal = ({ stats, activeTab, onTabChange, onClose }) => (
+  <motion.div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  >
+    <motion.div
+      className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    />
+
+    <motion.div
+      className="relative w-full max-w-md bookish-glass rounded-2xl p-6 border border-white/20"
+      initial={{ scale: 0.9, opacity: 0, y: 20 }}
+      animate={{ scale: 1, opacity: 1, y: 0 }}
+      exit={{ scale: 0.9, opacity: 0, y: 20 }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-['Lora'] text-gradient">Your Reading Stats</h3>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full hover:bg-white/10 transition-colors"
+        >
+          <svg className="w-5 h-5 text-[var(--text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <motion.div
+          className="text-center p-4 rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-[var(--primary)]" />
+          <div className="text-2xl font-bold text-[var(--text)]">{stats.booksRead}</div>
+          <div className="text-sm text-[var(--text)]/70">Books Read</div>
+        </motion.div>
+
+        <motion.div
+          className="text-center p-4 rounded-xl bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <ShareIcon className="w-8 h-8 mx-auto mb-2 text-[var(--accent)]" />
+          <div className="text-2xl font-bold text-[var(--text)]">{stats.booksShared}</div>
+          <div className="text-sm text-[var(--text)]/70">Books Shared</div>
+        </motion.div>
+
+        <motion.div
+          className="text-center p-4 rounded-xl bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <StarSolidIcon className="w-8 h-8 mx-auto mb-2 text-[var(--accent)]" />
+          <div className="text-2xl font-bold text-[var(--text)]">{stats.reviewsWritten}</div>
+          <div className="text-sm text-[var(--text)]/70">Reviews</div>
+        </motion.div>
+
+        <motion.div
+          className="text-center p-4 rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <HeartSolidIcon className="w-8 h-8 mx-auto mb-2 text-[var(--primary)]" />
+          <div className="text-2xl font-bold text-[var(--text)]">{stats.likesReceived}</div>
+          <div className="text-sm text-[var(--text)]/70">Likes</div>
+        </motion.div>
+      </div>
+
+      {/* Additional Stats Row */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <motion.div
+          className="text-center p-3 rounded-lg bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <BookmarkSolidIcon className="w-6 h-6 mx-auto mb-1 text-[var(--primary)]" />
+          <div className="text-lg font-bold text-[var(--text)]">{stats.bookmarksCount}</div>
+          <div className="text-xs text-[var(--text)]/70">Bookmarks</div>
+        </motion.div>
+
+        <motion.div
+          className="text-center p-3 rounded-lg bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <HeartSolidIcon className="w-6 h-6 mx-auto mb-1 text-[var(--accent)]" />
+          <div className="text-lg font-bold text-[var(--text)]">{stats.favoritesCount}</div>
+          <div className="text-xs text-[var(--text)]/70">Favorites</div>
+        </motion.div>
+
+        <motion.div
+          className="text-center p-3 rounded-lg bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20"
+          whileHover={{ scale: 1.05 }}
+        >
+          <ShareIcon className="w-6 h-6 mx-auto mb-1 text-[var(--primary)]" />
+          <div className="text-lg font-bold text-[var(--text)]">{stats.activeSwaps}</div>
+          <div className="text-xs text-[var(--text)]/70">Active Swaps</div>
+        </motion.div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+          <div className="flex items-center gap-3">
+            <CalendarIcon className="w-5 h-5 text-[var(--primary)]" />
+            <span className="text-sm text-[var(--text)]">Member since</span>
+          </div>
+          <span className="text-sm font-medium text-[var(--text)]">
+            {new Date(stats.joinDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long'
+            })}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+          <div className="flex items-center gap-3">
+            <SparklesIcon className="w-5 h-5 text-[var(--accent)]" />
+            <span className="text-sm text-[var(--text)]">Reading streak</span>
+          </div>
+          <span className="text-sm font-medium text-[var(--text)]">{stats.readingStreak} days</span>
+        </div>
+      </div>
+
+      {stats.achievements && stats.achievements.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-[var(--text)] mb-3">Achievements</h4>
+          <div className="flex gap-2 flex-wrap">
+            {stats.achievements.slice(0, 4).map((achievement) => {
+              // Map icon names to actual icons
+              const getIcon = (iconName) => {
+                switch(iconName) {
+                  case 'BookOpenIcon': return BookOpenIcon;
+                  case 'ShareIcon': return ShareIcon;
+                  case 'UsersIcon': return UsersIcon;
+                  case 'StarIcon': return StarSolidIcon;
+                  default: return TrophyIcon;
+                }
+              };
+
+              const IconComponent = getIcon(achievement.icon);
+
+              return (
+                <motion.div
+                  key={achievement.id}
+                  className="flex-1 min-w-[80px] text-center p-3 rounded-lg bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20"
+                  whileHover={{ scale: 1.05 }}
+                  title={achievement.description}
+                >
+                  <IconComponent className={`w-6 h-6 mx-auto mb-1 ${achievement.color || 'text-[var(--accent)]'}`} />
+                  <div className="text-xs text-[var(--text)]/80">{achievement.name}</div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  </motion.div>
+);
+
+// Enhanced Main Profile View Component
+const EnhancedMainProfileView = ({
   activeTab,
   tabs,
   onTabChange,
   profile,
   publicProfile,
+  profileStats,
   followers,
   following,
   mutualFollowers,
@@ -169,6 +495,9 @@ const MainProfileView = ({
   pagination,
   userFollowStatuses,
   isLoading,
+  isProfileExpanded,
+  onToggleExpanded,
+  onShowStats,
   onSearch,
   onPageChange,
   onViewProfile,
@@ -177,12 +506,22 @@ const MainProfileView = ({
   onRemoveFollower,
 }) => (
   <>
-    <TabNavigation 
+    {/* Enhanced Profile Header */}
+    <EnhancedProfileHeader
+      profile={publicProfile || profile}
+      stats={profileStats}
+      isExpanded={isProfileExpanded}
+      onToggleExpanded={onToggleExpanded}
+      onShowStats={onShowStats}
+    />
+
+    {/* Enhanced Tab Navigation */}
+    <EnhancedTabNavigation
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={onTabChange}
     />
-    
+
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -212,29 +551,211 @@ const MainProfileView = ({
   </>
 );
 
-// Tab navigation component
-const TabNavigation = ({ tabs, activeTab, onTabChange }) => (
-  <nav 
-    className="flex mb-4 gap-2 border-b border-[var(--secondary)] pb-2 py-2"
+// Enhanced Profile Header Component
+const EnhancedProfileHeader = ({ profile, stats, isExpanded, onToggleExpanded, onShowStats }) => (
+  <motion.div
+    className="relative mb-6 bookish-glass rounded-2xl overflow-hidden border border-white/20"
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+  >
+    {/* Background Gradient */}
+    <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 via-[var(--accent)]/5 to-[var(--primary)]/10" />
+
+    {/* Profile Content */}
+    <div className="relative p-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        {/* Profile Picture with Glow Effect */}
+        <motion.div
+          className="relative"
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] rounded-full blur-lg opacity-30 animate-pulse" />
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-3 border-white/30 shadow-2xl">
+            <img
+              src={profile?.profile_picture || '/default-avatar.png'}
+              alt={profile?.username}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          </div>
+
+          {/* Edit Button */}
+          <motion.button
+            className="absolute -bottom-1 -right-1 w-8 h-8 bg-[var(--accent)] rounded-full flex items-center justify-center shadow-lg"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <CameraIcon className="w-4 h-4 text-white" />
+          </motion.button>
+        </motion.div>
+
+        {/* Profile Info */}
+        <div className="flex-1 text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+            <h1 className="text-2xl sm:text-3xl font-['Lora'] text-gradient font-bold">
+              {profile?.username}
+            </h1>
+            <motion.button
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-sm rounded-full shadow-lg"
+              whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <PencilIcon className="w-4 h-4" />
+              Edit Profile
+            </motion.button>
+          </div>
+
+          {/* Location & Join Date */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mb-3 text-sm text-[var(--text)]/70">
+            <div className="flex items-center gap-1">
+              <MapPinIcon className="w-4 h-4" />
+              <span>{profile?.city}, {profile?.country}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CalendarIcon className="w-4 h-4" />
+              <span>Joined {new Date(stats.joinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <motion.p
+            className="text-[var(--text)] mb-4 leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {profile?.about_you || 'Passionate reader exploring new worlds through books 📚✨'}
+          </motion.p>
+
+          {/* Quick Stats */}
+          <div className="flex flex-wrap gap-4 justify-center sm:justify-start mb-4">
+            <motion.button
+              onClick={onShowStats}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <BookOpenIcon className="w-5 h-5 text-[var(--primary)]" />
+              <div className="text-left">
+                <div className="text-lg font-bold text-[var(--text)]">{stats.booksRead}</div>
+                <div className="text-xs text-[var(--text)]/70">Books</div>
+              </div>
+            </motion.button>
+
+            <motion.div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10"
+              whileHover={{ scale: 1.05 }}
+            >
+              <UsersIcon className="w-5 h-5 text-[var(--accent)]" />
+              <div className="text-left">
+                <div className="text-lg font-bold text-[var(--text)]">{profile?.followers_count || 0}</div>
+                <div className="text-xs text-[var(--text)]/70">Followers</div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10"
+              whileHover={{ scale: 1.05 }}
+            >
+              <HeartSolidIcon className="w-5 h-5 text-red-500" />
+              <div className="text-left">
+                <div className="text-lg font-bold text-[var(--text)]">{stats.likesReceived}</div>
+                <div className="text-xs text-[var(--text)]/70">Likes</div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Favorite Genres */}
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            {stats.favoriteGenres.map((genre, index) => (
+              <motion.span
+                key={genre}
+                className="px-3 py-1 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--accent)]/20 text-[var(--text)] text-sm rounded-full border border-white/20"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                {genre}
+              </motion.span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Reading Streak Banner */}
+      <motion.div
+        className="mt-6 p-4 rounded-xl bg-gradient-to-r from-[var(--accent)]/20 to-[var(--primary)]/20 border border-[var(--accent)]/30"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] rounded-full flex items-center justify-center">
+              <SparklesIcon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="text-lg font-bold text-[var(--text)]">{stats.readingStreak} Day Streak!</div>
+              <div className="text-sm text-[var(--text)]/70">Keep up the great reading habit</div>
+            </div>
+          </div>
+          <TrophyIcon className="w-8 h-8 text-[var(--accent)]" />
+        </div>
+      </motion.div>
+    </div>
+  </motion.div>
+);
+
+// Enhanced Tab Navigation Component
+const EnhancedTabNavigation = ({ tabs, activeTab, onTabChange }) => (
+  <nav
+    className="flex mb-6 gap-2 p-2 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10"
     role="tablist"
     aria-label="Profile sections"
   >
-    {tabs.map((tab) => (
-      <button
-        key={tab.id}
-        onClick={() => onTabChange(tab.id)}
-        className={`px-2 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-          activeTab === tab.id
-            ? 'text-[var(--accent)] bg-[var(--accent)]/10'
-            : 'text-[#456A76] hover:text-[var(--accent)] hover:bg-[var(--accent)]/5'
-        }`}
-        role="tab"
-        aria-selected={activeTab === tab.id}
-        aria-controls={`tabpanel-${tab.id}`}
-      >
-        {tab.label}
-      </button>
-    ))}
+    {tabs.map((tab, index) => {
+      const Icon = tab.icon;
+      const isActive = activeTab === tab.id;
+
+      return (
+        <motion.button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`relative flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${
+            isActive
+              ? 'text-white shadow-lg'
+              : 'text-[var(--text)]/70 hover:text-[var(--text)] hover:bg-white/10'
+          }`}
+          role="tab"
+          aria-selected={isActive}
+          aria-controls={`tabpanel-${tab.id}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {/* Active Background */}
+          {isActive && (
+            <motion.div
+              className={`absolute inset-0 bg-gradient-to-r ${tab.gradient} rounded-xl`}
+              layoutId="activeTab"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+          )}
+
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center gap-1">
+            <Icon className="w-5 h-5" />
+            <span className="text-sm font-medium">{tab.label}</span>
+            <span className="text-xs opacity-70">{tab.description}</span>
+          </div>
+        </motion.button>
+      );
+    })}
   </nav>
 );
 
@@ -263,14 +784,36 @@ const TabContent = ({
     case 'profile':
       return (
         <div role="tabpanel" id="tabpanel-profile" aria-labelledby="tab-profile">
-          <UserProfileCard
-            user={publicProfile}
-            isOwnProfile={true}
-            followStatus={userFollowStatuses[profile?.user_id] || {}}
-            onFollow={() => {}}
-            onUnFollow={() => {}}
-            onViewProfile={() => {}}
-          />
+          {/* Shareable Profile Card */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-['Lora'] text-[var(--text)]">Shareable Profile</h3>
+              <div className="flex gap-2">
+                <button
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors"
+                  title="Share your profile"
+                >
+                  <ShareIcon className="w-4 h-4" />
+                  Share
+                </button>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 text-[var(--accent)] rounded-lg transition-colors"
+                  title="Copy profile link"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Copy Link
+                </button>
+              </div>
+            </div>
+            <UserProfileCard
+              user={publicProfile}
+              isOwnProfile={true}
+              followStatus={{}}
+              onFollow={() => {}}
+              onUnFollow={() => {}}
+              onViewProfile={() => {}}
+            />
+          </div>
         </div>
       );
     
