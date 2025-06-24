@@ -261,6 +261,38 @@ export function useUsers() {
     return null;
   }, []);
 
+  const getUserBooks = useCallback(async (userId, page = 1) => {
+    const cacheKey = `user_books_${userId}_page_${page}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(`${API_ENDPOINTS.GET_USER_LIBRARY(userId)}?page=${page}`),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch user books'
+        ),
+        cacheKey,
+        60000 // Cache for 1 minute
+      );
+
+      if (result) {
+        const results = Array.isArray(result) ? result : result.results || [];
+        return {
+          results,
+          next: result.next || null,
+          previous: result.previous || null,
+          count: result.count || results.length || 0,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('User books fetch error:', err);
+      return null;
+    }
+  }, []);
+
   // Create stable debounced functions using useRef to avoid dependency issues
   const debouncedGetFollowersRef = useRef(null);
   const debouncedGetFollowingRef = useRef(null);
@@ -346,6 +378,7 @@ export function useUsers() {
     getFollowing,
     getRecommendedUsers,
     searchUsers,
+    getUserBooks,
     debouncedGetFollowers: debouncedGetFollowersRef.current,
     debouncedGetFollowing: debouncedGetFollowingRef.current,
     debouncedGetRecommendedUsers: debouncedGetRecommendedUsersRef.current,

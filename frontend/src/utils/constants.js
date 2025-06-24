@@ -80,6 +80,7 @@ export const API_ENDPOINTS = {
   GET_FOLLOWING: (userId) => `/users/following/${userId}/`,
   GET_RECOMMENDED_USERS: '/users/recommended/',
   SEARCH_USERS: '/users/search/',
+  GET_USER_LIBRARY: (userId) => `/users/${userId}/library/`,
 };
 
 // WebSocket endpoints

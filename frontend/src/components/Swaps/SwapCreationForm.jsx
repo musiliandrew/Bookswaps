@@ -10,8 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
-  const { userBooks, getUserBooks } = useLibrary();
-  const { searchUsers } = useUsers();
+  const { userLibrary, getUserLibrary } = useLibrary();
+  const { searchUsers, getUserBooks } = useUsers();
   
   const [formData, setFormData] = useState({
     initiator_book_id: '',
@@ -27,8 +27,8 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    getUserBooks();
-  }, [getUserBooks]);
+    getUserLibrary();
+  }, [getUserLibrary]);
 
   useEffect(() => {
     const searchUsersDebounced = setTimeout(async () => {
@@ -56,14 +56,14 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
     setFormData(prev => ({ ...prev, receiver_user_id: user.user_id }));
     setSearchQuery(user.username);
     setSearchResults([]);
-    
+
     // Fetch the selected user's books
     try {
-      // This would need to be implemented in the backend
-      // const books = await getUserBooks(user.user_id);
-      // setUserBooksForReceiver(books || []);
+      const result = await getUserBooks(user.user_id);
+      setUserBooksForReceiver(result?.results || []);
     } catch (error) {
       console.error('Error fetching user books:', error);
+      setUserBooksForReceiver([]);
     }
   };
 
@@ -83,7 +83,9 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
     onSubmit(formData);
   };
 
-  const availableBooks = userBooks.filter(book => book.availability === 'Available');
+  const availableBooks = userLibrary?.filter(book =>
+    book.available_for_exchange && book.condition !== 'damaged'
+  ) || [];
 
   return (
     <motion.form
