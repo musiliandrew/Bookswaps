@@ -31,34 +31,56 @@ import {
   StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
 
-// Helper function to parse genres that might be double-encoded
+// Enhanced helper function to parse genres that might be double-encoded
 const parseGenres = (genres) => {
   if (!genres) return [];
 
-  // If it's already an array, return it
+  // If it's already an array, clean each item
   if (Array.isArray(genres)) {
-    return genres.map(genre => {
-      // Handle double-encoded strings
-      if (typeof genre === 'string' && genre.startsWith('[') && genre.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(genre);
-          return Array.isArray(parsed) ? parsed.join(', ') : parsed;
-        } catch {
-          return genre.replace(/[\[\]"\\]/g, '');
+    return genres
+      .map(genre => {
+        if (typeof genre === 'string') {
+          // Handle double-encoded strings like ["[\"Sci-fi\"", "\"Fiction\""]
+          let cleaned = genre;
+
+          // Remove outer brackets and quotes
+          cleaned = cleaned.replace(/^\["|"\]$/g, '');
+          cleaned = cleaned.replace(/^"|"$/g, '');
+          cleaned = cleaned.replace(/\\"/g, '"');
+
+          // Split by comma if it contains multiple genres
+          if (cleaned.includes('","') || cleaned.includes('", "')) {
+            return cleaned.split(/",\s*"/).map(g => g.replace(/^"|"$/g, '').trim());
+          }
+
+          return cleaned.trim();
         }
-      }
-      return genre;
-    });
+        return genre;
+      })
+      .flat() // Flatten in case we split any strings
+      .filter(genre => genre && genre.length > 0) // Remove empty strings
+      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize first letter
   }
 
   // If it's a string, try to parse it
   if (typeof genres === 'string') {
     try {
+      // Try to parse as JSON first
       const parsed = JSON.parse(genres);
-      return Array.isArray(parsed) ? parsed : [parsed];
+      return parseGenres(parsed); // Recursively parse the result
     } catch {
-      // If parsing fails, clean up the string
-      return [genres.replace(/[\[\]"\\]/g, '')];
+      // If parsing fails, clean up the string manually
+      let cleaned = genres;
+
+      // Remove brackets and quotes
+      cleaned = cleaned.replace(/[\[\]"\\]/g, '');
+
+      // Split by comma and clean each item
+      return cleaned
+        .split(',')
+        .map(genre => genre.trim())
+        .filter(genre => genre.length > 0)
+        .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
     }
   }
 
@@ -197,35 +219,32 @@ const ProfileSection = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Floating Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen font-open-sans text-text">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Header Section */}
         <motion.div
-          className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-[var(--accent)]/10 to-[var(--primary)]/10 rounded-full blur-xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/10 rounded-full blur-xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.4, 0.7, 0.4],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
-        />
-      </div>
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+            👤 My Profile
+            <motion.div
+              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+          </h1>
+          <motion.p
+            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Your reading journey, connections, and literary adventures
+          </motion.p>
+        </motion.div>
 
       {/* Stats Modal */}
       <AnimatePresence>
