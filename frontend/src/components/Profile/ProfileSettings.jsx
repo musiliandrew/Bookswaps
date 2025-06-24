@@ -143,7 +143,8 @@ const ProfileSettings = () => {
           </motion.p>
         </motion.div>
 
-        <main className="max-w-5xl mx-auto">{/* Search Bar */}
+        <main className="max-w-5xl mx-auto">
+          {/* Search Bar */}
           <motion.div
             className="relative max-w-md mx-auto mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -163,21 +164,6 @@ const ProfileSettings = () => {
               </div>
             </div>
           </motion.div>
-
-          {/* Search Bar */}
-          <div className="relative max-w-md mx-auto mb-6">
-            <input
-              type="text"
-              placeholder="Search settings..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bookish-input w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
-            />
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--secondary)]/50">
-              🔍
-            </div>
-          </div>
-        </motion.div>
 
           {/* Enhanced Navigation */}
           <motion.nav

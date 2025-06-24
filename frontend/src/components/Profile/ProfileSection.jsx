@@ -523,7 +523,8 @@ const EnhancedMainProfileView = ({
   onFollow,
   onUnfollow,
   onRemoveFollower,
-}) => (
+}) => {
+  return (
   <>
     {/* Enhanced Profile Header */}
     <EnhancedProfileHeader
@@ -568,7 +569,8 @@ const EnhancedMainProfileView = ({
       />
     </motion.div>
   </>
-);
+  );
+};
 
 // Enhanced Profile Header Component
 const EnhancedProfileHeader = ({ profile, stats, isExpanded, onToggleExpanded, onShowStats }) => (

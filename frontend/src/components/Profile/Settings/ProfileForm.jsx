@@ -253,7 +253,7 @@ const ProfileForm = () => {
           'Update Profile'
         )}
       </button>
-    </form>
+    </motion.form>
   );
 };
 
