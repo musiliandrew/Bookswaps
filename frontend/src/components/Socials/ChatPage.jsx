@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { useSocieties } from '../../hooks/useSocieties';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { motion } from 'framer-motion';
-import NavigationTabs from '../Socials/Chat/NavigationTabs';
-import DirectChatView from '../Socials/Chat/DirectChatView';
-import SocietyChatView from '../Socials/Chat/SocietyChatView';
-import ChatCreationForm from '../Socials/Chat/ChatCreationForm';
-import ChatFilters from '../Socials/Chat/ChatFilters';
-import ChatList from '../Socials/Chat/ChatList';
-import SocietyCreationForm from '../Socials/Chat/SocietyCreationForm';
-import SocietyList from '../Socials/Chat/SocietyList';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  PaperAirplaneIcon,
+  PhotoIcon,
+  MicrophoneIcon,
+  VideoCameraIcon,
+  DocumentIcon,
+  FaceSmileIcon,
+  PlusIcon,
+  ArrowLeftIcon,
+  PhoneIcon,
+  InformationCircleIcon,
+  EllipsisVerticalIcon
+} from '@heroicons/react/24/outline';
+import MessageBubble from './Chat/MessageBubble';
+import MediaUploadModal from './Chat/MediaUploadModal';
+import VoiceRecorder from './Chat/VoiceRecorder';
 
 const ChatPage = () => {
   const { chatId, societyId } = useParams();
   const navigate = useNavigate();
+
+  // Chat hooks
   const {
     sendDirectMessage,
     editMessage,
@@ -28,6 +38,7 @@ const ChatPage = () => {
     error: chatError,
     pagination: chatPagination,
   } = useChat();
+
   const {
     createSociety,
     listSocieties,
@@ -44,20 +55,95 @@ const ChatPage = () => {
     pagination: societiesPagination,
   } = useSocieties();
 
-  const [chatFilters, setChatFilters] = useState({ recipient_id: '', unread: false });
-  const [newDirectMessage, setNewDirectMessage] = useState('');
-  const [newSocietyMessage, setNewSocietyMessage] = useState('');
-  const [newSociety, setNewSociety] = useState({
-    name: '',
-    description: '',
-    visibility: 'public',
-    focus_type: '',
-    focus_id: '',
-  });
-  const [newChat, setNewChat] = useState({ recipient_id: '', book_id: '' });
-  const [activeTab, setActiveTab] = useState('direct');
-  const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editContent, setEditContent] = useState('');
+  // State management
+  const [activeTab, setActiveTab] = useState('dm');
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedSociety, setSelectedSociety] = useState(null);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
+
+  // Refs
+  const messageInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, societyMessages]);
+
+  // Handle typing indicators
+  const handleTyping = (text) => {
+    setMessageText(text);
+    if (text && !isTyping) {
+      setIsTyping(true);
+      // Send typing status to backend
+      // TODO: Implement typing status API call
+    } else if (!text && isTyping) {
+      setIsTyping(false);
+      // Send stop typing status to backend
+    }
+  };
+
+  // Send message handler
+  const handleSendMessage = async () => {
+    if (!messageText.trim()) return;
+
+    try {
+      if (activeTab === 'dm' && selectedChat) {
+        await sendDirectMessage({
+          content: messageText,
+          receiver_id: selectedChat.user_id,
+          message_type: 'TEXT'
+        });
+      } else if (activeTab === 'societies' && selectedSociety) {
+        await sendSocietyMessage(selectedSociety.society_id, {
+          content: messageText,
+          message_type: 'TEXT'
+        });
+      }
+
+      setMessageText('');
+      setIsTyping(false);
+      scrollToBottom();
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
+  };
+
+  // Handle media upload
+  const handleMediaUpload = async (file, messageType) => {
+    try {
+      const formData = new FormData();
+      formData.append('media_file', file);
+      formData.append('message_type', messageType);
+
+      if (activeTab === 'dm' && selectedChat) {
+        formData.append('receiver_id', selectedChat.user_id);
+        // TODO: Implement media message API call
+      } else if (activeTab === 'societies' && selectedSociety) {
+        formData.append('society_id', selectedSociety.society_id);
+        // TODO: Implement society media message API call
+      }
+
+      toast.success('Media sent successfully!');
+      setShowMediaModal(false);
+    } catch (error) {
+      toast.error('Failed to send media');
+    }
+  };
+
+  // Initialize data
+  useEffect(() => {
+    listMessages({}, 1);
+    listSocieties({}, 1);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'direct' && !chatId && !societyId) {
@@ -159,174 +245,266 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="min-h-screen font-open-sans text-text">
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Header Section */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
-            💬 Chats
-            <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full opacity-20"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, -180, -360] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-          </h1>
-          <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Connect directly with readers, join societies, and build meaningful relationships
-          </motion.p>
-        </motion.div>
-
-        {/* Enhanced Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-        </motion.div>
-
-        {/* Enhanced Error Display */}
-        {(chatError || societiesError) && (
-          <motion.div
-            className="mb-8 p-6 bookish-glass rounded-2xl border border-red-300/20 bg-red-50/10"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex items-center space-x-3 text-red-600">
-              <div className="text-2xl">⚠️</div>
-              <div className="font-medium">{chatError || societiesError}</div>
+    <div className="flex h-screen bg-[var(--background)]">
+      {/* Sidebar */}
+      <div className="w-1/3 border-r border-gray-200 bg-white flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 bg-[var(--primary)] text-white">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold font-lora">BookSwaps Chat</h1>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setActiveTab('dm')}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'dm'
+                    ? 'bg-[var(--accent)] text-[var(--secondary)]'
+                    : 'bg-transparent hover:bg-white/10'
+                }`}
+              >
+                DMs
+              </button>
+              <button
+                onClick={() => setActiveTab('societies')}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'societies'
+                    ? 'bg-[var(--accent)] text-[var(--secondary)]'
+                    : 'bg-transparent hover:bg-white/10'
+                }`}
+              >
+                Groups
+              </button>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
 
-        {/* Direct Chat View */}
-        {chatId && activeTab === 'direct' && (
-          <DirectChatView
-            chatId={chatId}
-            messages={messages}
-            isChatLoading={isChatLoading}
-            newDirectMessage={newDirectMessage}
-            setNewDirectMessage={setNewDirectMessage}
-            handleSendDirectMessage={handleSendDirectMessage}
-            handleEditMessage={handleEditMessage}
-            handleDeleteMessage={handleDeleteMessage}
-            handleAddReaction={handleAddReaction}
-            editingMessageId={editingMessageId}
-            setEditingMessageId={setEditingMessageId}
-            editContent={editContent}
-            setEditContent={setEditContent}
-            markRead={markRead}
-          />
-        )}
-
-        {/* Society Chat View */}
-        {societyId && activeTab === 'societies' && (
-          <SocietyChatView
-            societyId={societyId}
-            societies={societies}
-            societyMessages={societyMessages}
-            isSocietiesLoading={isSocietiesLoading}
-            newSocietyMessage={newSocietyMessage}
-            setNewSocietyMessage={setNewSocietyMessage}
-            sendSocietyMessage={sendSocietyMessage}
-            handleEditMessage={handleEditMessage}
-            handleDeleteMessage={handleDeleteMessage}
-            handleAddReaction={handleAddReaction}
-            handlePinMessage={handlePinMessage}
-            editingMessageId={editingMessageId}
-            setEditingMessageId={setEditingMessageId}
-            editContent={editContent}
-            setEditContent={setEditContent}
-          />
-        )}
-
-        {/* Enhanced Direct Chats Section */}
-        {activeTab === 'direct' && !chatId && !societyId && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="grid grid-cols-1 lg:grid-cols-4 gap-8"
-          >
-            <div className="lg:col-span-3 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-              >
-                <ChatCreationForm newChat={newChat} setNewChat={setNewChat} handleStartChat={handleStartChat} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
-              >
-                <ChatFilters chatFilters={chatFilters} setChatFilters={setChatFilters} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-              >
-                <ChatList
-                  messages={messages}
-                  isChatLoading={isChatLoading}
-                  listMessages={listMessages}
-                  chatFilters={chatFilters}
-                  chatPagination={chatPagination}
-                />
-              </motion.div>
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'dm' ? (
+            <div className="p-2">
+              {isChatLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <motion.div
+                    key={message.chat_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3 rounded-lg mb-2 cursor-pointer transition-all hover:bg-gray-50 ${
+                      selectedChat?.chat_id === message.chat_id ? 'bg-[var(--accent)]/10 border-l-4 border-[var(--accent)]' : ''
+                    }`}
+                    onClick={() => setSelectedChat(message)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-[var(--primary)] rounded-full flex items-center justify-center text-white font-bold">
+                        {(message.sender?.username || message.receiver?.username || 'U')[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-[var(--text)] truncate">
+                            {message.sender?.username || message.receiver?.username || 'Unknown User'}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {message.sent_at_formatted || new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">
+                          {message.message_type === 'TEXT' ? message.content : `[${message.message_type}]`}
+                        </p>
+                        {message.status === 'UNREAD' && (
+                          <div className="w-2 h-2 bg-[var(--accent)] rounded-full mt-1"></div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
-          </motion.div>
-        )}
-
-        {/* Enhanced Society Chats Section */}
-        {activeTab === 'societies' && !societyId && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="grid grid-cols-1 lg:grid-cols-4 gap-8"
-          >
-            <div className="lg:col-span-3 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-              >
-                <SocietyCreationForm newSociety={newSociety} setNewSociety={setNewSociety} handleCreateSociety={handleCreateSociety} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
-              >
-                <SocietyList
-                  societies={societies}
-                  isSocietiesLoading={isSocietiesLoading}
-                  listSocieties={listSocieties}
-                  societiesPagination={societiesPagination}
-                  onSocietySelect={handleSocietySelect}
-                />
-              </motion.div>
+          ) : (
+            <div className="p-2">
+              {isSocietiesLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+                </div>
+              ) : (
+                societies.map((society) => (
+                  <motion.div
+                    key={society.society_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3 rounded-lg mb-2 cursor-pointer transition-all hover:bg-gray-50 ${
+                      selectedSociety?.society_id === society.society_id ? 'bg-[var(--accent)]/10 border-l-4 border-[var(--accent)]' : ''
+                    }`}
+                    onClick={() => setSelectedSociety(society)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-[var(--secondary)] rounded-full flex items-center justify-center text-white font-bold">
+                        {society.name[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-[var(--text)] truncate">
+                            {society.name}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {society.member_count} members
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">
+                          {society.description}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
-          </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Chat Window */}
+      <div className="flex-1 flex flex-col">
+        {selectedChat || selectedSociety ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[var(--primary)] rounded-full flex items-center justify-center text-white font-bold">
+                  {activeTab === 'dm'
+                    ? (selectedChat?.sender?.username || selectedChat?.receiver?.username || 'U')[0].toUpperCase()
+                    : selectedSociety?.name[0].toUpperCase()
+                  }
+                </div>
+                <div>
+                  <h2 className="font-semibold text-[var(--text)]">
+                    {activeTab === 'dm'
+                      ? (selectedChat?.sender?.username || selectedChat?.receiver?.username || 'Unknown User')
+                      : selectedSociety?.name
+                    }
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {activeTab === 'dm' ? 'Online' : `${selectedSociety?.member_count || 0} members`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <PhoneIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <VideoCameraIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <InformationCircleIcon className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+              <div className="space-y-4">
+                {activeTab === 'dm' ? (
+                  messages
+                    .filter(msg =>
+                      (msg.sender?.user_id === selectedChat?.sender?.user_id ||
+                       msg.receiver?.user_id === selectedChat?.receiver?.user_id)
+                    )
+                    .map((message) => (
+                      <MessageBubble
+                        key={message.chat_id}
+                        message={message}
+                        isOwn={message.sender?.user_id === selectedChat?.sender?.user_id}
+                      />
+                    ))
+                ) : (
+                  societyMessages.map((message) => (
+                    <MessageBubble
+                      key={message.message_id}
+                      message={message}
+                      isOwn={false}
+                      isGroup={true}
+                    />
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowMediaModal(true)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5 text-gray-600" />
+                </button>
+
+                <div className="flex-1 relative">
+                  <input
+                    ref={messageInputRef}
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => handleTyping(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Type a message..."
+                    className="w-full p-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                  />
+                  <button className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <FaceSmileIcon className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setShowVoiceRecorder(true)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <MicrophoneIcon className="w-5 h-5 text-gray-600" />
+                </button>
+
+                <button
+                  onClick={handleSendMessage}
+                  className="p-2 bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-full transition-colors"
+                >
+                  <PaperAirplaneIcon className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">💬</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Select a chat to start messaging</h3>
+              <p className="text-gray-500">Choose from your existing conversations or start a new one</p>
+            </div>
+          </div>
         )}
       </div>
+
+
+      {/* Modals */}
+      <AnimatePresence>
+        {showMediaModal && (
+          <MediaUploadModal
+            isOpen={showMediaModal}
+            onClose={() => setShowMediaModal(false)}
+            onUpload={handleMediaUpload}
+          />
+        )}
+
+        {showVoiceRecorder && (
+          <VoiceRecorder
+            isOpen={showVoiceRecorder}
+            onClose={() => setShowVoiceRecorder(false)}
+            onSend={(audioBlob) => handleMediaUpload(audioBlob, 'VOICE_NOTE')}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

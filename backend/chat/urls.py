@@ -3,7 +3,7 @@ from .views import (
     SendMessageView, EditMessageView, DeleteMessageView, MessageListView, MarkReadView,
     AddReactionView, ListReactionsView, CreateSocietyView, JoinSocietyView, LeaveSocietyView,
     SocietyListView, SendSocietyMessageView, EditSocietyMessageView, DeleteSocietyMessageView,
-    SocietyMessageListView, PinMessageView
+    SocietyMessageListView, PinMessageView, SendMediaMessageView, TypingStatusView
 )
 from backend.discussions.views import (
     CreateSocietyEventView, SocietyEventListView
@@ -13,12 +13,14 @@ app_name = 'chat'
 
 urlpatterns = [
     path('messages/send/', SendMessageView.as_view(), name='send_message'),
+    path('messages/send-media/', SendMediaMessageView.as_view(), name='send_media_message'),
     path('messages/<uuid:chat_id>/edit/', EditMessageView.as_view(), name='edit_message'),
     path('messages/<uuid:chat_id>/delete/', DeleteMessageView.as_view(), name='delete_message'),
     path('messages/<uuid:chat_id>/read/', MarkReadView.as_view(), name='mark_read'),
     path('messages/<uuid:chat_id>/react/', AddReactionView.as_view(), name='add_reaction'),
     path('messages/<uuid:chat_id>/reactions/', ListReactionsView.as_view(), name='list_reactions'),
     path('messages/', MessageListView.as_view(), name='message_list'),
+    path('typing/', TypingStatusView.as_view(), name='typing_status'),
     path('societies/create/', CreateSocietyView.as_view(), name='create_society'),
     path('societies/<uuid:society_id>/join/', JoinSocietyView.as_view(), name='join_society'),
     path('societies/<uuid:society_id>/leave/', LeaveSocietyView.as_view(), name='leave_society'),

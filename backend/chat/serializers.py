@@ -64,22 +64,60 @@ class ChatSerializer(serializers.ModelSerializer):
     receiver = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
     receiver_id = serializers.UUIDField(write_only=True)
-    content = serializers.CharField()
+    content = serializers.CharField(required=False, allow_blank=True)
     book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     can_note = serializers.SerializerMethodField()
     reactions = MessageReactionSerializer(many=True, read_only=True)
 
+    # Add time formatting
+    sent_at_formatted = serializers.SerializerMethodField()
+    delivered_at_formatted = serializers.SerializerMethodField()
+    read_at_formatted = serializers.SerializerMethodField()
+
     class Meta:
         model = Chats
         fields = [
-            'chat_id', 'sender', 'receiver', 'content', 'status',
-            'book', 'created_at', 'edited_at', 'receiver_id', 'book_id',
-            'can_note', 'reactions'
+            'chat_id', 'sender', 'receiver', 'content', 'message_type', 'status',
+            'book', 'media_url', 'media_thumbnail', 'media_duration', 'media_size',
+            'media_filename', 'sent_at', 'delivered_at', 'read_at', 'created_at',
+            'edited_at', 'receiver_id', 'book_id', 'can_note', 'reactions',
+            'sent_at_formatted', 'delivered_at_formatted', 'read_at_formatted'
         ]
-        read_only_fields = ['chat_id', 'status', 'created_at', 'edited_at', 'reactions']
+        read_only_fields = [
+            'chat_id', 'status', 'sent_at', 'delivered_at', 'read_at',
+            'created_at', 'edited_at', 'reactions', 'media_url', 'media_thumbnail',
+            'media_duration', 'media_size', 'media_filename'
+        ]
 
     def get_can_note(self, obj):
         return True  # Frontend triggers new message
+
+    def get_sent_at_formatted(self, obj):
+        return obj.sent_at.strftime('%H:%M') if obj.sent_at else None
+
+    def get_delivered_at_formatted(self, obj):
+        return obj.delivered_at.strftime('%H:%M') if obj.delivered_at else None
+
+    def get_read_at_formatted(self, obj):
+        return obj.read_at.strftime('%H:%M') if obj.read_at else None
+
+
+class MediaMessageSerializer(serializers.ModelSerializer):
+    """Serializer for media message uploads"""
+    receiver_id = serializers.UUIDField(write_only=True)
+    media_file = serializers.FileField(write_only=True)
+
+    class Meta:
+        model = Chats
+        fields = [
+            'receiver_id', 'message_type', 'content', 'media_file'
+        ]
+
+    def validate_message_type(self, value):
+        allowed_types = ['IMAGE', 'AUDIO', 'VIDEO', 'VOICE_NOTE', 'FILE']
+        if value not in allowed_types:
+            raise serializers.ValidationError(f"Invalid message type. Must be one of: {allowed_types}")
+        return value
 
     def validate_content(self, value):
         if not value.strip():

@@ -3,14 +3,23 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from backend.discussions.models import Society, SocietyMember, SocietyMessage
 from backend.users.models import CustomUser, Follows
 from backend.swaps.models import Notification
 from backend.utils.websocket import send_notification_to_user
 from .serializers import (
     ChatSerializer, ChatReadStatusSerializer, SocietyCreateSerializer,
-    SocietySerializer, SocietyMessageSerializer, MessageReactionSerializer
+    SocietySerializer, SocietyMessageSerializer, MessageReactionSerializer,
+    MediaMessageSerializer
 )
+from .models import Chats, ChatTypingStatus
+import os
+import uuid
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import mimetypes
 from .models import Chats, MessageReaction
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
@@ -552,3 +561,140 @@ class PinMessageView(APIView):
             }, status=status.HTTP_200_OK)
         except SocietyMessage.DoesNotExist:
             return Response({"error": "Message not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SendMediaMessageView(APIView):
+    """Send media messages (images, audio, video, voice notes)"""
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+
+        receiver_id = request.data.get('receiver_id')
+        message_type = request.data.get('message_type', 'IMAGE')
+        content = request.data.get('content', '')
+        media_file = request.FILES.get('media_file')
+
+        if not receiver_id:
+            return Response({"error": "Receiver ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not media_file:
+            return Response({"error": "Media file required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            receiver = CustomUser.objects.get(user_id=receiver_id)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Receiver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate file type based on message type
+        allowed_types = {
+            'IMAGE': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+            'AUDIO': ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4'],
+            'VIDEO': ['video/mp4', 'video/webm', 'video/quicktime'],
+            'VOICE_NOTE': ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm'],
+            'FILE': []  # Allow any file type
+        }
+
+        file_type = mimetypes.guess_type(media_file.name)[0]
+        if message_type != 'FILE' and file_type not in allowed_types.get(message_type, []):
+            return Response({"error": f"Invalid file type for {message_type}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate unique filename
+        file_extension = os.path.splitext(media_file.name)[1]
+        unique_filename = f"chat_media/{uuid.uuid4()}{file_extension}"
+
+        # Save file
+        file_path = default_storage.save(unique_filename, ContentFile(media_file.read()))
+        media_url = default_storage.url(file_path)
+
+        # Create chat message
+        chat = Chats.objects.create(
+            sender=request.user,
+            receiver=receiver,
+            content=content,
+            message_type=message_type,
+            media_url=media_url,
+            media_filename=media_file.name,
+            media_size=media_file.size,
+            status='SENT'
+        )
+
+        # Send WebSocket notification
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{chat.chat_id}",
+            {
+                "type": "chat_message",
+                "message": ChatSerializer(chat).data
+            }
+        )
+
+        # Send notification to receiver
+        notification = Notification.objects.create(
+            user=receiver,
+            type='message_received',
+            message=f"{request.user.username} sent you a {message_type.lower()}.",
+            content_type='chat',
+            content_id=chat.chat_id
+        )
+
+        send_notification_to_user(
+            receiver.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"{request.user.username} sent you a {message_type.lower()}.",
+                "type": "message_received",
+                "content_type": "chat",
+                "content_id": str(chat.chat_id),
+                "follow_id": None
+            }
+        )
+
+        return Response(ChatSerializer(chat).data, status=status.HTTP_201_CREATED)
+
+
+class TypingStatusView(APIView):
+    """Handle typing status for real-time indicators"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+
+        chat_partner_id = request.data.get('chat_partner_id')
+        is_typing = request.data.get('is_typing', False)
+
+        if not chat_partner_id:
+            return Response({"error": "Chat partner ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            chat_partner = CustomUser.objects.get(user_id=chat_partner_id)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Chat partner not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update or create typing status
+        typing_status, created = ChatTypingStatus.objects.get_or_create(
+            user=request.user,
+            chat_partner=chat_partner,
+            defaults={'is_typing': is_typing}
+        )
+
+        if not created:
+            typing_status.is_typing = is_typing
+            typing_status.save()
+
+        # Send WebSocket notification to chat partner
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{chat_partner.user_id}",
+            {
+                "type": "typing_status",
+                "user_id": str(request.user.user_id),
+                "username": request.user.username,
+                "is_typing": is_typing
+            }
+        )
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
