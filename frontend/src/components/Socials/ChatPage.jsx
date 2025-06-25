@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { useSocieties } from '../../hooks/useSocieties';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PaperAirplaneIcon,
-  PhotoIcon,
   MicrophoneIcon,
   VideoCameraIcon,
-  DocumentIcon,
   FaceSmileIcon,
   PlusIcon,
-  ArrowLeftIcon,
   PhoneIcon,
   InformationCircleIcon,
-  EllipsisVerticalIcon
 } from '@heroicons/react/24/outline';
 import MessageBubble from './Chat/MessageBubble';
 import MediaUploadModal from './Chat/MediaUploadModal';
@@ -23,35 +19,23 @@ import VoiceRecorder from './Chat/VoiceRecorder';
 
 const ChatPage = () => {
   const { chatId, societyId } = useParams();
-  const navigate = useNavigate();
 
-  // Chat hooks
+  // Chat hooks - only keeping the ones we actually use
   const {
     sendDirectMessage,
-    editMessage,
-    deleteMessage,
-    markRead,
-    addDirectReaction,
     listMessages,
     messages,
     isLoading: isChatLoading,
-    error: chatError,
     pagination: chatPagination,
   } = useChat();
 
   const {
-    createSociety,
     listSocieties,
     getSocietyMessages,
     sendSocietyMessage,
-    editSocietyMessage,
-    deleteSocietyMessage,
-    pinSocietyMessage,
-    addSocietyReaction,
     societies,
     societyMessages,
     isLoading: isSocietiesLoading,
-    error: societiesError,
     pagination: societiesPagination,
   } = useSocieties();
 
@@ -63,7 +47,7 @@ const ChatPage = () => {
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [chatFilters] = useState({});
 
   // Refs
   const messageInputRef = useRef(null);
@@ -112,7 +96,7 @@ const ChatPage = () => {
       setMessageText('');
       setIsTyping(false);
       scrollToBottom();
-    } catch (error) {
+    } catch {
       toast.error('Failed to send message');
     }
   };
@@ -134,7 +118,7 @@ const ChatPage = () => {
 
       toast.success('Media sent successfully!');
       setShowMediaModal(false);
-    } catch (error) {
+    } catch {
       toast.error('Failed to send media');
     }
   };
@@ -143,10 +127,10 @@ const ChatPage = () => {
   useEffect(() => {
     listMessages({}, 1);
     listSocieties({}, 1);
-  }, []);
+  }, [listMessages, listSocieties]);
 
   useEffect(() => {
-    if (activeTab === 'direct' && !chatId && !societyId) {
+    if (activeTab === 'dm' && !chatId && !societyId) {
       listMessages(chatFilters, chatPagination.messages.page);
     } else if (activeTab === 'societies' && !societyId) {
       listSocieties({}, societiesPagination.societies.page);
@@ -167,82 +151,6 @@ const ChatPage = () => {
     listSocieties,
     getSocietyMessages,
   ]);
-
-  const handleSendDirectMessage = async (e) => {
-    e.preventDefault();
-    if (!newDirectMessage.trim()) return;
-    const data = { content: newDirectMessage, receiver_id: chatId };
-    const response = await sendDirectMessage(data);
-    if (response) setNewDirectMessage('');
-  };
-
-  const handleEditMessage = async (messageId, isSociety = false) => {
-    const data = { content: editContent };
-    let response;
-    if (isSociety) {
-      response = await editSocietyMessage(societyId, messageId, data);
-    } else {
-      response = await editMessage(messageId, data);
-    }
-    if (response) {
-      setEditingMessageId(null);
-      setEditContent('');
-    }
-  };
-
-  const handleDeleteMessage = async (messageId, isSociety = false) => {
-    let response;
-    if (isSociety) {
-      response = await deleteSocietyMessage(societyId, messageId);
-    } else {
-      response = await deleteMessage(messageId);
-    }
-    if (response) toast.success('Message deleted!');
-  };
-
-  const handleAddReaction = async (messageId, emoji, isSociety = false) => {
-    const data = { emoji };
-    let response;
-    if (isSociety) {
-      response = await addSocietyReaction(societyId, messageId, data);
-    } else {
-      response = await addDirectReaction(messageId, data);
-    }
-    if (response) toast.success('Reaction added!');
-  };
-
-  const handlePinMessage = async (messageId) => {
-    const response = await pinSocietyMessage(societyId, messageId);
-    if (response) toast.success('Message pinned!');
-  };
-
-  const handleCreateSociety = async (e) => {
-    e.preventDefault();
-    const response = await createSociety(newSociety);
-    if (response) {
-      setNewSociety({ name: '', description: '', visibility: 'public', focus_type: '', focus_id: '' });
-      // Instead of navigating, just refresh the societies list and show success
-      toast.success('Society created successfully!');
-      listSocieties({}, 1); // Refresh the societies list
-    }
-  };
-
-  const handleStartChat = async (e) => {
-    e.preventDefault();
-    const data = { content: 'Hello!', receiver_id: newChat.recipient_id, book_id: newChat.book_id || null };
-    const response = await sendDirectMessage(data);
-    if (response) {
-      setNewChat({ recipient_id: '', book_id: '' });
-      // Instead of navigating, just show success and refresh messages
-      toast.success('Message sent successfully!');
-      listMessages(chatFilters, 1); // Refresh the messages list
-    }
-  };
-
-  const handleSocietySelect = (society) => {
-    // Navigate to the society chat
-    navigate(`/chat/society/${society.id}`);
-  };
 
   return (
     <div className="flex h-screen bg-[var(--background)]">
@@ -485,7 +393,6 @@ const ChatPage = () => {
           </div>
         )}
       </div>
-
 
       {/* Modals */}
       <AnimatePresence>
