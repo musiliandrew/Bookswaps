@@ -104,36 +104,66 @@ const EnhancedDiscussionsPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen font-open-sans text-text bookish-gradient flex items-center justify-center">
+        <motion.div
+          className="text-center bookish-glass rounded-2xl p-8 border border-white/20"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="w-16 h-16 bg-gradient-to-br from-error/20 to-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-xl font-lora font-semibold text-primary mb-2">Something went wrong</h2>
+          <p className="text-primary/70 mb-6">{error}</p>
           <button
             onClick={() => listPosts(filters, 1)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="bookish-button-enhanced text-white px-6 py-3 rounded-xl font-medium transition-all duration-300"
           >
             Try Again
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 pointer-events-none" />
-      
-      {/* Main Content */}
+    <div className="min-h-screen font-open-sans text-text bookish-gradient relative">
+      {/* Floating Elements Background */}
+      <div className="floating-elements absolute inset-0 pointer-events-none" />
+
+      {/* Enhanced Header Section */}
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+              💬 Discussions
+              <motion.div
+                className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </h1>
+            <motion.p
+              className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+            >
+              Share your thoughts, discover new books, and connect with fellow readers
+            </motion.p>
+          </motion.div>
+
+          {/* Main Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
           >
             <EnhancedPostFeed
               posts={posts}
@@ -165,31 +195,6 @@ const EnhancedDiscussionsPage = () => {
         isLoading={isLoading}
         initialPostType={selectedPostType}
       />
-
-      {/* Custom Styles */}
-      <style jsx>{`
-        .container {
-          max-width: 1200px;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
     </div>
   );
 };

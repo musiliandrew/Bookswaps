@@ -78,10 +78,10 @@ const EnhancedPostCard = ({
 
   return (
     <motion.div
-      className="bg-white rounded-2xl border border-gray-100 hover:border-gray-200 transition-all duration-300 overflow-hidden"
+      className="bookish-glass rounded-2xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+      whileHover={{ y: -2, scale: 1.01 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
@@ -90,10 +90,10 @@ const EnhancedPostCard = ({
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             {/* User Avatar */}
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
               {post.user?.profile_picture ? (
-                <img 
-                  src={post.user.profile_picture} 
+                <img
+                  src={post.user.profile_picture}
                   alt={post.user.username}
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -101,14 +101,14 @@ const EnhancedPostCard = ({
                 <UserIcon className="w-5 h-5 text-white" />
               )}
             </div>
-            
+
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold font-open-sans text-primary">
                   {post.user?.username || 'Anonymous'}
                 </span>
-                <span className="text-gray-400">•</span>
-                <span className="text-sm text-gray-500 flex items-center space-x-1">
+                <span className="text-primary/40">•</span>
+                <span className="text-sm text-primary/60 flex items-center space-x-1 font-open-sans">
                   <ClockIcon className="w-3 h-3" />
                   <span>
                     {post.created_at && !isNaN(new Date(post.created_at).getTime())
@@ -121,11 +121,11 @@ const EnhancedPostCard = ({
               
               {/* Post Type Badge */}
               <div className="flex items-center space-x-2 mt-1">
-                <span className={`px-2 py-1 text-xs font-medium text-white rounded-full bg-gradient-to-r ${getPostTypeColor(post.type)}`}>
+                <span className={`px-3 py-1 text-xs font-medium font-open-sans text-white rounded-full bg-gradient-to-r ${getPostTypeColor(post.type)}`}>
                   {getPostTypeIcon(post.type)} {post.type}
                 </span>
                 {post.spoiler_flag && (
-                  <span className="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full flex items-center space-x-1">
+                  <span className="px-3 py-1 text-xs font-medium font-open-sans text-error bg-error/10 rounded-full flex items-center space-x-1">
                     <EyeSlashIcon className="w-3 h-3" />
                     <span>Spoiler</span>
                   </span>
@@ -137,27 +137,27 @@ const EnhancedPostCard = ({
           {/* Bookmark Button */}
           <motion.button
             onClick={(e) => handleReaction('bookmark', e)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-white/50 rounded-full transition-colors"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
             {isBookmarked ? (
-              <BookmarkSolid className="w-5 h-5 text-blue-600" />
+              <BookmarkSolid className="w-5 h-5 text-accent" />
             ) : (
-              <BookmarkIcon className="w-5 h-5 text-gray-400" />
+              <BookmarkIcon className="w-5 h-5 text-primary/50" />
             )}
           </motion.button>
         </div>
 
         {/* Title */}
         <Link to={`/socials/discussions/post/${post.discussion_id}`}>
-          <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors cursor-pointer">
+          <h2 className="text-xl font-lora font-bold text-primary mb-3 hover:text-accent transition-colors cursor-pointer">
             {post.title}
           </h2>
         </Link>
 
         {/* Content */}
-        <div className="text-gray-700 leading-relaxed">
+        <div className="text-primary/80 leading-relaxed font-open-sans">
           {post.spoiler_flag && !showSpoiler ? (
             <div className="bg-gray-100 rounded-lg p-4 text-center">
               <EyeSlashIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -205,16 +205,16 @@ const EnhancedPostCard = ({
       </div>
 
       {/* Actions Bar */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+      <div className="px-6 py-4 bg-white/30 backdrop-blur-sm border-t border-white/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
             {/* Upvote */}
             <motion.button
               onClick={(e) => handleReaction('upvote', e)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
-                isUpvoted 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'hover:bg-gray-100 text-gray-600'
+              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all font-open-sans ${
+                isUpvoted
+                  ? 'bg-success/20 text-success'
+                  : 'hover:bg-white/50 text-primary/70'
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -230,10 +230,10 @@ const EnhancedPostCard = ({
             {/* Downvote */}
             <motion.button
               onClick={(e) => handleReaction('downvote', e)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
-                isDownvoted 
-                  ? 'bg-red-100 text-red-700' 
-                  : 'hover:bg-gray-100 text-gray-600'
+              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all font-open-sans ${
+                isDownvoted
+                  ? 'bg-error/20 text-error'
+                  : 'hover:bg-white/50 text-primary/70'
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -246,9 +246,9 @@ const EnhancedPostCard = ({
             </motion.button>
 
             {/* Comments */}
-            <Link 
+            <Link
               to={`/socials/discussions/post/${post.discussion_id}`}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-all"
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
             >
               <ChatBubbleLeftIcon className="w-4 h-4" />
               <span className="text-sm font-medium">{post.note_count || 0}</span>
@@ -257,7 +257,7 @@ const EnhancedPostCard = ({
             {/* Reprint */}
             <motion.button
               onClick={(e) => handleReaction('reprint', e)}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-all"
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -267,7 +267,7 @@ const EnhancedPostCard = ({
           </div>
 
           {/* Engagement Stats */}
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-primary/50 font-open-sans">
             {post.views && (
               <span>{post.views} views</span>
             )}
