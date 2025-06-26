@@ -106,7 +106,7 @@ const ChatPage = () => {
     };
 
     loadConversations();
-  }, [currentUser?.user_id]); // Use specific user_id to prevent unnecessary reloads
+  }, [currentUser, listMessages]); // Include currentUser and listMessages as dependencies
 
   // Load messages for selected conversation
   useEffect(() => {
