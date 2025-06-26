@@ -197,6 +197,65 @@ export function useSwaps() {
     });
   }, [notifications, isWebSocketConnected, getSwapHistory]);
 
+  // Extension request functions
+  const requestExtension = useCallback(async (swapId, extensionData) => {
+    const result = await handleApiCall(
+      () => api.post(`${API_ENDPOINTS.REQUEST_EXTENSION(swapId)}`, extensionData),
+      setIsLoading,
+      setError,
+      null,
+      'Request extension'
+    );
+    return result;
+  }, []);
+
+  const respondToExtension = useCallback(async (extensionId, responseData) => {
+    const result = await handleApiCall(
+      () => api.patch(`${API_ENDPOINTS.RESPOND_TO_EXTENSION(extensionId)}`, responseData),
+      setIsLoading,
+      setError,
+      null,
+      'Respond to extension'
+    );
+    return result;
+  }, []);
+
+  // QR verification function
+  const verifyQR = useCallback(async (swapId, qrData) => {
+    const result = await handleApiCall(
+      () => api.post(`${API_ENDPOINTS.VERIFY_QR(swapId)}`, qrData),
+      setIsLoading,
+      setError,
+      null,
+      'Verify QR code'
+    );
+    return result;
+  }, []);
+
+  // Enhanced getMidpoint with preferences
+  const getMidpointWithPreferences = useCallback(async (params) => {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (Array.isArray(params[key])) {
+        params[key].forEach(value => queryParams.append(key, value));
+      } else {
+        queryParams.append(key, params[key]);
+      }
+    });
+
+    const result = await handleApiCall(
+      () => api.get(`${API_ENDPOINTS.GET_MIDPOINT}?${queryParams.toString()}`),
+      setIsLoading,
+      setError,
+      null,
+      'Get optimal midpoint'
+    );
+    if (result) {
+      setMidpoint(result);
+    }
+    return result;
+  }, []);
+
   return {
     initiateSwap,
     getSwaps,
@@ -206,8 +265,12 @@ export function useSwaps() {
     getSwapHistory,
     addLocation,
     getMidpoint,
+    getMidpointWithPreferences,
     shareContent,
     getSwapQR,
+    requestExtension,
+    respondToExtension,
+    verifyQR,
     swaps,
     swapHistory,
     qrData,

@@ -35,6 +35,13 @@ class Location(models.Model):
             ('cafe', 'Cafe'),
             ('bookstore', 'Bookstore'),
             ('park', 'Park'),
+            ('hotel', 'Hotel Lobby'),
+            ('school', 'School/University'),
+            ('mall', 'Shopping Mall'),
+            ('restaurant', 'Restaurant'),
+            ('community_center', 'Community Center'),
+            ('train_station', 'Train Station'),
+            ('airport', 'Airport'),
             ('other', 'Other')
         ],
         db_comment='Type of exchange spot'
@@ -73,6 +80,44 @@ class Location(models.Model):
     is_active = models.BooleanField(
         default=True,
         db_comment='True if location is available for swaps'
+    )
+    address = models.TextField(
+        null=True,
+        blank=True,
+        db_comment='Full address of the location'
+    )
+    phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        db_comment='Contact phone number'
+    )
+    website = models.URLField(
+        null=True,
+        blank=True,
+        db_comment='Website URL'
+    )
+    opening_hours = models.JSONField(
+        null=True,
+        blank=True,
+        db_comment='Opening hours in JSON format'
+    )
+    amenities = models.JSONField(
+        default=list,
+        db_comment='Available amenities (wifi, parking, etc.)'
+    )
+    safety_score = models.FloatField(
+        default=5.0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        db_comment='Safety rating of the location (0-5)'
+    )
+    accessibility_features = models.JSONField(
+        default=list,
+        db_comment='Accessibility features available'
+    )
+    usage_count = models.PositiveIntegerField(
+        default=0,
+        db_comment='Number of times this location has been used for swaps'
     )
 
     class Meta:
@@ -173,6 +218,41 @@ class Swap(models.Model):
         blank=True,
         unique=True,
         db_comment='S3 URL for QR code used in swap confirmation'
+    )
+    qr_code_data = models.TextField(
+        null=True,
+        blank=True,
+        db_comment='Encrypted QR code data for verification'
+    )
+    return_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_comment='When the book should be returned (for borrowing swaps)'
+    )
+    extension_requested = models.BooleanField(
+        default=False,
+        db_comment='Whether receiver has requested extension'
+    )
+    extension_days = models.PositiveIntegerField(
+        default=0,
+        db_comment='Number of extension days requested'
+    )
+    extension_reason = models.TextField(
+        null=True,
+        blank=True,
+        db_comment='Reason for extension request'
+    )
+    extension_approved = models.BooleanField(
+        default=False,
+        db_comment='Whether owner approved the extension'
+    )
+    is_borrowing = models.BooleanField(
+        default=False,
+        db_comment='True if this is a borrowing swap (temporary), False if permanent exchange'
+    )
+    location_verified = models.BooleanField(
+        default=False,
+        db_comment='Whether both parties are at the meetup location'
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -513,3 +593,90 @@ class Exchange(models.Model):
             if self.swap.receiver_book and self.swap.initiator:
                 self.swap.receiver_book.owner = self.swap.initiator
                 self.swap.receiver_book.save()
+
+
+class ExtensionRequest(models.Model):
+    """
+    Manages extension requests for borrowing swaps
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+        ('expired', 'Expired')
+    ]
+
+    extension_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    swap = models.ForeignKey(
+        Swap,
+        on_delete=models.CASCADE,
+        related_name='extension_requests',
+        db_comment='The swap this extension request is for'
+    )
+    requester = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='extension_requests',
+        db_comment='User requesting the extension'
+    )
+    days_requested = models.PositiveIntegerField(
+        db_comment='Number of additional days requested'
+    )
+    reason = models.TextField(
+        db_comment='Reason for the extension request'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        db_comment='Status of the extension request'
+    )
+    owner_response = models.TextField(
+        null=True,
+        blank=True,
+        db_comment='Response from the book owner'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_comment='When extension was requested'
+    )
+    responded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_comment='When owner responded to the request'
+    )
+
+    class Meta:
+        db_table = 'extension_requests'
+        db_table_comment = 'Manages extension requests for borrowing swaps'
+        indexes = [
+            models.Index(fields=['swap']),
+            models.Index(fields=['requester']),
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"Extension Request for {self.swap.swap_id}: {self.days_requested} days"
+
+    def approve(self, owner_response=None):
+        """Approve the extension request"""
+        from datetime import timedelta
+
+        self.status = 'approved'
+        self.owner_response = owner_response
+        self.responded_at = timezone.now()
+        self.save()
+
+        # Update the swap's return deadline
+        if self.swap.return_deadline:
+            self.swap.return_deadline += timedelta(days=self.days_requested)
+            self.swap.extension_approved = True
+            self.swap.save()
+
+    def deny(self, owner_response=None):
+        """Deny the extension request"""
+        self.status = 'denied'
+        self.owner_response = owner_response
+        self.responded_at = timezone.now()
+        self.save()

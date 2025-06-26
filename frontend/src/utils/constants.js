@@ -64,6 +64,9 @@ export const API_ENDPOINTS = {
   GET_MIDPOINT: '/swaps/midpoint/',
   SHARE_CONTENT: '/swaps/share/',
   GET_SWAP_QR: (swapId) => `/swaps/${swapId}/qr/`,
+  REQUEST_EXTENSION: (swapId) => `/swaps/${swapId}/request-extension/`,
+  RESPOND_TO_EXTENSION: (extensionId) => `/swaps/extensions/${extensionId}/respond/`,
+  VERIFY_QR: (swapId) => `/swaps/${swapId}/verify-qr/`,
   // New endpoints for users
   GET_USER_PROFILE: (identifier) => `/users/profile/${identifier}/`,
   FOLLOW_USER: (userId) => `/users/follow/${userId}/`,

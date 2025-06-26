@@ -3,7 +3,8 @@ from .views import (
     InitiateSwapView, AcceptSwapView, ConfirmSwapView, CancelSwapView,
     SwapListView, SwapHistoryView, AddLocationView, NotificationListView,
     MarkNotificationReadView, MarkAllNotificationsReadView, DeleteNotificationView,
-    BulkNotificationOperationsView, ShareView, MidpointView, GetQRCodeView
+    BulkNotificationOperationsView, ShareView, MidpointView, GetQRCodeView,
+    RequestExtensionView, RespondToExtensionView, QRVerificationView
 )
 
 app_name = 'swaps'
@@ -24,4 +25,7 @@ urlpatterns = [
     path('share/', ShareView.as_view(), name='share'),
     path('midpoint/', MidpointView.as_view(), name='midpoint'),
     path('<uuid:swap_id>/qr/', GetQRCodeView.as_view(), name='get_qr_code'),
+    path('<uuid:swap_id>/request-extension/', RequestExtensionView.as_view(), name='request_extension'),
+    path('extensions/<uuid:extension_id>/respond/', RespondToExtensionView.as_view(), name='respond_to_extension'),
+    path('<uuid:swap_id>/verify-qr/', QRVerificationView.as_view(), name='verify_qr'),
 ]

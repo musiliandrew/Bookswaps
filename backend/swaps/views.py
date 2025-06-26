@@ -11,12 +11,14 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 import requests
 from math import radians, sin, cos, sqrt, atan2
-from .models import Swap, Notification, Location
+from .models import Swap, Notification, Location, ExtensionRequest
 from .serializers import (
     SwapCreateSerializer, SwapSerializer, SwapAcceptSerializer,
     SwapConfirmSerializer, SwapHistorySerializer, LocationSerializer,
     NotificationSerializer, ShareSerializer
 )
+from .qr_utils import qr_manager
+from .location_utils import location_service
 from backend.library.models import Book
 from backend.users.models import Follows
 from django.conf import settings
@@ -49,15 +51,36 @@ class InitiateSwapView(APIView):
         if initiator_book.locked_until and initiator_book.locked_until > timezone.now():
             return Response({"error": "Book locked"}, status=status.HTTP_400_BAD_REQUEST)
 
-        qr_code_url = f"https://bookswap-bucket.s3.amazonaws.com/qr/{uuid.uuid4()}.png"
+        # Generate secure QR code
+        qr_result = qr_manager.generate_swap_qr_code(
+            swap_id=uuid.uuid4(),  # Temporary ID, will be updated after creation
+            user_id=request.user.user_id
+        )
 
         serializer = SwapCreateSerializer(
             data=request.data,
-            context={'request': request, 'qr_code_url': qr_code_url}
+            context={'request': request, 'qr_code_url': qr_result['qr_code_url']}
         )
         if serializer.is_valid():
             with transaction.atomic():
                 swap = serializer.save()
+
+                # Update QR code with actual swap ID
+                qr_result = qr_manager.generate_swap_qr_code(
+                    swap_id=swap.swap_id,
+                    user_id=request.user.user_id
+                )
+                swap.qr_code_url = qr_result['qr_code_url']
+                swap.qr_code_data = qr_result['qr_data']
+
+                # Set borrowing details if specified
+                is_borrowing = request.data.get('is_borrowing', False)
+                if is_borrowing:
+                    swap.is_borrowing = True
+                    return_days = int(request.data.get('return_days', 14))
+                    swap.return_deadline = timezone.now() + timedelta(days=return_days)
+
+                swap.save()
 
                 initiator_book.locked_until = timezone.now() + timedelta(hours=24)
                 initiator_book.save()
@@ -432,43 +455,36 @@ class MidpointView(APIView):
         except (TypeError, ValueError):
             return Response({"error": "Invalid or missing coordinates"}, status=status.HTTP_400_BAD_REQUEST)
 
-        cache_key = f"midpoint_{user_lat}_{user_lon}_{other_lat}_{other_lon}"
+        # Get user preferences
+        preferences = {
+            'transport_mode': request.query_params.get('transport_mode', 'driving'),
+            'place_types': request.query_params.getlist('place_types'),
+            'max_distance': float(request.query_params.get('max_distance', 10))  # km
+        }
+
+        cache_key = f"midpoint_v2_{user_lat}_{user_lon}_{other_lat}_{other_lon}_{hash(str(preferences))}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return Response(cached_result, status=status.HTTP_200_OK)
 
-        midpoint = {
-            'latitude': (user_lat + other_lat) / 2,
-            'longitude': (user_lon + other_lon) / 2
-        }
-        address = "Unknown location"
-        if hasattr(settings, 'GOOGLE_MAPS_API_KEY'):
-            try:
-                response = requests.get(
-                    f"https://maps.googleapis.com/maps/api/geocode/json?latlng={midpoint['latitude']},{midpoint['longitude']}&key={settings.GOOGLE_MAPS_API_KEY}",
-                    timeout=5
-                )
-                response.raise_for_status()
-                data = response.json()
-                if data['status'] == 'OK' and data['results']:
-                    address = data['results'][0]['formatted_address']
-            except requests.RequestException:
-                address = "Geocoding failed"
+        coord1 = {'latitude': user_lat, 'longitude': user_lon}
+        coord2 = {'latitude': other_lat, 'longitude': other_lon}
 
-        nearby_locations = sorted(
-            Location.objects.filter(is_active=True),
-            key=lambda loc: haversine(midpoint, loc.coords)
-        )[:5]
+        # Use advanced location discovery service
+        result = location_service.calculate_optimal_midpoint(coord1, coord2, preferences)
 
-        serializer = LocationSerializer(nearby_locations, many=True)
+        # Format response
         response_data = {
-            "midpoint": {
-                "latitude": midpoint['latitude'],
-                "longitude": midpoint['longitude'],
-                "address": address
+            "midpoint": result['midpoint'],
+            "suggested_locations": result['suggested_locations'],
+            "distance_analysis": {
+                "distance_from_user1_km": result['distance_from_user1'],
+                "distance_from_user2_km": result['distance_from_user2'],
+                "total_distance_km": result['distance_from_user1'] + result['distance_from_user2']
             },
-            "suggested_locations": serializer.data
+            "preferences_applied": preferences
         }
+
         cache.set(cache_key, response_data, timeout=3600)
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -482,3 +498,176 @@ class GetQRCodeView(APIView):
         if not swap.qr_code_url:
             return Response({"error": "No QR code generated"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"qr_code_url": swap.qr_code_url}, status=status.HTTP_200_OK)
+
+
+class RequestExtensionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, swap_id):
+        swap = get_object_or_404(Swap, swap_id=swap_id)
+
+        # Only the receiver (borrower) can request extension
+        if request.user != swap.receiver:
+            return Response({"error": "Only the borrower can request extension"}, status=status.HTTP_403_FORBIDDEN)
+
+        if not swap.is_borrowing:
+            return Response({"error": "This is not a borrowing swap"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if swap.status != 'Completed':
+            return Response({"error": "Swap must be completed to request extension"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if there's already a pending extension request
+        existing_request = ExtensionRequest.objects.filter(
+            swap=swap,
+            status='pending'
+        ).first()
+
+        if existing_request:
+            return Response({"error": "Extension request already pending"}, status=status.HTTP_400_BAD_REQUEST)
+
+        days_requested = request.data.get('days_requested')
+        reason = request.data.get('reason', '')
+
+        if not days_requested or days_requested <= 0:
+            return Response({"error": "Invalid number of days requested"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create extension request
+        extension_request = ExtensionRequest.objects.create(
+            swap=swap,
+            requester=request.user,
+            days_requested=days_requested,
+            reason=reason
+        )
+
+        # Notify the book owner
+        notification = Notification.objects.create(
+            user=swap.initiator,
+            swap=swap,
+            type='extension_requested',
+            message=f"{request.user.username} requested {days_requested} day extension for '{swap.initiator_book.title}'"
+        )
+
+        return Response({
+            "message": "Extension request sent successfully",
+            "extension_id": extension_request.extension_id,
+            "days_requested": days_requested
+        }, status=status.HTTP_201_CREATED)
+
+
+class RespondToExtensionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, extension_id):
+        extension_request = get_object_or_404(ExtensionRequest, extension_id=extension_id)
+
+        # Only the book owner can respond
+        if request.user != extension_request.swap.initiator:
+            return Response({"error": "Only the book owner can respond to extension requests"}, status=status.HTTP_403_FORBIDDEN)
+
+        if extension_request.status != 'pending':
+            return Response({"error": "Extension request is no longer pending"}, status=status.HTTP_400_BAD_REQUEST)
+
+        action = request.data.get('action')  # 'approve' or 'deny'
+        response_message = request.data.get('response', '')
+
+        if action == 'approve':
+            extension_request.approve(response_message)
+
+            # Notify the requester
+            notification = Notification.objects.create(
+                user=extension_request.requester,
+                swap=extension_request.swap,
+                type='extension_approved',
+                message=f"Your extension request for '{extension_request.swap.initiator_book.title}' was approved"
+            )
+
+            return Response({
+                "message": "Extension approved successfully",
+                "new_deadline": extension_request.swap.return_deadline.isoformat()
+            }, status=status.HTTP_200_OK)
+
+        elif action == 'deny':
+            extension_request.deny(response_message)
+
+            # Notify the requester
+            notification = Notification.objects.create(
+                user=extension_request.requester,
+                swap=extension_request.swap,
+                type='extension_denied',
+                message=f"Your extension request for '{extension_request.swap.initiator_book.title}' was denied"
+            )
+
+            return Response({
+                "message": "Extension denied",
+                "reason": response_message
+            }, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"error": "Invalid action. Use 'approve' or 'deny'"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class QRVerificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, swap_id):
+        swap = get_object_or_404(Swap, swap_id=swap_id)
+
+        if request.user not in [swap.initiator, swap.receiver]:
+            return Response({"error": "Not part of this swap"}, status=status.HTTP_403_FORBIDDEN)
+
+        if swap.status != 'Accepted':
+            return Response({"error": "Swap must be in Accepted status for QR verification"}, status=status.HTTP_400_BAD_REQUEST)
+
+        qr_data = request.data.get('qr_data')
+        current_location = request.data.get('current_location')  # {latitude, longitude}
+
+        if not qr_data:
+            return Response({"error": "QR data is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Determine which user should be verified
+        other_user = swap.receiver if request.user == swap.initiator else swap.initiator
+
+        # Verify QR code
+        verification_result = qr_manager.verify_qr_code(
+            qr_data=qr_data,
+            expected_swap_id=swap.swap_id,
+            expected_user_id=other_user.user_id,
+            current_location=current_location
+        )
+
+        if not verification_result['success']:
+            return Response({
+                "error": verification_result['error'],
+                "error_code": verification_result['error_code']
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark location as verified for this user
+        if not hasattr(swap, '_verified_users'):
+            swap._verified_users = set()
+        swap._verified_users.add(request.user.user_id)
+
+        # If both users have verified, complete the swap
+        if len(getattr(swap, '_verified_users', set())) >= 2:
+            swap.status = 'Confirmed'
+            swap.location_verified = True
+            swap.save()
+
+            # Create exchange record
+            from .models import Exchange
+            exchange = Exchange.objects.create(
+                swap=swap,
+                exchange_date=timezone.now(),
+                location=swap.meetup_location
+            )
+
+            return Response({
+                "message": "Swap confirmed successfully! Both parties have verified their presence.",
+                "status": "confirmed",
+                "exchange_id": exchange.exchange_id
+            }, status=status.HTTP_200_OK)
+
+        else:
+            return Response({
+                "message": "QR code verified. Waiting for the other party to verify.",
+                "status": "partially_verified"
+            }, status=status.HTTP_200_OK)
