@@ -34,11 +34,10 @@ export function useChat() {
 
   const sendDirectMessage = useCallback(
     async (data) => {
-      const result = await handleApiCall(
+      const result = await handleApiCallWithResult(
         () => api.post(API_ENDPOINTS.SEND_MESSAGE, data),
         setIsLoading,
         setError,
-        'Message sent!',
         'Message send'
       );
       if (result) setMessages((prev) => [...prev, result]);
@@ -137,14 +136,13 @@ export function useChat() {
   const listMessages = useCallback(
     async (filters = {}, page = 1) => {
       const params = new URLSearchParams({ page });
-      if (filters.recipient_id) params.append('receiver_id', filters.recipient_id);
+      if (filters.receiver_id) params.append('receiver_id', filters.receiver_id);
       if (filters.unread) params.append('unread', 'true');
 
-      const result = await handleApiCall(
+      const result = await handleApiCallWithResult(
         () => api.get(`${API_ENDPOINTS.LIST_MESSAGES}?${params.toString()}`),
         setIsLoading,
         setError,
-        null,
         'Fetch messages'
       );
 
