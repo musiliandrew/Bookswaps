@@ -181,11 +181,12 @@ export function useChat() {
 
     notifications.forEach(({ type, data }) => {
       if (type === 'message_received') {
-        listMessages();
+        // Reload messages without causing infinite loop
+        listMessages({}, 1);
         toast.info(`New message from ${data.sender_name}`);
       }
     });
-  }, [notifications, isNotificationsConnected, listMessages]);
+  }, [notifications, isNotificationsConnected]); // Removed listMessages from dependencies
 
   return {
     sendDirectMessage,

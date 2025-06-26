@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { useAuth } from './hooks/useAuth';
 import Navbar from './components/Navbar';
+import ErrorBoundary from './components/Common/ErrorBoundary';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import PasswordResetPage from './pages/Auth/PasswordResetPage';
@@ -38,17 +39,18 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Navbar with fixed positioning - only show when authenticated */}
-      {isAuthenticated && (
-        <div className="fixed top-0 left-0 right-0 z-50 shadow-sm">
-          <Navbar isSmallScreen={isSmallScreen} />
-        </div>
-      )}
+    <ErrorBoundary>
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        {/* Navbar with fixed positioning - only show when authenticated */}
+        {isAuthenticated && (
+          <div className="fixed top-0 left-0 right-0 z-50 shadow-sm">
+            <Navbar isSmallScreen={isSmallScreen} />
+          </div>
+        )}
 
-      {/* Main content with padding to account for navbar */}
-      <main className={`flex-grow ${isAuthenticated ? 'pt-16' : ''}`}>
-        <Routes>
+        {/* Main content with padding to account for navbar */}
+        <main className={`flex-grow ${isAuthenticated ? 'pt-16' : ''}`}>
+          <Routes>
           {/* Public Routes (Unauthenticated Users) */}
           <Route
             path="/"
@@ -172,7 +174,8 @@ function App() {
         bodyClassName="bookish-toast-body"
         progressClassName="bookish-toast-progress"
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
 

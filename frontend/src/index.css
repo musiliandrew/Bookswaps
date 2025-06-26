@@ -3,12 +3,14 @@
 
 :root {
   --primary: #456A76;
-  --secondary: #2F2F2F;
+  --secondary: #F0EAD0;
+  --background: #B8C1B0;
   --accent: #D4A017;
-  --text: #2F2F2F;
-  --background: #F5F5F5;
-  --error: #E57373;
-  --success: #81C784;
+  --text: #6B7280;
+  --error: #9B2D30;
+  --success: #059669;
+  --dark-primary: #334155;
+  --light-accent: #FEF3C7;
 }
 
 /* General Styles */
@@ -31,7 +33,7 @@
 
 /* Gradient Background */
 .bookish-gradient {
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--background) 100%);
+  background: linear-gradient(135deg, var(--secondary) 0%, rgba(240, 234, 208, 0.9) 50%, var(--light-accent) 100%);
 }
 
 /* Card Glass Effect */

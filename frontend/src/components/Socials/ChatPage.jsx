@@ -44,6 +44,8 @@ const ChatPage = () => {
 
   // Load conversations on mount
   useEffect(() => {
+    if (!currentUser) return;
+
     console.log('ChatPage useEffect triggered, loading conversations...');
     const loadConversations = async () => {
       try {
@@ -51,8 +53,38 @@ const ChatPage = () => {
         const result = await listMessages({}, 1);
         console.log('listMessages result:', result);
         if (result && result.results) {
-          setConversations(result.results);
-          console.log('Conversations set:', result.results);
+          // Group messages by conversation partner
+          const conversationMap = new Map();
+
+          result.results.forEach(message => {
+            const partnerId = message.sender?.user_id === currentUser.user_id
+              ? message.receiver?.user_id
+              : message.sender?.user_id;
+
+            const partner = message.sender?.user_id === currentUser.user_id
+              ? message.receiver
+              : message.sender;
+
+            if (!partnerId || !partner) return;
+
+            if (!conversationMap.has(partnerId)) {
+              conversationMap.set(partnerId, {
+                partner,
+                latest_message: message,
+                unread_count: 0,
+                current_user_id: currentUser.user_id
+              });
+            } else {
+              const existing = conversationMap.get(partnerId);
+              if (new Date(message.created_at) > new Date(existing.latest_message.created_at)) {
+                existing.latest_message = message;
+              }
+            }
+          });
+
+          const conversationsList = Array.from(conversationMap.values());
+          setConversations(conversationsList);
+          console.log('Conversations set:', conversationsList);
         }
       } catch (error) {
         console.error('Failed to load conversations:', error);
@@ -61,7 +93,7 @@ const ChatPage = () => {
     };
 
     loadConversations();
-  }, [listMessages]);
+  }, [currentUser]); // Changed dependency to currentUser instead of listMessages
 
   // Load messages for selected conversation
   useEffect(() => {
@@ -170,11 +202,11 @@ const ChatPage = () => {
   console.log('ChatPage rendering with conversations:', conversations);
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] bg-gradient-to-br from-gray-50 to-white flex">
+    <div className="min-h-[calc(100vh-12rem)] bg-gradient-to-br from-gray-50 to-white flex rounded-lg overflow-hidden shadow-lg">
       {/* Conversations Sidebar - Hidden on mobile when conversation is selected */}
       <div className={`${
         isMobile && selectedConversation ? 'hidden' : 'flex'
-      } w-full lg:w-1/3 xl:w-1/4 border-r border-gray-200 bg-white flex-col`}>
+      } w-full lg:w-1/3 xl:w-1/4 border-r border-gray-200 bg-white flex-col min-h-full`}>
 
         {/* Header */}
         <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary)]/90 text-white p-4">

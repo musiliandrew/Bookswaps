@@ -173,7 +173,7 @@ export function useAuth() {
         return null;
       }
     },
-    [profile, refreshToken, error]
+    [refreshToken] // Removed profile and error from dependencies to prevent infinite loops
   );
 
   const debouncedGetProfile = useMemo(

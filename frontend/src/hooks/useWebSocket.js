@@ -307,10 +307,14 @@ export function useWebSocket(userId = null, type = 'notification') {
   useEffect(() => {
     if (isAuthenticated && (userId || profile?.user_id)) {
       // Small delay to prevent immediate multiple connections
-      const timer = setTimeout(connectWebSocket, 100);
+      const timer = setTimeout(() => {
+        if (mountedRef.current) {
+          connectWebSocket();
+        }
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [connectWebSocket, isAuthenticated, userId, profile?.user_id]);
+  }, [isAuthenticated, userId, profile?.user_id]); // Removed connectWebSocket from dependencies
 
   // Cleanup on unmount
   useEffect(() => {

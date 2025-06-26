@@ -85,7 +85,7 @@ const SocialsPage = () => {
       </nav>
 
       {/* Main Content with Enhanced Animations */}
-      <div className="pt-20 pb-32">
+      <div className="pt-6 pb-32 px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -110,7 +110,7 @@ const SocialsPage = () => {
               stiffness: 300,
               damping: 30
             }}
-            className="container mx-auto px-4"
+            className="w-full max-w-7xl mx-auto"
           >
             {activeTab === 'discussions' ? <EnhancedDiscussionsPage /> : <ChatPage />}
           </motion.div>
