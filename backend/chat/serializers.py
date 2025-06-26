@@ -101,26 +101,8 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_read_at_formatted(self, obj):
         return obj.read_at.strftime('%H:%M') if obj.read_at else None
 
-
-class MediaMessageSerializer(serializers.ModelSerializer):
-    """Serializer for media message uploads"""
-    receiver_id = serializers.UUIDField(write_only=True)
-    media_file = serializers.FileField(write_only=True)
-
-    class Meta:
-        model = Chats
-        fields = [
-            'receiver_id', 'message_type', 'content', 'media_file'
-        ]
-
-    def validate_message_type(self, value):
-        allowed_types = ['IMAGE', 'AUDIO', 'VIDEO', 'VOICE_NOTE', 'FILE']
-        if value not in allowed_types:
-            raise serializers.ValidationError(f"Invalid message type. Must be one of: {allowed_types}")
-        return value
-
     def validate_content(self, value):
-        if not value.strip():
+        if not value or not value.strip():
             raise serializers.ValidationError("Message content cannot be empty.")
         return bleach.clean(
             markdown(value),
@@ -140,20 +122,6 @@ class MediaMessageSerializer(serializers.ModelSerializer):
         if value:
             if not Book.objects.filter(book_id=value).exists():
                 raise serializers.ValidationError("Invalid book ID.")
-            receiver_id = self.initial_data.get('receiver_id')
-            if receiver_id:
-                sender = self.context['sender']
-                receiver = CustomUser.objects.get(user_id=receiver_id)
-                if not Exchange.objects.filter(
-                    swap__initiator_book__book_id=value,
-                    swap__initiator__in=[sender, receiver]
-                ).exists() and not Exchange.objects.filter(
-                    swap__receiver_book__book_id=value,
-                    swap__receiver__in=[sender, receiver]
-                ).exists():
-                    raise serializers.ValidationError(
-                        "Book must be part of a swap involving sender or receiver."
-                    )
         return value
 
     def create(self, validated_data):
@@ -166,9 +134,11 @@ class MediaMessageSerializer(serializers.ModelSerializer):
             sender=sender,
             receiver=receiver,
             book=book,
-            status='UNREAD',
+            status='SENT',
             **validated_data
         )
+
+        # Create notification
         notification = Notification.objects.create(
             user=receiver,
             type='message_received',
@@ -176,6 +146,7 @@ class MediaMessageSerializer(serializers.ModelSerializer):
             content_type='chat',
             content_id=chat.chat_id
         )
+
         # Send notification via WebSocket
         send_notification_to_user(
             receiver.user_id,
@@ -194,6 +165,73 @@ class MediaMessageSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get('content', instance.content)
         instance.save()
         return instance
+
+
+class MediaMessageSerializer(serializers.ModelSerializer):
+    """Serializer for media message uploads"""
+    receiver_id = serializers.UUIDField(write_only=True)
+    media_file = serializers.FileField(write_only=True)
+
+    class Meta:
+        model = Chats
+        fields = [
+            'receiver_id', 'message_type', 'content', 'media_file'
+        ]
+
+    def validate_message_type(self, value):
+        allowed_types = ['IMAGE', 'AUDIO', 'VIDEO', 'VOICE_NOTE', 'FILE']
+        if value not in allowed_types:
+            raise serializers.ValidationError(f"Invalid message type. Must be one of: {allowed_types}")
+        return value
+
+    def validate_media_file(self, value):
+        # Add file size and type validation
+        max_size = 10 * 1024 * 1024  # 10MB
+        if value.size > max_size:
+            raise serializers.ValidationError("File size cannot exceed 10MB.")
+        return value
+
+    def create(self, validated_data):
+        sender = self.context['sender']
+        receiver = CustomUser.objects.get(user_id=validated_data.pop('receiver_id'))
+        media_file = validated_data.pop('media_file')
+
+        # Handle file upload to storage (MinIO/S3)
+        # This would typically involve uploading the file and getting the URL
+        # For now, we'll create a placeholder
+
+        chat = Chats.objects.create(
+            sender=sender,
+            receiver=receiver,
+            status='SENT',
+            media_url=f"media/{media_file.name}",  # Placeholder
+            media_filename=media_file.name,
+            media_size=media_file.size,
+            **validated_data
+        )
+
+        # Create notification
+        notification = Notification.objects.create(
+            user=receiver,
+            type='message_received',
+            message=f"{sender.username} sent you a media message.",
+            content_type='chat',
+            content_id=chat.chat_id
+        )
+
+        # Send notification via WebSocket
+        send_notification_to_user(
+            receiver.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"{sender.username} sent you a media message.",
+                "type": "message_received",
+                "content_type": "chat",
+                "content_id": str(chat.chat_id),
+                "follow_id": None
+            }
+        )
+        return chat
     
 class ChatReadStatusSerializer(serializers.ModelSerializer):
     class Meta:
