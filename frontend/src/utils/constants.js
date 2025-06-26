@@ -86,6 +86,17 @@ export const API_ENDPOINTS = {
   GET_USER_LIBRARY: (userId) => `/users/${userId}/library/`,
   GET_MY_STATS: '/users/me/stats/',
   GET_USER_STATS: (userId) => `/users/${userId}/stats/`,
+
+  // Chat endpoints
+  SEND_MESSAGE: '/chat/messages/send/',
+  LIST_MESSAGES: '/chat/messages/',
+  EDIT_MESSAGE: (chatId) => `/chat/messages/${chatId}/edit/`,
+  DELETE_MESSAGE: (chatId) => `/chat/messages/${chatId}/delete/`,
+  MARK_READ: (chatId) => `/chat/messages/${chatId}/read/`,
+  ADD_REACTION: (chatId) => `/chat/messages/${chatId}/react/`,
+  LIST_REACTIONS: (chatId) => `/chat/messages/${chatId}/reactions/`,
+  SEND_MEDIA_MESSAGE: '/chat/messages/send-media/',
+  TYPING_STATUS: '/chat/typing/',
 };
 
 // WebSocket endpoints

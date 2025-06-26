@@ -11,9 +11,10 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
-const MessageBubble = ({ message, isOwn, isGroup = false }) => {
+const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
 
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -22,14 +23,25 @@ const MessageBubble = ({ message, isOwn, isGroup = false }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'SENT':
-        return <CheckIcon className="w-4 h-4 text-gray-400" />;
+        return <CheckIcon className="w-3 h-3 text-gray-400" />;
       case 'DELIVERED':
-        return <CheckCircleIcon className="w-4 h-4 text-gray-400" />;
+        return <CheckCircleIcon className="w-3 h-3 text-gray-400" />;
       case 'READ':
-        return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
+        return <CheckCircleIcon className="w-3 h-3 text-[var(--accent)]" />;
       default:
         return null;
     }
+  };
+
+  const getMessageBgColor = () => {
+    if (isOwn) {
+      return 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary)]/90 text-white';
+    }
+    return 'bg-white text-[var(--text)] shadow-sm border border-gray-100';
+  };
+
+  const getMessageAlignment = () => {
+    return isOwn ? 'justify-end' : 'justify-start';
   };
 
   const renderMediaContent = () => {
@@ -131,37 +143,106 @@ const MessageBubble = ({ message, isOwn, isGroup = false }) => {
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}
+        transition={{ duration: 0.2 }}
+        className={`flex ${getMessageAlignment()} mb-3 group`}
       >
         <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
+          {/* Group chat sender name */}
           {isGroup && !isOwn && (
-            <p className="text-xs text-gray-500 mb-1 px-3">
+            <p className="text-xs text-gray-500 mb-1 px-3 font-medium">
               {message.user?.username || message.sender?.username}
             </p>
           )}
-          
+
+          {/* Message bubble */}
           <div
-            className={`rounded-2xl px-4 py-3 ${
-              isOwn
-                ? 'bg-[var(--primary)] text-white rounded-br-md'
-                : 'bg-white text-[var(--text)] rounded-bl-md shadow-sm'
-            }`}
+            className={`rounded-2xl px-4 py-2 relative ${
+              isOwn ? 'rounded-br-md' : 'rounded-bl-md'
+            } ${getMessageBgColor()}`}
+            style={{
+              wordBreak: 'break-word',
+              hyphens: 'auto'
+            }}
           >
+            {/* Book reference indicator */}
+            {message.book && (
+              <div className={`mb-2 p-2 rounded-lg ${
+                isOwn ? 'bg-white/20' : 'bg-gray-50'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center">
+                    <span className="text-amber-600 text-xs">📚</span>
+                  </div>
+                  <div>
+                    <p className={`text-xs font-medium ${
+                      isOwn ? 'text-white/90' : 'text-gray-700'
+                    }`}>
+                      {message.book.title}
+                    </p>
+                    <p className={`text-xs ${
+                      isOwn ? 'text-white/70' : 'text-gray-500'
+                    }`}>
+                      by {message.book.author}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Message content */}
             {renderMediaContent()}
-            
-            <div className={`flex items-center justify-between mt-2 ${isOwn ? 'text-white/70' : 'text-gray-500'}`}>
+
+            {/* Message reactions */}
+            {message.reactions && message.reactions.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {message.reactions.map((reaction, index) => (
+                  <span
+                    key={index}
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                      isOwn ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {reaction.reaction_type} {reaction.count > 1 && reaction.count}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Time and status */}
+            <div className={`flex items-center justify-end mt-1 space-x-1 ${
+              isOwn ? 'text-white/60' : 'text-gray-400'
+            }`}>
               <span className="text-xs">
                 {formatTime(message.sent_at || message.created_at)}
               </span>
               {isOwn && (
-                <div className="ml-2">
+                <div className="flex items-center">
                   {getStatusIcon(message.status)}
                 </div>
               )}
             </div>
           </div>
+
+          {/* Profile picture for received messages */}
+          {!isOwn && !isGroup && partner && (
+            <div className="w-6 h-6 mt-1">
+              {partner.profile_picture ? (
+                <img
+                  src={partner.profile_picture}
+                  alt={partner.username}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                  <span className="text-white text-xs font-semibold">
+                    {partner.first_name?.[0] || partner.username[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
 
