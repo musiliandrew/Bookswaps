@@ -30,6 +30,7 @@ const EnhancedPostCard = ({
   showFullContent = false 
 }) => {
   const [showSpoiler, setShowSpoiler] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const getPostTypeColor = (type) => {
     switch (type) {

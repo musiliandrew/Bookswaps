@@ -271,7 +271,35 @@ export function useAuth() {
 
     window.addEventListener('auth:error', handleAuthError);
     window.addEventListener('auth:logout', handleAuthLogout);
-    checkAuthStatus();
+
+    // Check auth status on mount
+    const token = localStorage.getItem('access_token');
+    const cachedProfile = localStorage.getItem('user_profile');
+
+    if (token) {
+      // If we have a token, check if we also have cached profile
+      if (cachedProfile && !profile) {
+        try {
+          const parsedProfile = JSON.parse(cachedProfile);
+          setProfile(parsedProfile);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error parsing cached profile:', error);
+          // If cached profile is corrupted, fetch fresh
+          getProfile();
+        }
+      } else if (!profile) {
+        // No cached profile, fetch fresh
+        getProfile();
+      } else {
+        setIsLoading(false);
+      }
+    } else {
+      // No token, user is not authenticated
+      setIsLoading(false);
+      setIsAuthenticated(false);
+    }
 
     return () => {
       window.removeEventListener('auth:error', handleAuthError);
@@ -279,7 +307,7 @@ export function useAuth() {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       debouncedGetProfile.cancel();
     };
-  }, [checkAuthStatus, clearAuthState, debouncedGetProfile]);
+  }, []); // Empty dependency array to run only once
 
   const login = useCallback(
     async (credentials) => {

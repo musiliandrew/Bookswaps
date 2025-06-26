@@ -27,6 +27,7 @@ const ChatPage = () => {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [loading, setLoading] = useState(true);
 
   // Chat hooks
   const {
@@ -44,15 +45,20 @@ const ChatPage = () => {
 
   // Load conversations on mount
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping conversation load');
+      return;
+    }
 
     console.log('ChatPage useEffect triggered, loading conversations...');
     const loadConversations = async () => {
       try {
+        setLoading(true);
         console.log('Calling listMessages...');
         const result = await listMessages({}, 1);
         console.log('listMessages result:', result);
-        if (result && result.results) {
+
+        if (result && result.results && result.results.length > 0) {
           // Group messages by conversation partner
           const conversationMap = new Map();
 
@@ -85,15 +91,22 @@ const ChatPage = () => {
           const conversationsList = Array.from(conversationMap.values());
           setConversations(conversationsList);
           console.log('Conversations set:', conversationsList);
+        } else {
+          // No conversations found
+          console.log('No conversations found');
+          setConversations([]);
         }
       } catch (error) {
         console.error('Failed to load conversations:', error);
+        setConversations([]); // Set empty array on error
         toast.error('Failed to load conversations');
+      } finally {
+        setLoading(false);
       }
     };
 
     loadConversations();
-  }, [currentUser]); // Changed dependency to currentUser instead of listMessages
+  }, [currentUser?.user_id]); // Use specific user_id to prevent unnecessary reloads
 
   // Load messages for selected conversation
   useEffect(() => {
@@ -267,7 +280,7 @@ const ChatPage = () => {
               conversations={filteredConversations}
               selectedConversation={selectedConversation}
               onSelectConversation={handleSelectConversation}
-              isLoading={isChatLoading}
+              isLoading={loading || isChatLoading}
             />
           ) : (
             <div className="p-4">
