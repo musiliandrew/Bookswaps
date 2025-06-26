@@ -88,7 +88,7 @@ const ConversationList = ({ conversations, selectedConversation, onSelectConvers
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
                   <span className="text-white font-semibold text-lg">
-                    {conversation.partner.first_name?.[0] || conversation.partner.username[0].toUpperCase()}
+                    {conversation.partner.username[0].toUpperCase()}
                   </span>
                 </div>
               )}
@@ -101,9 +101,7 @@ const ConversationList = ({ conversations, selectedConversation, onSelectConvers
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-semibold text-gray-900 truncate">
-                  {conversation.partner.first_name && conversation.partner.last_name
-                    ? `${conversation.partner.first_name} ${conversation.partner.last_name}`
-                    : conversation.partner.username}
+                  {conversation.partner.username}
                 </h3>
                 <div className="flex items-center space-x-1">
                   {getStatusIcon(conversation.latest_message, conversation.current_user_id)}

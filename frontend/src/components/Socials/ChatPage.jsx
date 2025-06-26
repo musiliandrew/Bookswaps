@@ -15,6 +15,7 @@ import MediaUploadModal from './Chat/MediaUploadModal';
 import VoiceRecorder from './Chat/VoiceRecorder';
 
 const ChatPage = () => {
+  console.log('ChatPage component is rendering');
   const { user: currentUser } = useAuth();
 
   // State management
@@ -43,11 +44,15 @@ const ChatPage = () => {
 
   // Load conversations on mount
   useEffect(() => {
+    console.log('ChatPage useEffect triggered, loading conversations...');
     const loadConversations = async () => {
       try {
+        console.log('Calling listMessages...');
         const result = await listMessages({}, 1);
+        console.log('listMessages result:', result);
         if (result && result.results) {
           setConversations(result.results);
+          console.log('Conversations set:', result.results);
         }
       } catch (error) {
         console.error('Failed to load conversations:', error);
@@ -158,12 +163,14 @@ const ChatPage = () => {
   // Filter conversations based on search
   const filteredConversations = conversations.filter(conv => {
     if (!searchQuery) return true;
-    const partnerName = `${conv.partner.first_name || ''} ${conv.partner.last_name || ''} ${conv.partner.username}`.toLowerCase();
+    const partnerName = conv.partner.username.toLowerCase();
     return partnerName.includes(searchQuery.toLowerCase());
   });
 
+  console.log('ChatPage rendering with conversations:', conversations);
+
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-white flex">
+    <div className="min-h-[calc(100vh-8rem)] bg-gradient-to-br from-gray-50 to-white flex">
       {/* Conversations Sidebar - Hidden on mobile when conversation is selected */}
       <div className={`${
         isMobile && selectedConversation ? 'hidden' : 'flex'

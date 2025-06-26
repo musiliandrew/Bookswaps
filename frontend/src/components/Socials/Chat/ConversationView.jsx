@@ -126,9 +126,7 @@ const ConversationView = ({
           
           <div>
             <h3 className="font-semibold text-gray-900">
-              {conversation.partner.first_name && conversation.partner.last_name
-                ? `${conversation.partner.first_name} ${conversation.partner.last_name}`
-                : conversation.partner.username}
+              {conversation.partner.username}
             </h3>
             <p className="text-xs text-gray-500">
               {formatLastSeen(conversation.partner.last_seen)}

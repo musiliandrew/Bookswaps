@@ -125,7 +125,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "wsgi.application"
+WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     'default': {

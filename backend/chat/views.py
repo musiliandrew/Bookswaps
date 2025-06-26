@@ -140,9 +140,7 @@ class MessageListView(APIView):
                         'partner': {
                             'user_id': str(partner.user_id),
                             'username': partner.username,
-                            'first_name': partner.first_name,
-                            'last_name': partner.last_name,
-                            'profile_picture': partner.profile_picture.url if partner.profile_picture else None,
+                            'profile_picture': partner.profile_picture if partner.profile_picture else None,
                         },
                         'latest_message': ChatSerializer(latest_message).data,
                         'unread_count': Chats.objects.filter(
