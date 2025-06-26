@@ -14,7 +14,6 @@ import {
 const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
-  const [showReactions, setShowReactions] = useState(false);
 
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

@@ -143,6 +143,8 @@ export function useLibrary() {
       if (result) {
         setUserLibrary((prev) => [result, ...prev]);
         toast.success('📚 Book added successfully to your library!');
+        setBook(result.data || result);
+        await getUserLibrary();
       }
       return result;
 
@@ -171,11 +173,6 @@ export function useLibrary() {
     } finally {
       setIsLoading(false);
     }
-    if (result) {
-      setBook(result.data || result);
-      await getUserLibrary();
-    }
-    return result;
   }, [getUserLibrary]);
 
   const updateAvailability = useCallback(async (bookId, data) => {

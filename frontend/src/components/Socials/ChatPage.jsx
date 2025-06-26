@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
-import { useSocieties } from '../../hooks/useSocieties';
 import { useAuth } from '../../hooks/useAuth';
-import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   ChatBubbleLeftRightIcon,
   UsersIcon,
@@ -17,7 +15,6 @@ import MediaUploadModal from './Chat/MediaUploadModal';
 import VoiceRecorder from './Chat/VoiceRecorder';
 
 const ChatPage = () => {
-  const { chatId, societyId } = useParams();
   const { user: currentUser } = useAuth();
 
   // State management
@@ -34,20 +31,8 @@ const ChatPage = () => {
   const {
     sendDirectMessage,
     listMessages,
-    messages,
     isLoading: isChatLoading,
-    pagination: chatPagination,
   } = useChat();
-
-  const {
-    listSocieties,
-    getSocietyMessages,
-    sendSocietyMessage,
-    societies,
-    societyMessages,
-    isLoading: isSocietiesLoading,
-    pagination: societiesPagination,
-  } = useSocieties();
 
   // Effects for responsive design
   useEffect(() => {
@@ -125,6 +110,49 @@ const ChatPage = () => {
   // Handle back navigation on mobile
   const handleBack = () => {
     setSelectedConversation(null);
+  };
+
+  // Handle media upload (images, voice notes, etc.)
+  const handleMediaUpload = async (mediaData, messageType = 'IMAGE') => {
+    try {
+      if (!selectedConversation) {
+        toast.error('Please select a conversation first');
+        return;
+      }
+
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      if (mediaData instanceof Blob || mediaData instanceof File) {
+        formData.append('file', mediaData);
+        formData.append('message_type', messageType);
+        formData.append('receiver_id', selectedConversation.partner.user_id);
+      } else {
+        // Handle other types of media data
+        formData.append('content', mediaData);
+        formData.append('message_type', messageType);
+        formData.append('receiver_id', selectedConversation.partner.user_id);
+      }
+
+      await sendDirectMessage(formData);
+
+      // Reload messages after sending
+      const result = await listMessages({
+        receiver_id: selectedConversation.partner.user_id
+      }, 1);
+      if (result && result.results) {
+        setConversationMessages(result.results);
+      }
+
+      toast.success('Media sent successfully!');
+
+      // Close modals
+      setShowMediaModal(false);
+      setShowVoiceRecorder(false);
+    } catch (error) {
+      console.error('Failed to send media:', error);
+      toast.error('Failed to send media');
+    }
   };
 
   // Filter conversations based on search

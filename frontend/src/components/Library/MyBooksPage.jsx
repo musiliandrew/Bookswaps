@@ -114,7 +114,7 @@ const MyBooksPage = () => {
     }
   };
 
-  const handleViewExistingBook = (bookId) => {
+  const handleViewExistingBook = () => {
     setIsDuplicateModalOpen(false);
     // Navigate to book details or implement view logic
     toast.info('Feature coming soon: View existing book details');

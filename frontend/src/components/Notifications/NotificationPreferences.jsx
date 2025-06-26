@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { 
@@ -140,7 +140,7 @@ const NotificationPreferences = () => {
       // TODO: Implement API call to save preferences
       // await api.post('/api/swaps/notifications/preferences/', preferences);
       toast.success('Notification preferences saved!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to save preferences');
     } finally {
       setIsLoading(false);
