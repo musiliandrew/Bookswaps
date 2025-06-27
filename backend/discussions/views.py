@@ -38,6 +38,13 @@ class CreateDiscussionView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         discussion = serializer.save()
+
+        # Clear cache to show new posts immediately
+        user = self.request.user
+        # Clear the main post list cache for this user
+        main_cache_key = f"post_list_{user.user_id if user.is_authenticated else 'anon'}_<QueryDict: {{'page': ['1']}}>"
+        cache.delete(main_cache_key)
+
         notification = Notification.objects.create(
             user=self.request.user,
             type='discussion_created',
@@ -130,7 +137,7 @@ class PostListView(generics.ListAPIView):
             queryset = queryset.order_by('-created_at')
 
         print(f"Queryset count: {queryset.count()}")
-        cache.set(cache_key, queryset, timeout=300)  # 5 minutes
+        cache.set(cache_key, queryset, timeout=60)  # Reduced to 1 minute for faster updates
         return queryset
     
 class PostDetailView(generics.RetrieveAPIView):
@@ -669,6 +676,70 @@ class LeaveSocietyView(generics.DestroyAPIView):
                 "follow_id": None
             }
         )
+
+class SocietyListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = SocietySerializer
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        queryset = Society.objects.filter(status='ACTIVE').select_related('creator')
+
+        # Apply filters
+        focus_type = self.request.GET.get('focus_type')
+        focus_id = self.request.GET.get('focus_id')
+        my_societies = self.request.GET.get('my_societies') == 'true'
+        search = self.request.GET.get('search')
+
+        if focus_type:
+            queryset = queryset.filter(focus_type=focus_type)
+        if focus_id:
+            queryset = queryset.filter(focus_id=focus_id)
+        if my_societies and self.request.user.is_authenticated:
+            user_society_ids = SocietyMember.objects.filter(
+                user=self.request.user, status='ACTIVE'
+            ).values_list('society_id', flat=True)
+            queryset = queryset.filter(society_id__in=user_society_ids)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
+
+        # Annotate with member count
+        queryset = queryset.annotate(member_count=Count('members'))
+        return queryset.order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # Add is_member field for authenticated users
+            if request.user.is_authenticated:
+                for item in serializer.data:
+                    item['is_member'] = SocietyMember.objects.filter(
+                        society_id=item['society_id'],
+                        user=request.user,
+                        status='ACTIVE'
+                    ).exists()
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        # Add is_member field for authenticated users
+        if request.user.is_authenticated:
+            for item in serializer.data:
+                item['is_member'] = SocietyMember.objects.filter(
+                    society_id=item['society_id'],
+                    user=request.user,
+                    status='ACTIVE'
+                ).exists()
+
+        return Response({
+            'results': serializer.data,
+            'count': queryset.count()
+        })
+
 
 class CreateSocietyEventView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]

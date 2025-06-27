@@ -45,7 +45,10 @@ export function useDiscussions() {
         'Discussion created!',
         'Create discussion'
       );
-      if (result) setPosts((prev) => [...prev, result]);
+      if (result) {
+        // Add the new post to the beginning of the list
+        setPosts((prev) => [result, ...prev]);
+      }
       return result;
     },
     []

@@ -268,66 +268,326 @@ class TypingStatusView(APIView):
         return Response({"message": "Typing status updated."}, status=status.HTTP_200_OK)
 
 
-# Society/Group Chat Views (placeholder implementations)
+# Society/Group Chat Views
 class CreateSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Implementation for creating societies
-        return Response({"message": "Society creation not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        serializer = SocietyCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            society = serializer.save(creator=request.user)
+            # Automatically make creator an admin member
+            SocietyMember.objects.create(
+                society=society,
+                user=request.user,
+                role='admin',
+                status='ACTIVE'
+            )
+            # Create notification
+            notification = Notification.objects.create(
+                user=request.user,
+                type='society_created',
+                message=f"You created a new society: {society.name}",
+                content_type='society',
+                content_id=society.society_id
+            )
+            # Send WebSocket notification
+            send_notification_to_user(
+                request.user.user_id,
+                {
+                    "notification_id": str(notification.notification_id),
+                    "message": f"You created a new society: {society.name}",
+                    "type": "society_created",
+                    "content_type": "society",
+                    "content_id": str(society.society_id),
+                    "follow_id": None
+                }
+            )
+            return Response(SocietySerializer(society).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class JoinSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"message": "Join society not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def post(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        # Check if user is already a member
+        if SocietyMember.objects.filter(society=society, user=request.user).exists():
+            return Response({"error": "You are already a member of this society."},
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if society is private (for future implementation)
+        if society.visibility == 'private':
+            return Response({"error": "Cannot join private society without invitation."},
+                          status=status.HTTP_403_FORBIDDEN)
+
+        # Create membership
+        member = SocietyMember.objects.create(
+            society=society,
+            user=request.user,
+            role='member',
+            status='ACTIVE'
+        )
+
+        # Create notification
+        notification = Notification.objects.create(
+            user=request.user,
+            type='society_joined',
+            message=f"You joined the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+
+        # Send WebSocket notification
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You joined the society: {society.name}",
+                "type": "society_joined",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
+
+        return Response({"message": "Successfully joined society."}, status=status.HTTP_200_OK)
 
 
 class LeaveSocietyView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"message": "Leave society not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def post(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+            member = SocietyMember.objects.get(society=society, user=request.user)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+        except SocietyMember.DoesNotExist:
+            return Response({"error": "You are not a member of this society."},
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if user is the only admin
+        if (member.role == 'admin' and
+            SocietyMember.objects.filter(society=society, role='admin', status='ACTIVE').count() == 1):
+            return Response({"error": "Cannot leave as the only admin. Transfer admin role first."},
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove membership
+        member.delete()
+
+        # Create notification
+        notification = Notification.objects.create(
+            user=request.user,
+            type='society_left',
+            message=f"You left the society: {society.name}",
+            content_type='society',
+            content_id=society.society_id
+        )
+
+        # Send WebSocket notification
+        send_notification_to_user(
+            request.user.user_id,
+            {
+                "notification_id": str(notification.notification_id),
+                "message": f"You left the society: {society.name}",
+                "type": "society_left",
+                "content_type": "society",
+                "content_id": str(society.society_id),
+                "follow_id": None
+            }
+        )
+
+        return Response({"message": "Successfully left society."}, status=status.HTTP_200_OK)
 
 
 class SocietyListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({"results": [], "count": 0})
+        # Get query parameters
+        focus_type = request.GET.get('focus_type')
+        focus_id = request.GET.get('focus_id')
+        my_societies = request.GET.get('my_societies') == 'true'
+        search = request.GET.get('search')
+
+        # Base queryset
+        queryset = Society.objects.filter(status='ACTIVE')
+
+        # Apply filters
+        if focus_type:
+            queryset = queryset.filter(focus_type=focus_type)
+        if focus_id:
+            queryset = queryset.filter(focus_id=focus_id)
+        if my_societies:
+            user_society_ids = SocietyMember.objects.filter(
+                user=request.user, status='ACTIVE'
+            ).values_list('society_id', flat=True)
+            queryset = queryset.filter(society_id__in=user_society_ids)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
+
+        # Add member count and user membership status
+        societies = []
+        for society in queryset.select_related('creator'):
+            society_data = SocietySerializer(society).data
+            society_data['member_count'] = SocietyMember.objects.filter(
+                society=society, status='ACTIVE'
+            ).count()
+            society_data['is_member'] = SocietyMember.objects.filter(
+                society=society, user=request.user, status='ACTIVE'
+            ).exists()
+            societies.append(society_data)
+
+        return Response({
+            "results": societies,
+            "count": len(societies)
+        })
 
 
 class SendSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"message": "Society messaging not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def post(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        # Check if user is a member
+        if not SocietyMember.objects.filter(
+            society=society, user=request.user, status='ACTIVE'
+        ).exists():
+            return Response({"error": "You must be a member to send messages."},
+                          status=status.HTTP_403_FORBIDDEN)
+
+        # Create message
+        serializer = SocietyMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            message = serializer.save(society=society, user=request.user)
+            return Response(SocietyMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EditSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request):
-        return Response({"message": "Edit society message not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def patch(self, request, society_id, message_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+            message = SocietyMessage.objects.get(message_id=message_id, society=society)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+        except SocietyMessage.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        # Check if user owns the message or is admin
+        if (message.user != request.user and
+            not SocietyMember.objects.filter(
+                society=society, user=request.user, role='admin', status='ACTIVE'
+            ).exists()):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = SocietyMessageSerializer(message, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DeleteSocietyMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
-        return Response({"message": "Delete society message not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def delete(self, request, society_id, message_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+            message = SocietyMessage.objects.get(message_id=message_id, society=society)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+        except SocietyMessage.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        # Check if user owns the message or is admin
+        if (message.user != request.user and
+            not SocietyMember.objects.filter(
+                society=society, user=request.user, role='admin', status='ACTIVE'
+            ).exists()):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        message.delete()
+        return Response({"message": "Message deleted successfully."}, status=status.HTTP_200_OK)
 
 
 class SocietyMessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        return Response({"results": [], "count": 0})
+    def get(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        # Check if user is a member
+        if not SocietyMember.objects.filter(
+            society=society, user=request.user, status='ACTIVE'
+        ).exists():
+            return Response({"error": "You must be a member to view messages."},
+                          status=status.HTTP_403_FORBIDDEN)
+
+        # Get messages with pagination
+        messages = SocietyMessage.objects.filter(
+            society=society, status='ACTIVE'
+        ).select_related('user', 'book').prefetch_related('reactions').order_by('-created_at')
+
+        # Simple pagination
+        page = int(request.GET.get('page', 1))
+        page_size = 20
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        paginated_messages = messages[start:end]
+        serialized_messages = SocietyMessageSerializer(paginated_messages, many=True).data
+
+        return Response({
+            "results": serialized_messages,
+            "count": messages.count(),
+            "next": f"?page={page + 1}" if messages.count() > end else None,
+            "previous": f"?page={page - 1}" if page > 1 else None
+        })
 
 
 class PinMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"message": "Pin message not implemented yet."}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def post(self, request, society_id, message_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+            message = SocietyMessage.objects.get(message_id=message_id, society=society)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+        except SocietyMessage.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        # Check if user is admin
+        if not SocietyMember.objects.filter(
+            society=society, user=request.user, role='admin', status='ACTIVE'
+        ).exists():
+            return Response({"error": "Only admins can pin messages."},
+                          status=status.HTTP_403_FORBIDDEN)
+
+        # Toggle pin status
+        message.is_pinned = not message.is_pinned
+        message.save()
+
+        action = "pinned" if message.is_pinned else "unpinned"
+        return Response({
+            "message": f"Message {action} successfully.",
+            "is_pinned": message.is_pinned
+        })

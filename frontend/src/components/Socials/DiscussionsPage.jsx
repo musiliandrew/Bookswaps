@@ -37,6 +37,7 @@ const DiscussionsPage = () => {
   } = useDiscussions();
   const {
     listSocieties,
+    createSociety,
     joinSociety,
     leaveSociety,
     createSocietyEvent,
@@ -286,6 +287,7 @@ const DiscussionsPage = () => {
             <SocietyList
               societies={societies}
               isSocietiesLoading={isSocietiesLoading}
+              createSociety={createSociety}
               joinSociety={joinSociety}
               leaveSociety={leaveSociety}
               listSocieties={listSocieties}

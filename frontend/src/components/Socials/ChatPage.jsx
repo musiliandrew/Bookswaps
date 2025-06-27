@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
+import { useSocieties } from '../../hooks/useSocieties';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { AnimatePresence } from 'framer-motion';
@@ -13,6 +14,7 @@ import ConversationList from './Chat/ConversationList';
 import ConversationView from './Chat/ConversationView';
 import MediaUploadModal from './Chat/MediaUploadModal';
 import VoiceRecorder from './Chat/VoiceRecorder';
+import SocietyList from './Chat/SocietyList';
 
 const ChatPage = () => {
   console.log('ChatPage component is rendering');
@@ -36,6 +38,14 @@ const ChatPage = () => {
     isLoading: isChatLoading,
   } = useChat();
 
+  // Society hooks
+  const {
+    listSocieties,
+    societies,
+    isLoading: isSocietiesLoading,
+    pagination: societiesPagination,
+  } = useSocieties();
+
   // Effects for responsive design
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -50,13 +60,14 @@ const ChatPage = () => {
       return;
     }
 
-    console.log('ChatPage useEffect triggered, loading conversations...');
-    const loadConversations = async () => {
-      try {
-        setLoading(true);
-        console.log('Calling listMessages...');
-        const result = await listMessages({}, 1);
-        console.log('listMessages result:', result);
+    if (activeTab === 'dm') {
+      console.log('ChatPage useEffect triggered, loading conversations...');
+      const loadConversations = async () => {
+        try {
+          setLoading(true);
+          console.log('Calling listMessages...');
+          const result = await listMessages({}, 1);
+          console.log('listMessages result:', result);
 
         if (result && result.results && result.results.length > 0) {
           // Group messages by conversation partner
@@ -105,8 +116,12 @@ const ChatPage = () => {
       }
     };
 
-    loadConversations();
-  }, [currentUser, listMessages]); // Include currentUser and listMessages as dependencies
+      loadConversations();
+    } else if (activeTab === 'groups') {
+      console.log('Loading societies...');
+      listSocieties({}, 1);
+    }
+  }, [currentUser, activeTab, listMessages, listSocieties]);
 
   // Load messages for selected conversation
   useEffect(() => {
@@ -283,13 +298,17 @@ const ChatPage = () => {
               isLoading={loading || isChatLoading}
             />
           ) : (
-            <div className="p-4">
-              <div className="text-center text-gray-500">
-                <UsersIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>Group chats coming soon!</p>
-                <p className="text-sm">Join book societies to chat with fellow readers</p>
-              </div>
-            </div>
+            <SocietyList
+              societies={societies}
+              isSocietiesLoading={isSocietiesLoading}
+              onSocietySelect={(society) => {
+                // Navigate to society chat or handle society selection
+                console.log('Selected society:', society);
+                toast.info(`Society chat for "${society.name}" coming soon!`);
+              }}
+              listSocieties={listSocieties}
+              societiesPagination={societiesPagination}
+            />
           )}
         </div>
       </div>

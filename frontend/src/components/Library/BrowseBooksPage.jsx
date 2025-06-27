@@ -349,7 +349,7 @@ const BrowseBooksPage = () => {
                       <Pagination
                         pagination={pagination[isSearching ? 'search' : 'books']}
                         onPageChange={(page) =>
-                          isSearching
+                          isSearching && searchQuery.length >= 3
                             ? searchBooks({ query: searchQuery }, page)
                             : listBooks(filters, page)
                         }

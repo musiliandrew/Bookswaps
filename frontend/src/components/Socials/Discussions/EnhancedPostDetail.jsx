@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
+import {
   ArrowLeftIcon,
-  ArrowUpIcon, 
-  ArrowDownIcon, 
+  ArrowUpIcon,
+  ArrowDownIcon,
   ChatBubbleLeftIcon,
+  ChatBubbleBottomCenterTextIcon,
   ShareIcon,
   BookmarkIcon,
   EyeSlashIcon,
@@ -309,86 +310,136 @@ const EnhancedPostDetail = () => {
             Comments ({notes?.length || 0})
           </h2>
 
-          {/* Add Comment Form */}
-          <form onSubmit={handleAddComment} className="mb-8">
-            <div className="flex space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <UserIcon className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Share your thoughts..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                  rows={3}
-                />
-                <div className="flex justify-between items-center mt-3">
-                  <span className="text-sm text-gray-500">
-                    {newComment.length}/1000 characters
-                  </span>
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim() || isSubmittingComment}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmittingComment ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <PaperAirplaneIcon className="w-4 h-4" />
-                    )}
-                    <span>Comment</span>
-                  </button>
+          {/* Enhanced Comment Form */}
+          <motion.form
+            onSubmit={handleAddComment}
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="bookish-glass rounded-2xl border border-white/20 p-6">
+              <h3 className="text-lg font-lora font-semibold text-primary mb-4">Share Your Thoughts</h3>
+              <div className="flex space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center flex-shrink-0">
+                  <UserIcon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Share your thoughts about this discussion..."
+                    className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans resize-none focus:ring-2 focus:ring-accent/50 transition-all"
+                    rows={4}
+                    maxLength={1000}
+                  />
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-sm text-primary/60 font-open-sans">
+                      {newComment.length}/1000 characters
+                    </span>
+                    <motion.button
+                      type="submit"
+                      disabled={isSubmittingComment || !newComment.trim()}
+                      className="px-6 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {isSubmittingComment ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Posting...</span>
+                        </div>
+                      ) : (
+                        '💬 Post Comment'
+                      )}
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </div>
-          </form>
+          </motion.form>
 
-          {/* Comments List */}
-          <div className="space-y-6">
+          {/* Enhanced Comments List */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-lora font-semibold text-primary mb-6 flex items-center space-x-2">
+              <ChatBubbleLeftIcon className="w-6 h-6 text-accent" />
+              <span>Comments ({notes?.length || 0})</span>
+            </h3>
+
             {notes && notes.length > 0 ? (
-              notes.map((note) => (
-                <div key={note.note_id} className="flex space-x-4">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                    <UserIcon className="w-4 h-4 text-gray-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="font-medium text-gray-900">
+              notes.map((note, index) => (
+                <motion.div
+                  key={note.note_id}
+                  className="bookish-glass rounded-xl border border-white/20 p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex space-x-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center flex-shrink-0">
+                      {note.user?.profile_picture ? (
+                        <img
+                          src={note.user.profile_picture}
+                          alt={note.user.username}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <UserIcon className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="font-semibold text-primary font-open-sans">
                           {note.user?.username || 'Anonymous'}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-primary/60 font-open-sans">
                           {note.created_at && !isNaN(new Date(note.created_at).getTime())
                             ? formatDistanceToNow(new Date(note.created_at), { addSuffix: true })
                             : 'Recently'
                           }
                         </span>
                       </div>
-                      <p className="text-gray-700">{note.content}</p>
-                    </div>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <button
-                        onClick={() => likeDiscussionNote(note.note_id)}
-                        className="text-sm text-gray-500 hover:text-blue-600 transition-colors"
-                      >
-                        👍 {note.likes || 0}
-                      </button>
-                      <button
-                        onClick={() => setReplyingTo(note.note_id)}
-                        className="text-sm text-gray-500 hover:text-blue-600 transition-colors"
-                      >
-                        Reply
-                      </button>
+
+                      {/* Comment Content with HTML Rendering */}
+                      <div
+                        className="text-primary/80 font-open-sans leading-relaxed mb-4"
+                        dangerouslySetInnerHTML={{
+                          __html: note.content || ''
+                        }}
+                      />
+
+                      <div className="flex items-center space-x-4">
+                        <motion.button
+                          onClick={() => likeDiscussionNote(note.note_id)}
+                          className="flex items-center space-x-1 text-sm text-primary/60 hover:text-accent transition-colors font-open-sans"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <span>👍</span>
+                          <span>{note.likes || 0}</span>
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setReplyingTo(note.note_id)}
+                          className="text-sm text-primary/60 hover:text-accent transition-colors font-open-sans"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          💬 Reply
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
-              <div className="text-center py-8">
-                <ChatBubbleLeftIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No comments yet. Be the first to share your thoughts!</p>
-              </div>
+              <motion.div
+                className="text-center py-12 bookish-glass rounded-xl border border-white/20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <ChatBubbleLeftIcon className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+                <h4 className="text-lg font-lora font-medium text-primary mb-2">No comments yet</h4>
+                <p className="text-primary/60 font-open-sans">Be the first to share your thoughts on this discussion!</p>
+              </motion.div>
             )}
           </div>
         </motion.div>

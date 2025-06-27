@@ -18,12 +18,12 @@ import { toast } from 'react-toastify';
 import { useLibrary } from '../../../hooks/useLibrary';
 
 const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPostType = 'Article' }) => {
-  const { searchBooks, books } = useLibrary();
+  const { searchBooks, searchResults } = useLibrary();
   const [postData, setPostData] = useState({
     title: '',
     content: '',
     type: initialPostType,
-    book_id: '',
+    book_id: null,
     book_context: {
       chapter: '',
       page_range: '',
@@ -35,9 +35,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
     style_tags: [],
     media_urls: '',
     spoiler_flag: false,
-    spoiler_level: 'minor', // minor, major, ending
-    debate_mode: false,
-    debate_question: ''
+    spoiler_level: 'minor' // minor, major, ending
   });
 
   const [charCount, setCharCount] = useState(0);
@@ -79,13 +77,6 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
       description: 'Ask questions to the community',
       icon: SparklesIcon,
       gradient: 'from-primary/70 to-accent/70'
-    },
-    {
-      value: 'Debate',
-      label: '⚖️ Debate',
-      description: 'Start a structured debate',
-      icon: ChatBubbleBottomCenterTextIcon,
-      gradient: 'from-error to-error/80'
     }
   ];
 
@@ -116,7 +107,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
         title: '',
         content: '',
         type: initialPostType,
-        book_id: '',
+        book_id: null,
         book_context: {
           chapter: '',
           page_range: '',
@@ -128,9 +119,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
         style_tags: [],
         media_urls: '',
         spoiler_flag: false,
-        spoiler_level: 'minor',
-        debate_mode: false,
-        debate_question: ''
+        spoiler_level: 'minor'
       });
       setStep(1);
       setSelectedBook(null);
@@ -151,7 +140,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
     setBookSearch(query);
     if (query.length > 2) {
       try {
-        await searchBooks({ title: query }, 1);
+        await searchBooks({ query: query }, 1);
       } catch (error) {
         console.error('Book search failed:', error);
       }
@@ -192,13 +181,18 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
       return;
     }
 
-    if (postData.type === 'Debate' && !postData.debate_question.trim()) {
-      toast.error('Please provide a debate question');
+    // Validate book requirement based on post type
+    if ((postData.type === 'Synopsis' || postData.type === 'Query') && !postData.book_id) {
+      toast.error(`Please select a book for ${postData.type} posts`);
       return;
     }
 
+
+
     const formattedData = {
       ...postData,
+      // For Articles, book_id must be null. For Synopsis/Query, use selected book_id
+      book_id: postData.type === 'Article' ? null : postData.book_id,
       tags: [
         ...postData.tags,
         ...postData.theme_tags,
@@ -220,10 +214,12 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
       toast.error('Please fill in title and content first');
       return;
     }
-    if (step === 1 && postData.type === 'Debate' && !postData.debate_question.trim()) {
-      toast.error('Please provide a debate question for debate posts');
+
+    if (step === 2 && (postData.type === 'Synopsis' || postData.type === 'Query') && !postData.book_id) {
+      toast.error(`Please select a book for ${postData.type} posts`);
       return;
     }
+
     if (step < 3) {
       setStep(step + 1);
     }
@@ -267,6 +263,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="p-2 hover:bg-white/20 rounded-full transition-colors"
                 >
@@ -396,7 +393,15 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                     <div>
                       <label className="flex items-center space-x-2 text-sm font-medium text-primary mb-3 font-open-sans">
                         <BookOpenIcon className="w-4 h-4" />
-                        <span>Link to Book (optional)</span>
+                        <span>
+                          {postData.type === 'Article'
+                            ? 'Link to Book (optional)'
+                            : `Select Book (required for ${postData.type})`
+                          }
+                        </span>
+                        {(postData.type === 'Synopsis' || postData.type === 'Query') && (
+                          <span className="text-error text-xs">*</span>
+                        )}
                       </label>
 
                       <div className="relative">
@@ -406,18 +411,22 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                           onChange={(e) => handleBookSearch(e.target.value)}
                           onFocus={() => setShowBookSearch(true)}
                           className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans pr-10"
-                          placeholder="Search for a book to link your discussion..."
+                          placeholder={
+                            postData.type === 'Article'
+                              ? "Search for a book to link your discussion (optional)..."
+                              : `Search for the book for your ${postData.type.toLowerCase()}...`
+                          }
                         />
                         <MagnifyingGlassIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-primary/50" />
 
                         {/* Book Search Results */}
-                        {showBookSearch && books && books.length > 0 && (
+                        {showBookSearch && searchResults && searchResults.length > 0 && (
                           <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="absolute z-10 w-full mt-2 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg max-h-60 overflow-y-auto"
                           >
-                            {books.slice(0, 5).map((book) => (
+                            {searchResults.slice(0, 5).map((book) => (
                               <button
                                 key={book.book_id}
                                 type="button"
@@ -460,7 +469,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                               type="button"
                               onClick={() => {
                                 setSelectedBook(null);
-                                setPostData({ ...postData, book_id: '' });
+                                setPostData({ ...postData, book_id: null });
                                 setBookSearch('');
                               }}
                               className="p-1 hover:bg-accent/20 rounded-full transition-colors"

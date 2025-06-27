@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import SocietyFilters from './SocietyFilters';
 
-const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety, listSocieties, societyFilters, setSocietyFilters, societiesPagination, societiesError }) => {
+const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety, listSocieties, societyFilters, setSocietyFilters, societiesPagination, societiesError, createSociety }) => {
   const [selectedSociety, setSelectedSociety] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newSociety, setNewSociety] = useState({
+    name: '',
+    description: '',
+    visibility: 'public',
+    focus_type: '',
+    focus_id: ''
+  });
 
   const handleJoinSociety = async (societyId) => {
     const response = await joinSociety(societyId);
@@ -24,6 +33,28 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
 
   const handleSocietyClick = (society) => {
     setSelectedSociety(society);
+  };
+
+  const handleCreateSociety = async (e) => {
+    e.preventDefault();
+    if (!newSociety.name.trim()) {
+      toast.error('Society name is required');
+      return;
+    }
+
+    const response = await createSociety(newSociety);
+    if (response) {
+      toast.success('Society created successfully!');
+      setShowCreateForm(false);
+      setNewSociety({
+        name: '',
+        description: '',
+        visibility: 'public',
+        focus_type: '',
+        focus_id: ''
+      });
+      listSocieties(societyFilters, 1); // Refresh the list
+    }
   };
 
   if (societiesError) {
@@ -55,6 +86,15 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
             Join communities of book lovers and discuss your favorite reads
           </p>
         </div>
+        <motion.button
+          onClick={() => setShowCreateForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <PlusIcon className="w-5 h-5" />
+          Create Society
+        </motion.button>
       </div>
 
       {/* Filters */}
@@ -258,6 +298,96 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
                 </button>
               )}
             </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Create Society Modal */}
+      {showCreateForm && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowCreateForm(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-[var(--card-bg)] rounded-lg p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Create New Society</h3>
+            <form onSubmit={handleCreateSociety} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                  Society Name *
+                </label>
+                <input
+                  type="text"
+                  value={newSociety.name}
+                  onChange={(e) => setNewSociety({ ...newSociety, name: e.target.value })}
+                  className="w-full p-2 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                  placeholder="Enter society name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newSociety.description}
+                  onChange={(e) => setNewSociety({ ...newSociety, description: e.target.value })}
+                  className="w-full p-2 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                  placeholder="Describe your society"
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                  Visibility
+                </label>
+                <select
+                  value={newSociety.visibility}
+                  onChange={(e) => setNewSociety({ ...newSociety, visibility: e.target.value })}
+                  className="w-full p-2 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                  Focus Type
+                </label>
+                <select
+                  value={newSociety.focus_type}
+                  onChange={(e) => setNewSociety({ ...newSociety, focus_type: e.target.value })}
+                  className="w-full p-2 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                >
+                  <option value="">General</option>
+                  <option value="Book">Book</option>
+                  <option value="Genre">Genre</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 px-4 py-2 border border-[var(--secondary)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--secondary)]/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+                >
+                  Create Society
+                </button>
+              </div>
+            </form>
           </motion.div>
         </motion.div>
       )}

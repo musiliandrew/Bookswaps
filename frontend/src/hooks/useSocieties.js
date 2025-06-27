@@ -115,25 +115,19 @@ export function useSocieties() {
     return result;
   }, []);
 
-  const sendSocietyMessage = useCallback(
-    async (societyId, content) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        await sendMessage(content, societyId); // Use WebSocket
-        toast.success('Message sent!');
-        return true;
-      } catch (err) {
-        const errorMessage = err.message || 'Failed to send message';
-        setError(errorMessage);
-        toast.error(errorMessage);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [sendMessage]
-  );
+  const sendSocietyMessage = useCallback(async (societyId, content) => {
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.SEND_SOCIETY_MESSAGE(societyId), { content }),
+      setIsLoading,
+      setError,
+      'Message sent!',
+      'Send message'
+    );
+    if (result) {
+      setSocietyMessages((prev) => [...prev, result]);
+    }
+    return result;
+  }, []);
 
   const editSocietyMessage = useCallback(async (societyId, messageId, data) => {
     const result = await handleApiCall(

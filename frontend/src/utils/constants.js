@@ -41,18 +41,27 @@ export const API_ENDPOINTS = {
   MARK_ALL_NOTIFICATIONS_READ: '/swaps/notifications/mark-all-read/',
   DELETE_NOTIFICATION: (notificationId) => `/swaps/notifications/${notificationId}/`,
   BULK_NOTIFICATION_OPERATIONS: '/swaps/notifications/bulk/',
+  // Society endpoints (chat-focused)
   CREATE_SOCIETY: '/chat/societies/create/',
   JOIN_SOCIETY: (societyId) => `/chat/societies/${societyId}/join/`,
   LEAVE_SOCIETY: (societyId) => `/chat/societies/${societyId}/leave/`,
   LIST_SOCIETIES: '/chat/societies/',
   GET_SOCIETY_MESSAGES: (societyId) => `/chat/societies/${societyId}/messages/`,
+  SEND_SOCIETY_MESSAGE: (societyId) => `/chat/societies/${societyId}/messages/send/`,
   EDIT_SOCIETY_MESSAGE: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/edit/`,
   DELETE_SOCIETY_MESSAGE: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/delete/`,
   PIN_SOCIETY_MESSAGE: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/pin/`,
   ADD_SOCIETY_REACTION: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/react/`,
   LIST_SOCIETY_REACTIONS: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/reactions/`,
-  CREATE_SOCIETY_EVENT: (societyId) => `/chat/societies/${societyId}/events/create/`,
-  LIST_SOCIETY_EVENTS: (societyId) => `/chat/societies/${societyId}/events/`,
+
+  // Society endpoints (discussion-focused)
+  LIST_SOCIETIES_DISCUSSIONS: '/discussions/societies/',
+  CREATE_SOCIETY_DISCUSSIONS: '/discussions/societies/create/',
+  GET_SOCIETY_DETAIL: (societyId) => `/discussions/societies/${societyId}/`,
+  JOIN_SOCIETY_DISCUSSIONS: (societyId) => `/discussions/societies/${societyId}/join/`,
+  LEAVE_SOCIETY_DISCUSSIONS: (societyId) => `/discussions/societies/${societyId}/leave/`,
+  CREATE_SOCIETY_EVENT: (societyId) => `/discussions/societies/${societyId}/events/create/`,
+  LIST_SOCIETY_EVENTS: (societyId) => `/discussions/societies/${societyId}/events/`,
   // New endpoints for swaps
   INITIATE_SWAP: '/swaps/',
   LIST_SWAPS: '/swaps/list/',
@@ -96,4 +105,7 @@ export const API_ENDPOINTS = {
 // WebSocket endpoints
 export const WS_ENDPOINTS = {
   NOTIFICATIONS: (token) => `/ws/notifications/?token=${token}`,
+  CHAT: (chatId) => `/ws/chat/${chatId}/`,
+  SOCIETY: (societyId) => `/ws/society/${societyId}/`,
+  DISCUSSIONS: (discussionId) => `/ws/discussions/${discussionId}/`,
 };

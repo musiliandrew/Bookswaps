@@ -94,8 +94,14 @@ export function useLibrary() {
   }, []);
 
   const searchBooks = useCallback(async (filters = {}, page = 1) => {
+    // Validate query parameter
+    if (!filters.query || filters.query.length < 3) {
+      setError('Search query must be at least 3 characters');
+      return null;
+    }
+
     const params = new URLSearchParams({ page });
-    if (filters.query) params.append('q', filters.query);
+    params.append('q', filters.query);
     if (filters.genre?.length) params.append('genre', filters.genre.join(','));
     if (filters.author) params.append('author', filters.author);
 
