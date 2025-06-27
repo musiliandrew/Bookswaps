@@ -10,7 +10,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "192.168.3.97", "*"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -19,7 +19,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:9000",
     'http://frontend:5173',
     'http://172.18.0.2:5173',
+    'http://172.21.0.6:5173',
+    "http://192.168.3.97:5173",
 ]
+
+# Allow all origins for development (more permissive)
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = [
     "DELETE",

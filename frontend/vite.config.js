@@ -11,4 +11,9 @@ export default defineConfig({
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx'],
   },
+  server: {
+    host: '0.0.0.0', // Allow external access
+    port: 5173,
+    strictPort: true,
+  },
 });

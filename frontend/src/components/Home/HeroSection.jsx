@@ -34,6 +34,12 @@ const HeroSection = () => {
   // Preload images and track their load states
   useEffect(() => {
     const loadImage = (src, index) => {
+      // Set loading state first
+      setImageLoadStates(prev => ({
+        ...prev,
+        [index]: 'loading'
+      }));
+
       const img = new window.Image();
       img.onload = () => {
         setImageLoadStates(prev => ({
@@ -48,16 +54,12 @@ const HeroSection = () => {
         }));
       };
       img.src = src;
-      setImageLoadStates(prev => ({
-        ...prev,
-        [index]: 'loading'
-      }));
     };
 
     heroImages.forEach((image, index) => {
       loadImage(image.src, index);
     });
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
 
   useEffect(() => {
     const interval = setInterval(() => {

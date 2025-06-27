@@ -94,56 +94,34 @@ function App() {
           />
 
           {/* Protected Routes (Authenticated Users) */}
-          <Route
-            path="/profile/me"
-            element={
-              isAuthenticated ? (
-                <ProfilePage />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/library"
-            element={
-              isAuthenticated ? (
-                <LibraryPage />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/socials"
-            element={
-              isAuthenticated ? (
-                <SocialsPage />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/socials/discussions/post/:postId"
-            element={
-              isAuthenticated ? (
-                <EnhancedPostDetail />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              isAuthenticated ? (
-                <NotificationsPage />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+          {isAuthenticated && (
+            <Route
+              path="/profile/me"
+              element={<ProfilePage />}
+            />
+          )}
+          {!isAuthenticated && (
+            <Route
+              path="/profile/me"
+              element={<Navigate to="/" replace />}
+            />
+          )}
+          {isAuthenticated && (
+            <>
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/socials" element={<SocialsPage />} />
+              <Route path="/socials/discussions/post/:postId" element={<EnhancedPostDetail />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+            </>
+          )}
+          {!isAuthenticated && (
+            <>
+              <Route path="/library" element={<Navigate to="/" replace />} />
+              <Route path="/socials" element={<Navigate to="/" replace />} />
+              <Route path="/socials/discussions/post/:postId" element={<Navigate to="/" replace />} />
+              <Route path="/notifications" element={<Navigate to="/" replace />} />
+            </>
+          )}
 
           {/* Catch-all route */}
           <Route

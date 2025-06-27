@@ -4,7 +4,6 @@ import { toast } from 'react-toastify';
 import { api } from '../utils/api';
 import { handleApiCall, handleApiCallWithResult } from '../utils/apiUtils';
 import { API_ENDPOINTS } from '../utils/constants';
-import { jwtDecode } from 'jwt-decode';
 import debounce from 'lodash/debounce';
 
 export function useAuth() {
@@ -77,14 +76,15 @@ export function useAuth() {
   const getProfileInternal = useCallback(
     async (forceFetch = false) => {
       const now = Date.now();
+      const currentProfile = profile; // Capture current profile value
 
       // If already fetching or recently fetched (and not forcing), return existing profile
-      if (profileFetchRef.current || (now - lastProfileFetch.current < 10000 && !forceFetch && profile)) {
-        return profile;
+      if (profileFetchRef.current || (now - lastProfileFetch.current < 10000 && !forceFetch && currentProfile)) {
+        return currentProfile;
       }
 
       // Try cached profile first (only if not forcing fetch)
-      if (!forceFetch && !profile) {
+      if (!forceFetch && !currentProfile) {
         const cachedProfile = localStorage.getItem('user_profile');
         if (cachedProfile) {
           try {
@@ -139,17 +139,6 @@ export function useAuth() {
         }
 
         console.log('Profile fetch failed, no result returned');
-
-        // Check if we got a 401 and haven't already tried refreshing
-        if (!forceFetch && error && error.toString().includes('401')) {
-          console.log('Attempting token refresh due to 401 error');
-          const newToken = await refreshToken();
-          if (newToken) {
-            console.log('Token refreshed, retrying profile fetch');
-            return await getProfileInternal(true);
-          }
-        }
-
         return null;
       } catch (err) {
         profileFetchRef.current = false;
@@ -173,7 +162,7 @@ export function useAuth() {
         return null;
       }
     },
-    [refreshToken] // Removed profile and error from dependencies to prevent infinite loops
+    [refreshToken, profile] // Include profile as dependency but handle it carefully
   );
 
   const debouncedGetProfile = useMemo(
@@ -186,73 +175,7 @@ export function useAuth() {
     [debouncedGetProfile]
   );
 
-  const checkAuthStatus = useCallback(async () => {
-    setIsLoading(true);
-    const token = localStorage.getItem('access_token');
-    const refresh = localStorage.getItem('refresh_token');
 
-    console.log('Checking auth status - Token:', token ? 'Present' : 'Missing', 'Refresh:', refresh ? 'Present' : 'Missing');
-
-    if (!token && !refresh) {
-      clearAuthState();
-      setIsLoading(false);
-      return;
-    }
-
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (!decoded?.exp) throw new Error('Invalid token: Missing expiration');
-        
-        console.log('Token expires at:', new Date(decoded.exp * 1000), 'Current time:', new Date());
-        
-        if (decoded.exp * 1000 < Date.now()) {
-          console.log('Token expired, attempting refresh');
-          
-          if (!refresh) {
-            clearAuthState();
-            setIsLoading(false);
-            return;
-          }
-          
-          const newToken = await refreshToken();
-          if (newToken) {
-            await getProfile(true);
-          } else {
-            clearAuthState();
-          }
-        } else {
-          console.log('Token is valid, fetching profile');
-          // Set the Authorization header immediately
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-          await getProfile();
-        }
-      } catch (tokenError) {
-        console.log('Token decode error:', tokenError);
-        
-        if (refresh) {
-          const newToken = await refreshToken();
-          if (newToken) {
-            await getProfile(true);
-          } else {
-            clearAuthState();
-          }
-        } else {
-          clearAuthState();
-        }
-      }
-    } else if (refresh) {
-      console.log('No access token but have refresh token, attempting refresh');
-      const newToken = await refreshToken();
-      if (newToken) {
-        await getProfile(true);
-      } else {
-        clearAuthState();
-      }
-    }
-
-    setIsLoading(false);
-  }, [refreshToken, clearAuthState, getProfile]);
 
   useEffect(() => {
     const handleAuthError = () => {
@@ -272,42 +195,54 @@ export function useAuth() {
     window.addEventListener('auth:error', handleAuthError);
     window.addEventListener('auth:logout', handleAuthLogout);
 
-    // Check auth status on mount
-    const token = localStorage.getItem('access_token');
-    const cachedProfile = localStorage.getItem('user_profile');
-
-    if (token) {
-      // If we have a token, check if we also have cached profile
-      if (cachedProfile && !profile) {
-        try {
-          const parsedProfile = JSON.parse(cachedProfile);
-          setProfile(parsedProfile);
-          setIsAuthenticated(true);
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Error parsing cached profile:', error);
-          // If cached profile is corrupted, fetch fresh
-          getProfile();
-        }
-      } else if (!profile) {
-        // No cached profile, fetch fresh
-        getProfile();
-      } else {
-        setIsLoading(false);
-      }
-    } else {
-      // No token, user is not authenticated
-      setIsLoading(false);
-      setIsAuthenticated(false);
-    }
-
     return () => {
       window.removeEventListener('auth:error', handleAuthError);
       window.removeEventListener('auth:logout', handleAuthLogout);
       if (abortControllerRef.current) abortControllerRef.current.abort();
       debouncedGetProfile.cancel();
     };
-  }, []); // Empty dependency array to run only once
+  }, [clearAuthState, debouncedGetProfile]); // Only include stable dependencies
+
+  // Separate useEffect for initial auth check
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      const cachedProfile = localStorage.getItem('user_profile');
+
+      if (token) {
+        // If we have a token, check if we also have cached profile
+        if (cachedProfile) {
+          try {
+            const parsedProfile = JSON.parse(cachedProfile);
+            setProfile(parsedProfile);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            return; // Exit early if we have cached profile
+          } catch (error) {
+            console.error('Error parsing cached profile:', error);
+            localStorage.removeItem('user_profile');
+          }
+        }
+
+        // No cached profile or parsing failed, fetch fresh
+        try {
+          await getProfile();
+        } catch (error) {
+          console.error('Error fetching profile on init:', error);
+          setIsLoading(false);
+        }
+      } else {
+        // No token, user is not authenticated
+        setIsLoading(false);
+        setIsAuthenticated(false);
+      }
+    };
+
+    // Only initialize if we haven't already
+    if (isLoading) {
+      initializeAuth();
+    }
+  }, [getProfile, isLoading]); // Include necessary dependencies
 
   const login = useCallback(
     async (credentials) => {
