@@ -15,7 +15,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
   
   const [formData, setFormData] = useState({
     initiator_book_id: '',
-    receiver_user_id: '',
+    receiver_id: '',
     receiver_book_id: '',
     message: ''
   });
@@ -35,8 +35,8 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
       if (searchQuery.trim().length >= 2) {
         setIsSearching(true);
         try {
-          const results = await searchUsers(searchQuery);
-          setSearchResults(results || []);
+          const results = await searchUsers({ query: searchQuery });
+          setSearchResults(results?.results || []);
         } catch (error) {
           console.error('Error searching users:', error);
           setSearchResults([]);
@@ -53,7 +53,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
 
   const handleUserSelect = async (user) => {
     setSelectedUser(user);
-    setFormData(prev => ({ ...prev, receiver_user_id: user.user_id }));
+    setFormData(prev => ({ ...prev, receiver_id: user.user_id }));
     setSearchQuery(user.username);
     setSearchResults([]);
 
@@ -75,7 +75,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
       return;
     }
     
-    if (!formData.receiver_user_id) {
+    if (!formData.receiver_id) {
       alert('Please select a user to swap with');
       return;
     }
@@ -142,7 +142,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
                 onClick={() => {
                   setSelectedUser(null);
                   setSearchQuery('');
-                  setFormData(prev => ({ ...prev, receiver_user_id: '', receiver_book_id: '' }));
+                  setFormData(prev => ({ ...prev, receiver_id: '', receiver_book_id: '' }));
                 }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
@@ -233,7 +233,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
         </button>
         <button
           type="submit"
-          disabled={isLoading || !formData.initiator_book_id || !formData.receiver_user_id}
+          disabled={isLoading || !formData.initiator_book_id || !formData.receiver_id}
           className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Proposing...' : 'Propose Swap'}

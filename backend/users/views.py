@@ -585,8 +585,6 @@ class UserLibraryView(APIView):
             )
 
 
-        from backend.utils.pagination import CustomPagination
-
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = UserLibraryBookSerializer(result_page, many=True, context={'request': request})
