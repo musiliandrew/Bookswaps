@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
 import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';

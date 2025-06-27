@@ -70,38 +70,69 @@ class CreateDiscussionSerializer(serializers.ModelSerializer):
 class DiscussionFeedSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvote_count = serializers.IntegerField(read_only=True)  # Changed from upvotes
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')  # Changed back to upvotes for consistency
+    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')  # Added downvotes
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     content = serializers.SerializerMethodField()
+    is_upvoted = serializers.SerializerMethodField()
+    is_downvoted = serializers.SerializerMethodField()
 
     class Meta:
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book',
-            'content', 'upvote_count', 'note_count', 'reprint_count'
+            'content', 'upvotes', 'downvotes', 'note_count', 'reprint_count',
+            'is_upvoted', 'is_downvoted'
         ]
 
     def get_content(self, obj):
         return obj.content[:150] + "..." if len(obj.content) > 150 else obj.content
 
+    def get_is_upvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.upvotes.filter(user=request.user).exists()
+        return False
+
+    def get_is_downvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.downvotes.filter(user=request.user).exists()
+        return False
+
 
 class DiscussionDetailSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvote_count = serializers.IntegerField(read_only=True)  # Changed from upvotes
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')  # Changed back to upvotes for consistency
+    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')  # Added downvotes
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     tags = serializers.ListField(child=serializers.CharField(), read_only=True)
     media_urls = serializers.ListField(child=serializers.URLField(), read_only=True)
+    is_upvoted = serializers.SerializerMethodField()
+    is_downvoted = serializers.SerializerMethodField()
 
     class Meta:
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book', 'content',
-            'tags', 'media_urls', 'spoiler_flag', 'upvote_count', 'note_count',
-            'reprint_count', 'created_at', 'last_edited_at'
+            'tags', 'media_urls', 'spoiler_flag', 'upvotes', 'downvotes', 'note_count',
+            'reprint_count', 'is_upvoted', 'is_downvoted', 'created_at', 'last_edited_at'
         ]
+
+    def get_is_upvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.upvotes.filter(user=request.user).exists()
+        return False
+
+    def get_is_downvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.downvotes.filter(user=request.user).exists()
+        return False
 
 class NoteSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
@@ -165,10 +196,24 @@ class UpvoteResponseSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
     downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
+    is_upvoted = serializers.SerializerMethodField()
+    is_downvoted = serializers.SerializerMethodField()
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'user', 'title', 'upvotes', 'downvotes']
+        fields = ['discussion_id', 'user', 'title', 'upvotes', 'downvotes', 'is_upvoted', 'is_downvoted']
+
+    def get_is_upvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.upvotes.filter(user=request.user).exists()
+        return False
+
+    def get_is_downvoted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.downvotes.filter(user=request.user).exists()
+        return False
 
 
 class ReprintSerializer(serializers.ModelSerializer):

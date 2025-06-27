@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { useUserStats } from '../../hooks/useUserStats';

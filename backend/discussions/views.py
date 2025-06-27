@@ -72,6 +72,11 @@ class PostListView(generics.ListAPIView):
     serializer_class = DiscussionFeedSerializer
     pagination_class = StandardPagination
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def get_queryset(self):
         user = self.request.user
         params = self.request.query_params
@@ -85,7 +90,8 @@ class PostListView(generics.ListAPIView):
         
         try:
             queryset = queryset.annotate(
-                upvote_count=Count('upvotes'),
+                upvotes_count=Count('upvotes'),  # Fixed to match serializer source
+                downvotes_count=Count('downvotes'),  # Added downvotes count
                 note_count=Count('notes'),
                 reprint_count=Count('reprints')
             )
@@ -132,9 +138,15 @@ class PostDetailView(generics.RetrieveAPIView):
     serializer_class = DiscussionDetailSerializer
     lookup_field = 'discussion_id'
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def get_queryset(self):
         return Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
-            upvote_count=Count('upvotes'),  # Changed from upvotes to upvote_count
+            upvotes_count=Count('upvotes'),  # Fixed to match serializer source
+            downvotes_count=Count('downvotes'),  # Added downvotes count
             note_count=Count('notes'),
             reprint_count=Count('reprints')
         )
@@ -310,19 +322,24 @@ class LikeCommentView(generics.UpdateAPIView):
         )
         return Response(serializer.data)
 
-class UpvotePostView(generics.UpdateAPIView):
+class UpvotePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UpvoteResponseSerializer
-    lookup_field = 'discussion_id'
 
-    def get_queryset(self):
-        return Discussion.objects.filter(status='active').annotate(upvotes_count=Count('upvotes'))
+    def get_object(self, discussion_id):
+        try:
+            return Discussion.objects.filter(status='active').annotate(upvotes_count=Count('upvotes')).get(discussion_id=discussion_id)
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found")
 
-    def update(self, request, *args, **kwargs):
-        discussion = self.get_object()
+    def post(self, request, discussion_id):
+        discussion = self.get_object(discussion_id)
         user = request.user
 
         with transaction.atomic():
+            # Remove any existing downvote first (mutual exclusion)
+            Downvote.objects.filter(discussion=discussion, user=user).delete()
+
+            # Toggle upvote
             upvote, created = Upvote.objects.get_or_create(
                 discussion=discussion,
                 user=user,
@@ -358,8 +375,11 @@ class UpvotePostView(generics.UpdateAPIView):
             except Exception as e:
                 print(f"Notification creation failed: {str(e)}")
 
-        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(upvotes_count=Count('upvotes')).first()
-        serializer = self.get_serializer(discussion)
+        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+        serializer = UpvoteResponseSerializer(discussion, context={'request': request})
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -372,19 +392,20 @@ class UpvotePostView(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
-class DownvotePostView(generics.UpdateAPIView):
+class DownvotePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UpvoteResponseSerializer  # Reuse the same serializer
-    lookup_field = 'discussion_id'
 
-    def get_queryset(self):
-        return Discussion.objects.filter(status='active').annotate(
-            upvotes_count=Count('upvotes'),
-            downvotes_count=Count('downvotes')
-        )
+    def get_object(self, discussion_id):
+        try:
+            return Discussion.objects.filter(status='active').annotate(
+                upvotes_count=Count('upvotes'),
+                downvotes_count=Count('downvotes')
+            ).get(discussion_id=discussion_id)
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found")
 
-    def update(self, request, *args, **kwargs):
-        discussion = self.get_object()
+    def post(self, request, discussion_id):
+        discussion = self.get_object(discussion_id)
         user = request.user
 
         with transaction.atomic():
@@ -409,7 +430,7 @@ class DownvotePostView(generics.UpdateAPIView):
             upvotes_count=Count('upvotes'),
             downvotes_count=Count('downvotes')
         ).first()
-        serializer = self.get_serializer(discussion)
+        serializer = UpvoteResponseSerializer(discussion, context={'request': request})
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(

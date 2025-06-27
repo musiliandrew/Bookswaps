@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
 import AuthLink from '../Common/AuthLink';

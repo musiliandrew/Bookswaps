@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import ProfileForm from '../Profile/Settings/ProfileForm';
 import AccountSettingsForm from '../Profile/Settings/AccountSettingsForm';
 import ChatPreferencesForm from '../Profile/Settings/ChatPreferencesForm';

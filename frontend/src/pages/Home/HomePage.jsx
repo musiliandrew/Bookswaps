@@ -9,7 +9,7 @@ import FeatureCard from '../../components/Home/FeaturedCard';
 import Footer from '../../components/Home/Footer';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { api } from '../../utils/api';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 function HomePage() {
   const navigate = useNavigate();

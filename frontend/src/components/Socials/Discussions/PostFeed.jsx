@@ -10,8 +10,8 @@ const PostFeed = ({ posts, isDiscussionsLoading, listPosts, postFilters, discuss
         <>
           {posts && posts.length > 0 ? (
             posts.map(post => (
-              <div key={post.id} className="bg-white p-4 rounded shadow mb-4">
-                <Link to={`/discussions/post/${post.id}`}>
+              <div key={post.discussion_id} className="bg-white p-4 rounded shadow mb-4">
+                <Link to={`/discussions/post/${post.discussion_id}`}>
                   <h3 className="text-xl font-bold">{post.title}</h3>
                 </Link>
                 {/* Fixed: Access username property instead of rendering the user object */}

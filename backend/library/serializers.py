@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from .models import Book, BookHistory, Library, Bookmark, Favorite, PopularBook
 from backend.users.models import CustomUser
 from backend.swaps.models import Swap
@@ -44,11 +44,12 @@ class BookMiniSerializer(serializers.ModelSerializer):
 
 class BookHistorySerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
+    book = BookMiniSerializer(read_only=True)
     swap_id = serializers.UUIDField(source='swap.swap_id', read_only=True, allow_null=True)
 
     class Meta:
         model = BookHistory
-        fields = ['history_id', 'user', 'swap_id', 'status', 'start_date', 'end_date', 'notes']
+        fields = ['history_id', 'book', 'user', 'swap_id', 'status', 'start_date', 'end_date', 'notes']
 
 class LibraryBookSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
@@ -241,11 +242,38 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         book_id = validated_data.pop('book_id')
-        return Bookmark.objects.create(
-            user=self.context['request'].user,
-            book=Book.objects.get(book_id=book_id),
-            **validated_data
-        )
+        book = Book.objects.get(book_id=book_id)
+        user = self.context['request'].user
+
+        # Check if bookmark already exists and is active
+        existing_bookmark = Bookmark.objects.filter(user=user, book=book).first()
+        if existing_bookmark:
+            if existing_bookmark.active:
+                raise ValidationError({
+                    "error": "You have already bookmarked this book",
+                    "error_type": "DUPLICATE_BOOKMARK",
+                    "details": "This book is already in your bookmarks"
+                })
+            else:
+                # Reactivate the existing bookmark
+                existing_bookmark.active = True
+                existing_bookmark.notify_on_available = validated_data.get('notify_on_available', existing_bookmark.notify_on_available)
+                existing_bookmark.save()
+                return existing_bookmark
+
+        try:
+            return Bookmark.objects.create(
+                user=user,
+                book=book,
+                **validated_data
+            )
+        except IntegrityError:
+            # Handle race condition where bookmark was created between check and create
+            raise ValidationError({
+                "error": "You have already bookmarked this book",
+                "error_type": "DUPLICATE_BOOKMARK",
+                "details": "This book is already in your bookmarks"
+            })
 
 class FavoriteSerializer(serializers.ModelSerializer):
     book = BookMiniSerializer(read_only=True)
@@ -262,11 +290,38 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         book_id = validated_data.pop('book_id')
-        return Favorite.objects.create(
-            user=self.context['request'].user,
-            book=Book.objects.get(book_id=book_id),
-            **validated_data
-        )
+        book = Book.objects.get(book_id=book_id)
+        user = self.context['request'].user
+
+        # Check if favorite already exists and is active
+        existing_favorite = Favorite.objects.filter(user=user, book=book).first()
+        if existing_favorite:
+            if existing_favorite.active:
+                raise ValidationError({
+                    "error": "You have already favorited this book",
+                    "error_type": "DUPLICATE_FAVORITE",
+                    "details": "This book is already in your favorites"
+                })
+            else:
+                # Reactivate the existing favorite
+                existing_favorite.active = True
+                existing_favorite.reason = validated_data.get('reason', existing_favorite.reason)
+                existing_favorite.save()
+                return existing_favorite
+
+        try:
+            return Favorite.objects.create(
+                user=user,
+                book=book,
+                **validated_data
+            )
+        except IntegrityError:
+            # Handle race condition where favorite was created between check and create
+            raise ValidationError({
+                "error": "You have already favorited this book",
+                "error_type": "DUPLICATE_FAVORITE",
+                "details": "This book is already in your favorites"
+            })
 
 class PopularBookSerializer(serializers.ModelSerializer):
     book = BookMiniSerializer(read_only=True)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { AnimatePresence } from 'framer-motion';
 import {

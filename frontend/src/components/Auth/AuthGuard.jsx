@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AuthGuard = ({ children }) => {
-  const { auth, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && auth.isAuthenticated) {
-      navigate('/profile', { replace: true });
+    if (!isLoading && isAuthenticated) {
+      navigate('/profile/me', { replace: true });
     }
-  }, [auth.isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) return <div className="bookish-glass p-4 text-center">Loading...</div>;
 
-  return !auth.isAuthenticated ? children : null;
+  return !isAuthenticated ? children : null;
 };
 
 export default AuthGuard;

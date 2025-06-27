@@ -101,21 +101,29 @@ const BrowseBooksPage = () => {
 
   const handleBookmark = async (bookId, isBookmarked) => {
     try {
-      if (isBookmarked) await removeBookmark(bookId);
-      else await bookmarkBook(bookId);
-      toast.success(isBookmarked ? 'Bookmark removed' : 'Book bookmarked');
-    } catch {
-      toast.error('Failed to update bookmark');
+      if (isBookmarked) {
+        await removeBookmark(bookId);
+      } else {
+        await bookmarkBook(bookId);
+      }
+      // Success messages are now handled in the useLibrary hook
+    } catch (error) {
+      // Error messages are now handled in the useLibrary hook
+      console.error('Bookmark operation failed:', error);
     }
   };
 
   const handleFavorite = async (bookId, isFavorited) => {
     try {
-      if (isFavorited) await unfavoriteBook(bookId);
-      else await favoriteBook(bookId);
-      toast.success(isFavorited ? 'Removed from favorites' : 'Added to favorites');
-    } catch {
-      toast.error('Failed to update favorite');
+      if (isFavorited) {
+        await unfavoriteBook(bookId);
+      } else {
+        await favoriteBook(bookId);
+      }
+      // Success messages are now handled in the useLibrary hook
+    } catch (error) {
+      // Error messages are now handled in the useLibrary hook
+      console.error('Favorite operation failed:', error);
     }
   };
 

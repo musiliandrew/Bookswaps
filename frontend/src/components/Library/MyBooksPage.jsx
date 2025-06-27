@@ -159,11 +159,15 @@ const MyBooksPage = () => {
 
   const handleBookmark = async (bookId, isBookmarked) => {
     try {
-      if (isBookmarked) await removeBookmark(bookId);
-      else await bookmarkBook(bookId);
-      toast.success(isBookmarked ? 'Bookmark removed' : 'Book bookmarked');
-    } catch {
-      toast.error('Failed to update bookmark');
+      if (isBookmarked) {
+        await removeBookmark(bookId);
+      } else {
+        await bookmarkBook(bookId);
+      }
+      // Success messages are now handled in the useLibrary hook
+    } catch (error) {
+      // Error messages are now handled in the useLibrary hook
+      console.error('Bookmark operation failed:', error);
     }
   };
 

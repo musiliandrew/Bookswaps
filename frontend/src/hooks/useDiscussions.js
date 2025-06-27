@@ -101,8 +101,8 @@ export function useDiscussions() {
         'Delete post'
       );
       if (result) {
-        setPosts((prev) => prev.filter((p) => p.id !== discussionId));
-        if (post?.id === discussionId) setPost(null);
+        setPosts((prev) => prev.filter((p) => p.discussion_id !== discussionId));
+        if (post?.discussion_id === discussionId) setPost(null);
       }
       return result;
     },
@@ -153,7 +153,7 @@ export function useDiscussions() {
       );
       if (result) {
         setNotes((prev) =>
-          prev.map((n) => (n.id === noteId ? { ...n, likes: result.likes } : n))
+          prev.map((n) => (n.note_id === noteId ? { ...n, likes: result.likes } : n))
         );
       }
       return result;
@@ -172,9 +172,23 @@ export function useDiscussions() {
       );
       if (result) {
         setPosts((prev) =>
-          prev.map((p) => (p.id === discussionId ? { ...p, upvotes: result.upvotes } : p))
+          prev.map((p) => (p.discussion_id === discussionId ? {
+            ...p,
+            upvotes: result.upvotes_count || result.upvotes,
+            downvotes: result.downvotes_count || result.downvotes,
+            is_upvoted: result.is_upvoted,
+            is_downvoted: result.is_downvoted
+          } : p))
         );
-        if (post?.id === discussionId) setPost((prev) => ({ ...prev, upvotes: result.upvotes }));
+        if (post?.discussion_id === discussionId) {
+          setPost((prev) => ({
+            ...prev,
+            upvotes: result.upvotes_count || result.upvotes,
+            downvotes: result.downvotes_count || result.downvotes,
+            is_upvoted: result.is_upvoted,
+            is_downvoted: result.is_downvoted
+          }));
+        }
       }
       return result;
     },
@@ -184,7 +198,7 @@ export function useDiscussions() {
   const downvoteDiscussionPost = useCallback(
     async (discussionId) => {
       const result = await handleApiCall(
-        () => api.patch(API_ENDPOINTS.DOWNVOTE_POST(discussionId)),
+        () => api.post(API_ENDPOINTS.DOWNVOTE_POST(discussionId)),
         setIsLoading,
         setError,
         null,
@@ -192,9 +206,23 @@ export function useDiscussions() {
       );
       if (result) {
         setPosts((prev) =>
-          prev.map((p) => (p.id === discussionId ? { ...p, downvotes: result.downvotes } : p))
+          prev.map((p) => (p.discussion_id === discussionId ? {
+            ...p,
+            upvotes: result.upvotes_count || result.upvotes,
+            downvotes: result.downvotes_count || result.downvotes,
+            is_upvoted: result.is_upvoted,
+            is_downvoted: result.is_downvoted
+          } : p))
         );
-        if (post?.id === discussionId) setPost((prev) => ({ ...prev, downvotes: result.downvotes }));
+        if (post?.discussion_id === discussionId) {
+          setPost((prev) => ({
+            ...prev,
+            upvotes: result.upvotes_count || result.upvotes,
+            downvotes: result.downvotes_count || result.downvotes,
+            is_upvoted: result.is_upvoted,
+            is_downvoted: result.is_downvoted
+          }));
+        }
       }
       return result;
     },
@@ -245,13 +273,13 @@ export function useDiscussions() {
     if (discussionData.notes?.length) {
       setNotes((prev) => [
         ...prev,
-        ...discussionData.notes.filter((n) => n.id && !prev.find((pn) => pn.id === n.id)),
+        ...discussionData.notes.filter((n) => n.note_id && !prev.find((pn) => pn.note_id === n.note_id)),
       ]);
     }
     if (discussionData.likes?.length) {
       setNotes((prev) =>
         prev.map((n) =>
-          discussionData.likes.find((l) => l?.note_id === n.id)
+          discussionData.likes.find((l) => l?.note_id === n.note_id)
             ? { ...n, likes: (n.likes || 0) + 1 }
             : n
         )
@@ -260,12 +288,12 @@ export function useDiscussions() {
     if (discussionData.upvotes?.length) {
       setPosts((prev) =>
         prev.map((p) =>
-          discussionData.upvotes.find((u) => u?.discussion_id === p.id)
+          discussionData.upvotes.find((u) => u?.discussion_id === p.discussion_id)
             ? { ...p, upvotes: (p.upvotes || 0) + 1 }
             : p
         )
       );
-      if (post && discussionData.upvotes.find((u) => u?.discussion_id === post.id)) {
+      if (post && discussionData.upvotes.find((u) => u?.discussion_id === post.discussion_id)) {
         setPost((prev) => ({ ...prev, upvotes: (prev.upvotes || 0) + 1 }));
       }
     }
@@ -297,15 +325,15 @@ export function useDiscussions() {
         toast.info(`Your comment was liked`);
       } else if (type === 'discussion_upvoted' && data?.discussion_id) {
         setPosts((prev) =>
-          prev.map((p) => (p.id === data.discussion_id ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p))
+          prev.map((p) => (p.discussion_id === data.discussion_id ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p))
         );
-        if (post?.id === data.discussion_id) {
+        if (post?.discussion_id === data.discussion_id) {
           setPost((prev) => ({ ...prev, upvotes: (prev.upvotes || 0) + 1 }));
         }
         toast.info(`Your discussion was upvoted`);
       } else if (type === 'discussion_reprinted' && data?.reprint_id) {
         setPosts((prev) =>
-          prev.map((p) => (p.id === data.discussion_id ? { ...p, reprint_count: (p.reprint_count || 0) + 1 } : p))
+          prev.map((p) => (p.discussion_id === data.discussion_id ? { ...p, reprint_count: (p.reprint_count || 0) + 1 } : p))
         );
         toast.info(`Your discussion was reposted`);
       }

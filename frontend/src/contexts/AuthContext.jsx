@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api } from '../utils/api';
@@ -6,7 +6,17 @@ import { handleApiCall, handleApiCallWithResult } from '../utils/apiUtils';
 import { API_ENDPOINTS } from '../utils/constants';
 import debounce from 'lodash/debounce';
 
-export function useAuth() {
+const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +27,7 @@ export function useAuth() {
   const refreshInProgress = useRef(false);
   const profileFetchRef = useRef(false);
   const lastProfileFetch = useRef(0);
+  const initializationRef = useRef(false);
 
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('access_token');
@@ -46,7 +57,7 @@ export function useAuth() {
       () => api.post(API_ENDPOINTS.TOKEN_REFRESH, { refresh: refresh }),
       setIsLoading,
       setError,
-      'Token refresh successful',
+      null, // Don't show success toast for token refresh
       'Token refresh'
     );
 
@@ -76,7 +87,7 @@ export function useAuth() {
   const getProfileInternal = useCallback(
     async (forceFetch = false) => {
       const now = Date.now();
-      const currentProfile = profile; // Capture current profile value
+      const currentProfile = profile;
 
       // If already fetching or recently fetched (and not forcing), return existing profile
       if (profileFetchRef.current || (now - lastProfileFetch.current < 10000 && !forceFetch && currentProfile)) {
@@ -115,8 +126,6 @@ export function useAuth() {
       }
       abortControllerRef.current = new AbortController();
 
-      console.log('Fetching profile with token:', token ? 'Present' : 'Missing');
-
       try {
         const result = await handleApiCall(
           () => api.get(API_ENDPOINTS.PROFILE, {
@@ -131,18 +140,15 @@ export function useAuth() {
         profileFetchRef.current = false;
 
         if (result) {
-          console.log('Profile fetch successful:', result);
           setProfile(result);
           localStorage.setItem('user_profile', JSON.stringify(result));
           setIsAuthenticated(true);
           return result;
         }
 
-        console.log('Profile fetch failed, no result returned');
         return null;
       } catch (err) {
         profileFetchRef.current = false;
-        console.error('Profile fetch error:', err);
 
         // Handle network errors or other issues
         if (err.name === 'AbortError') {
@@ -151,10 +157,8 @@ export function useAuth() {
 
         // If it's a 401 error and we haven't tried refresh yet
         if (!forceFetch && (err.response?.status === 401 || err.toString().includes('401'))) {
-          console.log('Attempting token refresh due to error:', err);
           const newToken = await refreshToken();
           if (newToken) {
-            console.log('Token refreshed, retrying profile fetch');
             return await getProfileInternal(true);
           }
         }
@@ -162,7 +166,7 @@ export function useAuth() {
         return null;
       }
     },
-    [refreshToken, profile] // Include profile as dependency but handle it carefully
+    [refreshToken, profile]
   );
 
   const debouncedGetProfile = useMemo(
@@ -175,17 +179,57 @@ export function useAuth() {
     [debouncedGetProfile]
   );
 
+  // Initialize authentication state once
+  useEffect(() => {
+    const initializeAuth = async () => {
+      if (initializationRef.current) return;
+      initializationRef.current = true;
 
+      const token = localStorage.getItem('access_token');
+      const cachedProfile = localStorage.getItem('user_profile');
 
+      if (token) {
+        // Set the authorization header
+        api.defaults.headers.Authorization = `Bearer ${token}`;
+        
+        // If we have a cached profile, use it immediately
+        if (cachedProfile) {
+          try {
+            const parsedProfile = JSON.parse(cachedProfile);
+            setProfile(parsedProfile);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            return;
+          } catch (error) {
+            localStorage.removeItem('user_profile');
+          }
+        }
+
+        // Fetch fresh profile
+        try {
+          await getProfile(true);
+        } catch (error) {
+          console.error('Error fetching profile on init:', error);
+          setIsLoading(false);
+        }
+      } else {
+        // No token, user is not authenticated
+        setIsLoading(false);
+        setIsAuthenticated(false);
+      }
+    };
+
+    initializeAuth();
+  }, []); // Empty dependency array - only run once
+
+  // Handle auth events
   useEffect(() => {
     const handleAuthError = () => {
-      console.log('Auth error event received');
       clearAuthState();
       toast.error('Authentication error, redirecting to login');
     };
 
     const handleAuthLogout = (event) => {
-      console.log('Auth logout event received:', event.detail);
       clearAuthState();
       if (event.detail?.reason === 'token_refresh_failed') {
         toast.error('Session expired, please log in again');
@@ -201,53 +245,10 @@ export function useAuth() {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       debouncedGetProfile.cancel();
     };
-  }, [clearAuthState, debouncedGetProfile]); // Only include stable dependencies
-
-  // Separate useEffect for initial auth check
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      const cachedProfile = localStorage.getItem('user_profile');
-
-      if (token) {
-        // If we have a token, check if we also have cached profile
-        if (cachedProfile) {
-          try {
-            const parsedProfile = JSON.parse(cachedProfile);
-            setProfile(parsedProfile);
-            setIsAuthenticated(true);
-            setIsLoading(false);
-            return; // Exit early if we have cached profile
-          } catch (error) {
-            console.error('Error parsing cached profile:', error);
-            localStorage.removeItem('user_profile');
-          }
-        }
-
-        // No cached profile or parsing failed, fetch fresh
-        try {
-          await getProfile();
-        } catch (error) {
-          console.error('Error fetching profile on init:', error);
-          setIsLoading(false);
-        }
-      } else {
-        // No token, user is not authenticated
-        setIsLoading(false);
-        setIsAuthenticated(false);
-      }
-    };
-
-    // Only initialize if we haven't already
-    if (isLoading) {
-      initializeAuth();
-    }
-  }, [getProfile, isLoading]); // Include necessary dependencies
+  }, [clearAuthState, debouncedGetProfile]);
 
   const login = useCallback(
     async (credentials) => {
-      console.log('Attempting login with credentials:', credentials);
-
       const result = await handleApiCall(
         () => api.post(API_ENDPOINTS.LOGIN, credentials),
         setIsLoading,
@@ -257,39 +258,23 @@ export function useAuth() {
       );
 
       if (!result) {
-        console.log('Login failed - no result');
         return false;
       }
-
-      console.log('Login response:', result);
 
       // Handle both possible field name variations
       const accessToken = result.access_token || result.token;
       const refreshToken = result.refresh_token || result.refresh;
       
       if (!accessToken) {
-        console.error('No access token in login response:', result);
         setError('Missing access token in login response');
         toast.error('Invalid login response - missing access token');
         clearAuthState();
         return false;
       }
 
-      if (!refreshToken) {
-        console.error('No refresh token in login response:', result);
-        setError('Missing refresh token in login response');
-        toast.error('Invalid login response - missing refresh token');
-        clearAuthState();
-        return false;
-      }
-
-      console.log('Storing tokens and setting headers');
-
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
       api.defaults.headers.Authorization = `Bearer ${accessToken}`;
-
-      console.log('Fetching profile after login');
 
       // Clear any existing errors before fetching profile
       setError(null);
@@ -297,21 +282,24 @@ export function useAuth() {
       // Call getProfileInternal directly to bypass debouncing
       const profileData = await getProfileInternal(true);
       if (profileData) {
-        console.log('Login successful, profile fetched:', profileData);
         setIsAuthenticated(true);
         toast.success('Login successful!');
         return true;
       }
 
-      console.log('Profile fetch failed after login');
       // Since the profile fetch failed but tokens are valid, 
-      // let's still consider login successful - checkAuthStatus will handle profile fetch
+      // let's still consider login successful
       setIsAuthenticated(true);
       toast.success('Login successful!');
       return true;
     },
     [getProfileInternal, clearAuthState]
   );
+
+  const logout = useCallback(() => {
+    clearAuthState();
+    toast.success('Logged out successfully');
+  }, [clearAuthState]);
 
   const register = useCallback(
     async (userData) => {
@@ -340,12 +328,12 @@ export function useAuth() {
       if (result) {
         const accessToken = result.access_token || result.token;
         const refreshToken = result.refresh_token || result.refresh;
-        
+
         if (accessToken && refreshToken) {
           localStorage.setItem('access_token', accessToken);
           localStorage.setItem('refresh_token', refreshToken);
           api.defaults.headers.Authorization = `Bearer ${accessToken}`;
-          
+
           await getProfile(true);
           navigate('/profile/me', { replace: true });
           return true;
@@ -358,76 +346,54 @@ export function useAuth() {
     [navigate, getProfile, clearAuthState]
   );
 
-  const logout = useCallback(async () => {
-    const refreshTokenValue = localStorage.getItem('refresh_token');
-    const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.LOGOUT, { refresh_token: refreshTokenValue }),
-      setIsLoading,
-      setError,
-      null,
-      'Logout'
-    );
-
-    clearAuthState();
-    navigate('/', { replace: true });
-    return result !== null;
-  }, [navigate, clearAuthState]);
-
   const requestPasswordReset = useCallback(
-    async (data) => {
-      const result = await handleApiCallWithResult(
-        () => api.post(API_ENDPOINTS.PASSWORD_RESET, data),
+    async (email) => {
+      return await handleApiCall(
+        () => api.post(API_ENDPOINTS.PASSWORD_RESET_REQUEST, { email }),
         setIsLoading,
         setError,
-        'Password reset link sent!',
+        'Password reset email sent!',
         'Password reset request'
       );
-      if (result) setSuccess('Password reset link sent!');
-      return result;
     },
     []
   );
 
   const confirmPasswordReset = useCallback(
-    async (data) => {
-      const result = await handleApiCallWithResult(
-        () => api.post(API_ENDPOINTS.PASSWORD_RESET_CONFIRM, data),
+    async (token, password) => {
+      return await handleApiCall(
+        () => api.post(API_ENDPOINTS.PASSWORD_RESET_CONFIRM, { token, password }),
         setIsLoading,
         setError,
-        'Password reset successfully!',
-        'Password reset'
+        'Password reset successful!',
+        'Password reset confirmation'
       );
-      if (result) {
-        setSuccess('Password reset successfully!');
-        navigate('/login', { replace: true });
-      }
-      return result;
     },
-    [navigate]
+    []
   );
 
   const updateProfile = useCallback(
-    async (data) => {
-      if (!isAuthenticated) return null;
+    async (profileData) => {
+      if (!isAuthenticated) return false;
+
       const formData = new FormData();
-      Object.keys(data).forEach((key) => {
-        if (key === 'genres' && Array.isArray(data[key])) {
-          formData.append(key, JSON.stringify(data[key]));
-        } else if (data[key] instanceof File) {
-          formData.append(key, data[key]);
-        } else if (data[key] !== undefined) {
-          formData.append(key, data[key]);
+      Object.keys(profileData).forEach((key) => {
+        if (key === 'genres' && Array.isArray(profileData[key])) {
+          formData.append(key, JSON.stringify(profileData[key]));
+        } else if (profileData[key] instanceof File) {
+          formData.append(key, profileData[key]);
+        } else if (profileData[key] !== undefined && profileData[key] !== null) {
+          formData.append(key, profileData[key]);
         }
       });
 
-      const result = await handleApiCall(
-        () =>
-          api.patch(API_ENDPOINTS.PROFILE, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          }),
+      const result = await handleApiCallWithResult(
+        () => api.patch(API_ENDPOINTS.UPDATE_PROFILE, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }),
         setIsLoading,
         setError,
-        'Profile updated!',
+        'Profile updated successfully!',
         'Profile update'
       );
 
@@ -441,39 +407,43 @@ export function useAuth() {
   );
 
   const updateAccountSettings = useCallback(
-    async (data) => {
+    async (settingsData) => {
+      if (!isAuthenticated) return false;
       const result = await handleApiCallWithResult(
-        () => api.patch(API_ENDPOINTS.ACCOUNT_SETTINGS, data),
+        () => api.patch(API_ENDPOINTS.UPDATE_ACCOUNT_SETTINGS, settingsData),
         setIsLoading,
         setError,
-        null,
+        'Account settings updated successfully!',
         'Account settings update'
       );
-      if (result) await getProfile(true);
+
+      if (result) {
+        setProfile(result);
+        localStorage.setItem('user_profile', JSON.stringify(result));
+      }
       return result;
     },
-    [getProfile]
+    [isAuthenticated]
   );
 
   const updateChatPreferences = useCallback(
-    async (data) => {
-      if (!isAuthenticated) return null;
-      const result = await handleApiCall(
-        () => api.patch(API_ENDPOINTS.CHAT_PREFERENCES, data),
+    async (chatPrefs) => {
+      if (!isAuthenticated) return false;
+      const result = await handleApiCallWithResult(
+        () => api.patch(API_ENDPOINTS.UPDATE_CHAT_PREFERENCES, chatPrefs),
         setIsLoading,
         setError,
-        'Chat preferences updated!',
+        'Chat preferences updated successfully!',
         'Chat preferences update'
       );
 
       if (result) {
-        const updatedProfile = { ...profile, chat_preferences: result.chat_preferences };
-        setProfile(updatedProfile);
-        localStorage.setItem('user_profile', JSON.stringify(updatedProfile));
+        setProfile(result);
+        localStorage.setItem('user_profile', JSON.stringify(result));
       }
       return result;
     },
-    [isAuthenticated, profile]
+    [isAuthenticated]
   );
 
   const deleteAccount = useCallback(
@@ -496,7 +466,7 @@ export function useAuth() {
     [isAuthenticated, navigate, clearAuthState]
   );
 
-  return {
+  const value = {
     login,
     register,
     refreshToken,
@@ -513,5 +483,12 @@ export function useAuth() {
     isLoading,
     error,
     success,
+    clearAuthState
   };
-}
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

@@ -208,18 +208,35 @@ export function useLibrary() {
   }, [book]);
 
   const bookmarkBook = useCallback(async (bookId) => {
-    const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.BOOKMARK_BOOK(bookId)),
-      setIsLoading,
-      setError,
-      'Book bookmarked!',
-      'Bookmark book'
-    );
-    if (result) {
-      setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
-      setBookmarks((prev) => [...prev, result]);
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.post(API_ENDPOINTS.BOOKMARK_BOOK(bookId));
+      const result = response.data;
+
+      if (result) {
+        setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
+        setBookmarks((prev) => [...prev, result]);
+        toast.success('Book bookmarked!');
+      }
+      return result;
+    } catch (error) {
+      const errorData = error.response?.data;
+
+      if (error.response?.status === 409 && errorData?.error_type === 'DUPLICATE_BOOKMARK') {
+        // User already bookmarked this book
+        toast.info('This book is already in your bookmarks');
+        setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
+        return true; // Consider it successful since the desired state is achieved
+      } else {
+        const errorMessage = errorData?.error || 'Failed to bookmark book';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+    } finally {
+      setIsLoading(false);
     }
-    return result;
   }, []);
 
   const removeBookmark = useCallback(async (bookId) => {
@@ -238,18 +255,35 @@ export function useLibrary() {
   }, []);
 
   const favoriteBook = useCallback(async (bookId) => {
-    const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.FAVORITE_BOOK(bookId)),
-      setIsLoading,
-      setError,
-      'Book favorited!',
-      'Favorite book'
-    );
-    if (result) {
-      setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
-      setFavorites((prev) => [...prev, result]);
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.post(API_ENDPOINTS.FAVORITE_BOOK(bookId));
+      const result = response.data;
+
+      if (result) {
+        setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
+        setFavorites((prev) => [...prev, result]);
+        toast.success('Book favorited!');
+      }
+      return result;
+    } catch (error) {
+      const errorData = error.response?.data;
+
+      if (error.response?.status === 409 && errorData?.error_type === 'DUPLICATE_FAVORITE') {
+        // User already favorited this book
+        toast.info('This book is already in your favorites');
+        setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
+        return true; // Consider it successful since the desired state is achieved
+      } else {
+        const errorMessage = errorData?.error || 'Failed to favorite book';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+    } finally {
+      setIsLoading(false);
     }
-    return result;
   }, []);
 
   const unfavoriteBook = useCallback(async (bookId) => {

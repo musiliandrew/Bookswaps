@@ -243,6 +243,7 @@ const EnhancedPostCard = ({
               ) : (
                 <ArrowDownIcon className="w-4 h-4" />
               )}
+              <span className="text-sm font-medium">{post.downvotes || 0}</span>
             </motion.button>
 
             {/* Comments */}

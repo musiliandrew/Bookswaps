@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useDiscussions } from '../../hooks/useDiscussions';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import Button from '../Common/Button';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import LoginPage from './pages/Auth/LoginPage';

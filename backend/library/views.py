@@ -304,10 +304,37 @@ class BookmarkBookView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
-        serializer.is_valid(raise_exception=True)
-        bookmark = serializer.save()
-        return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
+        try:
+            serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+            serializer.is_valid(raise_exception=True)
+            bookmark = serializer.save()
+            return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Handle structured validation errors from serializer
+            if hasattr(e, 'detail') and isinstance(e.detail, dict):
+                error_data = e.detail
+                if error_data.get('error_type') == 'DUPLICATE_BOOKMARK':
+                    return Response(error_data, status=status.HTTP_409_CONFLICT)
+            # Handle other validation errors
+            return Response(
+                {"error": "Validation failed", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except IntegrityError as e:
+            # Fallback for any IntegrityError that wasn't caught by serializer
+            if 'unique' in str(e).lower() and ('user' in str(e).lower() or 'book' in str(e).lower()):
+                return Response(
+                    {
+                        "error": "You have already bookmarked this book",
+                        "error_type": "DUPLICATE_BOOKMARK",
+                        "details": "This book is already in your bookmarks"
+                    },
+                    status=status.HTTP_409_CONFLICT
+                )
+            return Response(
+                {"error": "Database constraint violation", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class RemoveBookmarkView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -329,10 +356,37 @@ class FavoriteBookView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
-        serializer.is_valid(raise_exception=True)
-        favorite = serializer.save()
-        return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
+        try:
+            serializer = self.get_serializer(data={'book_id': self.kwargs['book_id'], **request.data})
+            serializer.is_valid(raise_exception=True)
+            favorite = serializer.save()
+            return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Handle structured validation errors from serializer
+            if hasattr(e, 'detail') and isinstance(e.detail, dict):
+                error_data = e.detail
+                if error_data.get('error_type') == 'DUPLICATE_FAVORITE':
+                    return Response(error_data, status=status.HTTP_409_CONFLICT)
+            # Handle other validation errors
+            return Response(
+                {"error": "Validation failed", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except IntegrityError as e:
+            # Fallback for any IntegrityError that wasn't caught by serializer
+            if 'unique' in str(e).lower() and ('user' in str(e).lower() or 'book' in str(e).lower()):
+                return Response(
+                    {
+                        "error": "You have already favorited this book",
+                        "error_type": "DUPLICATE_FAVORITE",
+                        "details": "This book is already in your favorites"
+                    },
+                    status=status.HTTP_409_CONFLICT
+                )
+            return Response(
+                {"error": "Database constraint violation", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class UnfavoriteBookView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]

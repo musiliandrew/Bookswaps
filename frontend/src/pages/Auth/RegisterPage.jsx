@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import RegisterForm from '../../components//Auth/RegisterForm';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RegisterPage = () => {
   const { register, error, isLoading } = useAuth();

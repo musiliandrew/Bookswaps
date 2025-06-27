@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/Auth/LoginForm';
 import AuthLink from '../../components/Auth/AuthLink';
 

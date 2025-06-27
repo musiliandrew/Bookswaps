@@ -161,8 +161,8 @@ const refreshTokenFunction = async () => {
   
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'}users/token/refresh/`, 
-      { refresh_token: refresh } // Changed from 'refresh' to 'refresh_token'
+      `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'}users/token/refresh/`,
+      { refresh: refresh } // Backend expects 'refresh' field name
     );
     
     // Handle both possible response formats

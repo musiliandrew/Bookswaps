@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwaps } from '../../hooks/useSwaps';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import SwapList from './SwapList';
 import SwapHistory from './SwapHistory';
 import SwapCreationForm from './SwapCreationForm';

@@ -191,10 +191,9 @@ const EnhancedPostFeed = ({
                     onDownvote={onDownvote}
                     onReprint={onReprint}
                     onBookmark={onBookmark}
-                    // You can add user interaction states here
-                    // isUpvoted={userInteractions[post.discussion_id]?.upvoted}
-                    // isDownvoted={userInteractions[post.discussion_id]?.downvoted}
-                    // isBookmarked={userInteractions[post.discussion_id]?.bookmarked}
+                    isUpvoted={post.is_upvoted}
+                    isDownvoted={post.is_downvoted}
+                    isBookmarked={false} // TODO: Add bookmark state from backend
                   />
                 </motion.div>
               ))}

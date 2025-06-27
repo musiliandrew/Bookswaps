@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
 import ErrorMessage from '../Common/ErrorMessage';
