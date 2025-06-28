@@ -18,11 +18,11 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState({
     name: '',
-    address: '',
+    type: 'other',
+    city: '',
     latitude: '',
     longitude: '',
-    description: '',
-    is_public: true
+    rating: null
   });
   const [midpointData, setMidpointData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -59,25 +59,42 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
   };
 
   const handleAddLocation = async () => {
-    if (!newLocation.name || !newLocation.address) {
-      toast.error('Please fill in name and address');
+    if (!newLocation.name || !newLocation.city) {
+      toast.error('Please fill in name and city');
       return;
     }
 
     try {
-      const result = await addLocation(newLocation);
+      // Format data according to LocationSerializer
+      const locationData = {
+        name: newLocation.name,
+        type: newLocation.type || 'other',
+        city: newLocation.city,
+        coords: null, // Will be set by backend if lat/lng provided
+        rating: newLocation.rating || null
+      };
+
+      // Add coordinates if provided
+      if (newLocation.latitude && newLocation.longitude) {
+        locationData.coords = {
+          latitude: parseFloat(newLocation.latitude),
+          longitude: parseFloat(newLocation.longitude)
+        };
+      }
+
+      const result = await addLocation(locationData);
       if (result) {
-        const updatedLocations = [...locations, { ...newLocation, id: Date.now() }];
+        const updatedLocations = [...locations, { ...result, id: result.location_id || Date.now() }];
         setLocations(updatedLocations);
         localStorage.setItem('bookswap_locations', JSON.stringify(updatedLocations));
-        
+
         setNewLocation({
           name: '',
-          address: '',
+          type: 'other',
+          city: '',
           latitude: '',
           longitude: '',
-          description: '',
-          is_public: true
+          rating: null
         });
         setShowAddForm(false);
         toast.success('Location added successfully!');
@@ -96,10 +113,10 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
 
     try {
       const result = await getMidpoint({
-        user1_lat: userLocation.latitude,
-        user1_lng: userLocation.longitude,
-        user2_lat: otherUserLocation.latitude,
-        user2_lng: otherUserLocation.longitude
+        user_lat: userLocation.latitude,
+        user_lon: userLocation.longitude,
+        other_lat: otherUserLocation.latitude,
+        other_lon: otherUserLocation.longitude
       });
       
       if (result) {
@@ -217,13 +234,13 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                   
                   <div>
                     <label className="block text-sm font-medium text-primary mb-2">
-                      Address *
+                      City *
                     </label>
                     <input
                       type="text"
-                      value={newLocation.address}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Full address"
+                      value={newLocation.city}
+                      onChange={(e) => setNewLocation(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="City name"
                       className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
                     />
                   </div>
@@ -255,32 +272,41 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
                     />
                   </div>
-                </div>
-                
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    Description (optional)
-                  </label>
-                  <textarea
-                    value={newLocation.description}
-                    onChange={(e) => setNewLocation(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Additional details about this location"
-                    rows={2}
-                    className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary resize-none"
-                  />
-                </div>
-                
-                <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
-                    id="is_public"
-                    checked={newLocation.is_public}
-                    onChange={(e) => setNewLocation(prev => ({ ...prev, is_public: e.target.checked }))}
-                    className="rounded border-white/20"
-                  />
-                  <label htmlFor="is_public" className="text-sm text-primary">
-                    Make this location public for other users
-                  </label>
+
+                  <div>
+                    <label className="block text-sm font-medium text-primary mb-2">
+                      Location Type
+                    </label>
+                    <select
+                      value={newLocation.type}
+                      onChange={(e) => setNewLocation(prev => ({ ...prev, type: e.target.value }))}
+                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                    >
+                      <option value="library">Library</option>
+                      <option value="cafe">Cafe</option>
+                      <option value="park">Park</option>
+                      <option value="bookstore">Bookstore</option>
+                      <option value="restaurant">Restaurant</option>
+                      <option value="mall">Shopping Mall</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-primary mb-2">
+                      Rating (1-5, optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={newLocation.rating || ''}
+                      onChange={(e) => setNewLocation(prev => ({ ...prev, rating: e.target.value ? parseFloat(e.target.value) : null }))}
+                      placeholder="4.5"
+                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex gap-3 mt-4">
