@@ -16,6 +16,8 @@ import {
   BookOpenIcon,
   TagIcon
 } from '@heroicons/react/24/outline';
+import CreateEventModal from './CreateEventModal';
+import EventDetailModal from './EventDetailModal';
 
 const SocietyDetailPage = () => {
   const { societyId } = useParams();
@@ -37,6 +39,9 @@ const SocietyDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isMember, setIsMember] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [showEventDetailModal, setShowEventDetailModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     if (societyId) {
@@ -89,6 +94,16 @@ const SocietyDetailPage = () => {
         toast.error('Failed to leave society');
       }
     }
+  };
+
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+    setShowEventDetailModal(true);
+  };
+
+  const handleEventCreated = () => {
+    loadSocietyData(); // Refresh events
+    setShowCreateEventModal(false);
   };
 
   const tabs = [
@@ -284,7 +299,14 @@ const SocietyDetailPage = () => {
               <SocietyMembers members={societyMembers} isAdmin={isAdmin} />
             )}
             {activeTab === 'events' && (
-              <SocietyEvents events={societyEvents} societyId={societyId} isMember={isMember} />
+              <SocietyEvents
+                events={societyEvents}
+                societyId={societyId}
+                isMember={isMember}
+                isAdmin={isAdmin}
+                onEventClick={handleEventClick}
+                onCreateEvent={() => setShowCreateEventModal(true)}
+              />
             )}
             {activeTab === 'discussions' && (
               <SocietyDiscussions societyId={societyId} isMember={isMember} />
@@ -292,6 +314,21 @@ const SocietyDetailPage = () => {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Modals */}
+      <CreateEventModal
+        isOpen={showCreateEventModal}
+        onClose={() => setShowCreateEventModal(false)}
+        societyId={societyId}
+        onSuccess={handleEventCreated}
+      />
+
+      <EventDetailModal
+        isOpen={showEventDetailModal}
+        onClose={() => setShowEventDetailModal(false)}
+        event={selectedEvent}
+        societyId={societyId}
+      />
     </div>
   );
 };
@@ -329,31 +366,150 @@ const SocietyMembers = ({ members, isAdmin }) => (
   </div>
 );
 
-const SocietyEvents = ({ events, societyId, isMember }) => (
-  <div className="bookish-glass rounded-2xl border border-white/20 p-8">
-    <div className="flex items-center justify-between mb-6">
-      <h3 className="text-xl font-lora font-bold text-primary">Events</h3>
-      {isMember && (
-        <button className="flex items-center gap-2 bookish-button-enhanced text-white px-4 py-2 rounded-xl">
-          <PlusIcon className="w-4 h-4" />
-          Create Event
-        </button>
+const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onCreateEvent }) => {
+  const getEventTypeIcon = (type) => {
+    const icons = {
+      'DISCUSSION': '📚',
+      'MEETUP': '🤝',
+      'READING': '📖',
+      'WORKSHOP': '🎓',
+      'SOCIAL': '🎉',
+      'OTHER': '📅'
+    };
+    return icons[type] || '📅';
+  };
+
+  const formatEventDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const isUpcoming = date > now;
+
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isUpcoming
+    };
+  };
+
+  return (
+    <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-lora font-bold text-primary">Events</h3>
+        {(isMember || isAdmin) && (
+          <button
+            onClick={onCreateEvent}
+            className="flex items-center gap-2 bookish-button-enhanced text-white px-4 py-2 rounded-xl"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Create Event
+          </button>
+        )}
+      </div>
+
+      {events?.length === 0 ? (
+        <div className="text-center py-12">
+          <CalendarIcon className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+          <h4 className="text-lg font-semibold text-primary mb-2">No Events Yet</h4>
+          <p className="text-primary/70 mb-6">
+            {isMember || isAdmin
+              ? "Be the first to create an event for this society!"
+              : "No events scheduled yet."
+            }
+          </p>
+          {(isMember || isAdmin) && (
+            <button
+              onClick={onCreateEvent}
+              className="bookish-button-enhanced text-white px-6 py-3 rounded-xl"
+            >
+              Create First Event
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {events.map((event) => {
+            const eventDate = formatEventDate(event.start_time);
+            const attendeeCount = event.attendees?.filter(a => a.status === 'ATTENDING').length || 0;
+
+            return (
+              <motion.div
+                key={event.event_id}
+                className="p-6 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 cursor-pointer transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+                onClick={() => onEventClick(event)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl">{getEventTypeIcon(event.event_type)}</div>
+
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-primary text-lg">{event.title}</h4>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        eventDate.isUpcoming
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                      }`}>
+                        {eventDate.isUpcoming ? 'Upcoming' : 'Past'}
+                      </div>
+                    </div>
+
+                    {event.description && (
+                      <p className="text-primary/70 mb-3 line-clamp-2">{event.description}</p>
+                    )}
+
+                    <div className="flex items-center gap-6 text-sm text-primary/60">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        <span>{eventDate.date} at {eventDate.time}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <UsersIcon className="w-4 h-4" />
+                        <span>{attendeeCount} attending</span>
+                      </div>
+
+                      {event.is_virtual && (
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          <span>Virtual</span>
+                        </div>
+                      )}
+
+                      {event.location && !event.is_virtual && (
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          <span className="truncate max-w-32">{event.location}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {event.tags && event.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {event.tags.slice(0, 3).map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-accent/20 text-accent text-xs rounded-full"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {event.tags.length > 3 && (
+                          <span className="px-2 py-1 bg-white/10 text-primary/60 text-xs rounded-full">
+                            +{event.tags.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
     </div>
-    {events?.length === 0 ? (
-      <p className="text-primary/70 text-center py-8">No events scheduled yet.</p>
-    ) : (
-      <div className="space-y-4">
-        {events?.map((event) => (
-          <div key={event.event_id} className="p-4 bg-white/5 rounded-xl">
-            <h4 className="font-semibold text-primary">{event.title}</h4>
-            <p className="text-sm text-primary/70 mt-1">{event.description}</p>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 const SocietyDiscussions = ({ societyId, isMember }) => (
   <div className="bookish-glass rounded-2xl border border-white/20 p-8">

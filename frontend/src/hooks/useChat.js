@@ -155,6 +155,23 @@ export function useChat() {
     []
   );
 
+  const sendMediaMessage = useCallback(
+    async (formData) => {
+      return await handleApiCall(
+        () => api.post(API_ENDPOINTS.SEND_MEDIA_MESSAGE, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }),
+        setIsLoading,
+        setError,
+        'Media sent!',
+        'Send media message'
+      );
+    },
+    []
+  );
+
   useEffect(() => {
     if (!isChatWsConnected || !wsData) return;
 
@@ -196,6 +213,7 @@ export function useChat() {
     addDirectReaction,
     listReactions,
     listMessages,
+    sendMediaMessage,
     messages,
     isLoading,
     error,

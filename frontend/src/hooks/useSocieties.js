@@ -277,6 +277,17 @@ export function useSocieties() {
     return result;
   }, []);
 
+  const rsvpToEvent = useCallback(async (societyId, eventId, data) => {
+    const result = await handleApiCall(
+      () => api.post(API_ENDPOINTS.RSVP_EVENT(societyId, eventId), data),
+      setIsLoading,
+      setError,
+      'RSVP updated!',
+      'Update RSVP'
+    );
+    return result;
+  }, []);
+
   useEffect(() => {
   if (!isSocietyWsConnected || !societyData) return;
 
@@ -334,6 +345,7 @@ export function useSocieties() {
     listSocietyReactions,
     createSocietyEvent,
     listSocietyEvents,
+    rsvpToEvent,
     societies,
     society,
     societyMembers,

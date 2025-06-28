@@ -55,6 +55,7 @@ export const API_ENDPOINTS = {
   PIN_SOCIETY_MESSAGE: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/pin/`,
   ADD_SOCIETY_REACTION: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/react/`,
   LIST_SOCIETY_REACTIONS: (societyId, messageId) => `/chat/societies/${societyId}/messages/${messageId}/reactions/`,
+  RSVP_EVENT: (societyId, eventId) => `/discussions/societies/${societyId}/events/${eventId}/rsvp/`,
 
   // Society endpoints (discussion-focused)
   LIST_SOCIETIES_DISCUSSIONS: '/discussions/societies/',
@@ -100,6 +101,7 @@ export const API_ENDPOINTS = {
   MARK_READ: (chatId) => `/chat/messages/${chatId}/read/`,
   ADD_REACTION: (chatId) => `/chat/messages/${chatId}/react/`,
   LIST_REACTIONS: (chatId) => `/chat/messages/${chatId}/reactions/`,
+  SEND_MEDIA_MESSAGE: '/chat/media/',
   SEND_MEDIA_MESSAGE: '/chat/messages/send-media/',
   TYPING_STATUS: '/chat/typing/',
 };

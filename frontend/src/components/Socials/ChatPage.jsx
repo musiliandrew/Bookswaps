@@ -13,8 +13,10 @@ import {
 import ConversationList from './Chat/ConversationList';
 import ConversationView from './Chat/ConversationView';
 import MediaUploadModal from './Chat/MediaUploadModal';
+import EnhancedMediaUpload from './Chat/EnhancedMediaUpload';
 import VoiceRecorder from './Chat/VoiceRecorder';
 import SocietyList from './Chat/SocietyList';
+import MessagePinning, { PinnedMessagesSection } from './Chat/MessagePinning';
 
 const ChatPage = () => {
   console.log('ChatPage component is rendering');
@@ -27,6 +29,7 @@ const ChatPage = () => {
   const [conversationMessages, setConversationMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMediaModal, setShowMediaModal] = useState(false);
+  const [showEnhancedMediaModal, setShowEnhancedMediaModal] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [loading, setLoading] = useState(true);
