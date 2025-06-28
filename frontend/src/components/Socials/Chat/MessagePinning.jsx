@@ -4,13 +4,13 @@ import { useSocieties } from '../../../hooks/useSocieties';
 import { useAuth } from '../../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import {
-  PinIcon,
+  MapPinIcon,
   XMarkIcon,
   ChevronDownIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import {
-  PinIcon as PinIconSolid
+  MapPinIcon as MapPinIconSolid
 } from '@heroicons/react/24/solid';
 
 const MessagePinning = ({ 
@@ -61,9 +61,9 @@ const MessagePinning = ({
           title={message?.is_pinned ? 'Unpin message' : 'Pin message'}
         >
           {message?.is_pinned ? (
-            <PinIconSolid className="w-4 h-4" />
+            <MapPinIconSolid className="w-4 h-4" />
           ) : (
-            <PinIcon className="w-4 h-4" />
+            <MapPinIcon className="w-4 h-4" />
           )}
         </motion.button>
       )}
@@ -71,7 +71,7 @@ const MessagePinning = ({
       {/* Pinned Indicator */}
       {message?.is_pinned && !compact && (
         <div className="flex items-center gap-1 text-xs text-yellow-500 mb-1">
-          <PinIconSolid className="w-3 h-3" />
+          <MapPinIconSolid className="w-3 h-3" />
           <span>Pinned message</span>
         </div>
       )}
@@ -152,7 +152,7 @@ export const PinnedMessagesSection = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <PinIconSolid className="w-4 h-4 text-yellow-500" />
+          <MapPinIconSolid className="w-4 h-4 text-yellow-500" />
           <span className="font-semibold text-primary">
             Pinned Messages ({pinnedMessages.length})
           </span>
