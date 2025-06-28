@@ -48,6 +48,12 @@ const ProfilePage = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Helper function to change tab and update URL (moved before usage)
+  const changeTab = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  }, [setSearchParams]);
+
   // Memoize swipe handlers to prevent unnecessary re-renders
   const handleSwipeLeft = useCallback(() => {
     if (activeTab === 'my-profile') {
@@ -87,12 +93,6 @@ const ProfilePage = () => {
   const handleRetry = useCallback(() => {
     getProfile();
   }, [getProfile]);
-
-  // Helper function to change tab and update URL
-  const changeTab = useCallback((tabId) => {
-    setActiveTab(tabId);
-    setSearchParams({ tab: tabId });
-  }, [setSearchParams]);
 
   // Profile completion handlers
   const handleShowCompletionGuide = useCallback(() => {
