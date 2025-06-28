@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
@@ -10,17 +11,28 @@ import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/rea
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const ProfilePage = () => {
-  const { 
-    isAuthenticated, 
-    profile, 
-    isLoading: authLoading, 
-    error: authError, 
-    getProfile 
+  const {
+    isAuthenticated,
+    profile,
+    isLoading: authLoading,
+    error: authError,
+    getProfile
   } = useAuth();
-  
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  // Handle tab query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'settings') {
+      setActiveTab('settings');
+    } else if (tabParam === 'my-profile' || !tabParam) {
+      setActiveTab('my-profile');
+    }
+  }, [searchParams]);
 
   // Memoize the profile fetching logic
   useEffect(() => {
@@ -39,15 +51,15 @@ const ProfilePage = () => {
   // Memoize swipe handlers to prevent unnecessary re-renders
   const handleSwipeLeft = useCallback(() => {
     if (activeTab === 'my-profile') {
-      setActiveTab('settings');
+      changeTab('settings');
     }
-  }, [activeTab]);
+  }, [activeTab, changeTab]);
 
   const handleSwipeRight = useCallback(() => {
     if (activeTab === 'settings') {
-      setActiveTab('my-profile');
+      changeTab('my-profile');
     }
-  }, [activeTab]);
+  }, [activeTab, changeTab]);
 
   const handlers = useSwipeable({
     onSwipedLeft: handleSwipeLeft,
@@ -76,6 +88,12 @@ const ProfilePage = () => {
     getProfile();
   }, [getProfile]);
 
+  // Helper function to change tab and update URL
+  const changeTab = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  }, [setSearchParams]);
+
   // Profile completion handlers
   const handleShowCompletionGuide = useCallback(() => {
     setShowCompletionModal(true);
@@ -83,10 +101,10 @@ const ProfilePage = () => {
 
   const handleFieldClick = useCallback((field) => {
     // Navigate to settings tab and focus on the specific field
-    setActiveTab('settings');
+    changeTab('settings');
     // You could add logic here to scroll to or highlight the specific field
     console.log('Focus on field:', field);
-  }, []);
+  }, [changeTab]);
 
   // Enhanced Loading state
   if (authLoading || !profile) {
@@ -169,7 +187,7 @@ const ProfilePage = () => {
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => changeTab(tab.id)}
               className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300`}
               style={{
                 color: activeTab === tab.id ? 'white' : 'var(--primary)',
