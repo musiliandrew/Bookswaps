@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import QRCodeModal from './QRCodeModal';
 import LocationManager from './LocationManager';
 import SwapExtensionModal from './SwapExtensionModal';
+import AcceptSwapModal from './AcceptSwapModal';
 
 const SwapList = ({
   swaps,
@@ -33,6 +34,7 @@ const SwapList = ({
   const [showQRModal, setShowQRModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [selectedSwapForModal, setSelectedSwapForModal] = useState(null);
 
   const handleConfirmSwap = (swapId) => {
@@ -64,6 +66,17 @@ const SwapList = ({
     // Handle location selection - would typically update the swap
     console.log('Selected location:', location);
     setShowLocationModal(false);
+  };
+
+  const handleShowAcceptModal = (swap) => {
+    setSelectedSwapForModal(swap);
+    setShowAcceptModal(true);
+  };
+
+  const handleAcceptSwap = (swapId, acceptData) => {
+    onAccept(swapId, acceptData);
+    setShowAcceptModal(false);
+    setSelectedSwapForModal(null);
   };
 
   const isInitiator = (swap) => swap.initiator?.user_id === currentUserId;
@@ -191,7 +204,7 @@ const SwapList = ({
           <div className="flex flex-wrap gap-2">
             {canAccept(swap) && (
               <motion.button
-                onClick={() => onAccept(swap.swap_id)}
+                onClick={() => handleShowAcceptModal(swap)}
                 className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -345,6 +358,14 @@ const SwapList = ({
         onClose={() => setShowExtensionModal(false)}
         swap={selectedSwapForModal}
         mode="request"
+      />
+
+      <AcceptSwapModal
+        isOpen={showAcceptModal}
+        onClose={() => setShowAcceptModal(false)}
+        onAccept={handleAcceptSwap}
+        swap={selectedSwapForModal}
+        isLoading={isLoading}
       />
     </div>
   );

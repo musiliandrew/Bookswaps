@@ -63,9 +63,15 @@ export function useSwaps() {
     return result;
   }, []);
 
-  const acceptSwap = useCallback(async (swapId) => {
+  const acceptSwap = useCallback(async (swapId, acceptData = {}) => {
+    // Backend requires status field and optionally meetup details
+    const data = {
+      status: 'Accepted',
+      ...acceptData  // Allow optional meetup_location_id and meetup_time
+    };
+
     const result = await handleApiCall(
-      () => api.patch(API_ENDPOINTS.ACCEPT_SWAP(swapId)),
+      () => api.patch(API_ENDPOINTS.ACCEPT_SWAP(swapId), data),
       setIsLoading,
       setError,
       'Swap accepted!',
@@ -73,7 +79,7 @@ export function useSwaps() {
     );
     if (result) {
       setSwaps((prev) =>
-        prev.map((s) => (s.id === swapId ? { ...s, status: 'Accepted' } : s))
+        prev.map((s) => (s.swap_id === swapId ? { ...s, status: 'Accepted' } : s))
       );
     }
     return result;
@@ -89,7 +95,7 @@ export function useSwaps() {
     );
     if (result) {
       setSwaps((prev) =>
-        prev.map((s) => (s.id === swapId ? { ...s, status: result.status } : s))
+        prev.map((s) => (s.swap_id === swapId ? { ...s, status: result.status } : s))
       );
     }
     return result;
@@ -105,7 +111,7 @@ export function useSwaps() {
     );
     if (result) {
       setSwaps((prev) =>
-        prev.map((s) => (s.id === swapId ? { ...s, status: 'Cancelled' } : s))
+        prev.map((s) => (s.swap_id === swapId ? { ...s, status: 'Cancelled' } : s))
       );
     }
     return result;
@@ -183,12 +189,12 @@ export function useSwaps() {
     notifications.forEach((notification) => {
       const { type, swap } = notification;
       if (type === 'swap_proposed' && swap?.swap_id) {
-        setSwaps((prev) => [swap, ...prev.filter((s) => s.id !== swap.swap_id)]);
+        setSwaps((prev) => [swap, ...prev.filter((s) => s.swap_id !== swap.swap_id)]);
         toast.info(`New swap proposed: ${swap.initiator?.username || 'Unknown'}`);
       } else if (['swap_accepted', 'swap_confirmed', 'swap_completed', 'swap_cancelled'].includes(type) && swap?.swap_id) {
         setSwaps((prev) =>
           prev.map((s) =>
-            s.id === swap.swap_id ? { ...s, status: swap.status } : s
+            s.swap_id === swap.swap_id ? { ...s, status: swap.status } : s
           )
         );
         getSwapHistory();

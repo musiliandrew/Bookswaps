@@ -58,8 +58,8 @@ const SwapsPage = () => {
     }
   };
 
-  const handleAcceptSwap = async (swapId) => {
-    const result = await acceptSwap(swapId);
+  const handleAcceptSwap = async (swapId, acceptData = {}) => {
+    const result = await acceptSwap(swapId, acceptData);
     if (result) {
       toast.success('Swap accepted!');
       getSwaps(filters, pagination.swaps.page);
