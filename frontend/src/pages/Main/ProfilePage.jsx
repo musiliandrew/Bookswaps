@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
 import ProfileCompletionBanner from '../../components/Profile/ProfileCompletionBanner';
+import ProfileCompletionModal from '../../components/Profile/ProfileCompletionModal';
 import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
@@ -19,6 +20,7 @@ const ProfilePage = () => {
   
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   // Memoize the profile fetching logic
   useEffect(() => {
@@ -73,6 +75,18 @@ const ProfilePage = () => {
   const handleRetry = useCallback(() => {
     getProfile();
   }, [getProfile]);
+
+  // Profile completion handlers
+  const handleShowCompletionGuide = useCallback(() => {
+    setShowCompletionModal(true);
+  }, []);
+
+  const handleFieldClick = useCallback((field) => {
+    // Navigate to settings tab and focus on the specific field
+    setActiveTab('settings');
+    // You could add logic here to scroll to or highlight the specific field
+    console.log('Focus on field:', field);
+  }, []);
 
   // Enhanced Loading state
   if (authLoading || !profile) {
@@ -203,6 +217,8 @@ const ProfilePage = () => {
               <ProfileCompletionBanner
                 completionPercentage={profile.profile_completion || 0}
                 isCompleted={profile.profile_completed || false}
+                completionDetails={profile.profile_completion_details}
+                onShowGuide={handleShowCompletionGuide}
               />
             )}
 
@@ -241,6 +257,14 @@ const ProfilePage = () => {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Profile Completion Modal */}
+        <ProfileCompletionModal
+          isOpen={showCompletionModal}
+          onClose={() => setShowCompletionModal(false)}
+          completionDetails={profile?.profile_completion_details}
+          onFieldClick={handleFieldClick}
+        />
       </div>
     </ErrorBoundary>
   );

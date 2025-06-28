@@ -850,3 +850,11 @@ class UserStatsView(APIView):
             })
 
         return achievements
+
+class ProfileCompletionView(APIView):
+    """Get detailed profile completion information"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        completion_details = request.user.get_profile_completion_details()
+        return Response(completion_details, status=status.HTTP_200_OK)

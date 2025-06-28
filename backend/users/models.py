@@ -74,26 +74,127 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
+    def get_profile_completion_details(self):
+        """Get detailed profile completion information"""
+        fields_info = {
+            'username': {
+                'completed': bool(self.username),
+                'label': 'Username',
+                'description': 'Your unique username',
+                'category': 'essential',
+                'weight': 10
+            },
+            'email': {
+                'completed': bool(self.email),
+                'label': 'Email Address',
+                'description': 'Your email for notifications',
+                'category': 'essential',
+                'weight': 10
+            },
+            'birth_date': {
+                'completed': bool(self.birth_date),
+                'label': 'Birth Date',
+                'description': 'Help us recommend age-appropriate books',
+                'category': 'personal',
+                'weight': 10
+            },
+            'gender': {
+                'completed': bool(self.gender),
+                'label': 'Gender',
+                'description': 'Optional demographic information',
+                'category': 'personal',
+                'weight': 10
+            },
+            'city': {
+                'completed': bool(self.city),
+                'label': 'City',
+                'description': 'Find local book swappers near you',
+                'category': 'location',
+                'weight': 10
+            },
+            'country': {
+                'completed': bool(self.country),
+                'label': 'Country',
+                'description': 'Connect with readers worldwide',
+                'category': 'location',
+                'weight': 10
+            },
+            'about_you': {
+                'completed': bool(self.about_you and len(self.about_you.strip()) > 10),
+                'label': 'About You',
+                'description': 'Tell others about your reading interests (min 10 characters)',
+                'category': 'social',
+                'weight': 15
+            },
+            'genres': {
+                'completed': bool(self.genres and len(self.genres) >= 3),
+                'label': 'Favorite Genres',
+                'description': 'Select at least 3 genres you enjoy reading',
+                'category': 'preferences',
+                'weight': 15
+            },
+            'profile_picture': {
+                'completed': bool(self.profile_picture),
+                'label': 'Profile Picture',
+                'description': 'Add a photo to personalize your profile',
+                'category': 'social',
+                'weight': 10
+            },
+            'ethnicity': {
+                'completed': bool(self.ethnicity),
+                'label': 'Ethnicity',
+                'description': 'Optional demographic information',
+                'category': 'personal',
+                'weight': 0  # Optional field, doesn't count toward completion
+            }
+        }
+
+        # Calculate completion
+        total_weight = sum(field['weight'] for field in fields_info.values() if field['weight'] > 0)
+        completed_weight = sum(field['weight'] for field in fields_info.values()
+                             if field['completed'] and field['weight'] > 0)
+
+        percentage = int((completed_weight / total_weight) * 100) if total_weight > 0 else 0
+
+        # Group by category
+        categories = {
+            'essential': [],
+            'personal': [],
+            'location': [],
+            'social': [],
+            'preferences': []
+        }
+
+        for field_name, field_info in fields_info.items():
+            category = field_info['category']
+            if category in categories:
+                categories[category].append({
+                    'field': field_name,
+                    **field_info
+                })
+
+        # Get missing fields
+        missing_fields = [
+            {
+                'field': field_name,
+                **field_info
+            }
+            for field_name, field_info in fields_info.items()
+            if not field_info['completed'] and field_info['weight'] > 0
+        ]
+
+        return {
+            'percentage': percentage,
+            'completed_weight': completed_weight,
+            'total_weight': total_weight,
+            'categories': categories,
+            'missing_fields': missing_fields,
+            'fields_info': fields_info
+        }
+
     def get_profile_completion_percentage(self):
         """Calculate profile completion percentage"""
-        total_fields = 10  # Total important fields
-        completed_fields = 0
-
-        # Essential fields (always required)
-        if self.username: completed_fields += 1
-        if self.email: completed_fields += 1
-
-        # Profile fields
-        if self.birth_date: completed_fields += 1
-        if self.gender: completed_fields += 1
-        if self.city: completed_fields += 1
-        if self.country: completed_fields += 1
-        if self.about_you: completed_fields += 1
-        if self.genres: completed_fields += 1
-        if self.profile_picture: completed_fields += 1
-        if self.ethnicity: completed_fields += 1
-
-        return int((completed_fields / total_fields) * 100)
+        return self.get_profile_completion_details()['percentage']
 
     def update_profile_completion_status(self):
         """Update profile_completed based on completion percentage"""

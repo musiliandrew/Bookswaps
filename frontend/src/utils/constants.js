@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   ACCOUNT_SETTINGS: '/users/me/settings/account/',
   CHAT_PREFERENCES: '/users/me/settings/preferences/',
   DELETE_ACCOUNT: '/users/me/delete/',
+  PROFILE_COMPLETION: '/users/me/profile-completion/',
   CREATE_DISCUSSION: '/discussions/posts/',
   LIST_POSTS: '/discussions/posts/list/',
   GET_POST: (discussionId) => `/discussions/posts/${discussionId}/`,

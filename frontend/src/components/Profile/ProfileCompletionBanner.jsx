@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
-const ProfileCompletionBanner = ({ 
-  completionPercentage = 0, 
+const ProfileCompletionBanner = ({
+  completionPercentage = 0,
   isCompleted = false,
-  onDismiss 
+  completionDetails = null,
+  onDismiss,
+  onShowGuide
 }) => {
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
@@ -104,6 +106,16 @@ const ProfileCompletionBanner = ({
           <p className="text-sm text-[var(--text)] mb-3 font-['Open_Sans']">
             Complete your profile to get better book recommendations and connect with fellow readers.
           </p>
+
+          {/* Missing fields preview */}
+          {completionDetails && completionDetails.missing_fields && completionDetails.missing_fields.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs text-[var(--text)] font-['Open_Sans'] mb-2">
+                Missing: {completionDetails.missing_fields.slice(0, 3).map(f => f.label).join(', ')}
+                {completionDetails.missing_fields.length > 3 && ` +${completionDetails.missing_fields.length - 3} more`}
+              </p>
+            </div>
+          )}
           
           {/* Progress bar */}
           <div className="w-full bg-[var(--secondary)]/50 rounded-full h-2 mb-3">
@@ -114,15 +126,27 @@ const ProfileCompletionBanner = ({
             />
           </div>
 
-          {/* Action button */}
-          <motion.button
-            onClick={handleCompleteProfile}
-            className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans']"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Complete Profile
-          </motion.button>
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <motion.button
+              onClick={handleCompleteProfile}
+              className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Complete Profile
+            </motion.button>
+            {onShowGuide && (
+              <motion.button
+                onClick={onShowGuide}
+                className="bg-white/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                View Guide
+              </motion.button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

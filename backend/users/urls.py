@@ -32,6 +32,7 @@ urlpatterns = [
     # Settings endpoints
     path('me/settings/preferences/', views.UpdateChatPreferencesView.as_view(), name='update_chat_preferences'),
     path('me/settings/account/', views.UpdateAccountSettingsView.as_view(), name='update_account_settings'),
+    path('me/profile-completion/', views.ProfileCompletionView.as_view(), name='profile_completion'),
     
     # Search and recommendations
     path('search/', views.SearchUsersView.as_view(), name='search_users'),
