@@ -52,11 +52,15 @@ const LibraryPage = () => {
           <motion.button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${
-              activeTab === tab.id
-                ? 'text-white bg-gradient-to-br from-primary to-accent shadow-lg'
-                : 'text-primary/70 hover:text-primary hover:bg-white/10'
-            }`}
+            className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300`}
+            style={{
+              color: activeTab === tab.id ? 'white' : 'var(--primary)',
+              background: activeTab === tab.id
+                ? 'linear-gradient(135deg, var(--primary), var(--accent))'
+                : 'transparent',
+              boxShadow: activeTab === tab.id ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+              opacity: activeTab === tab.id ? 1 : 0.7
+            }}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >
