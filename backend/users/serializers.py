@@ -176,13 +176,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+    profile_completion = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
         fields = [
             'user_id', 'username', 'city', 'country', 'birth_date', 'gender', 'about_you',
             'genres', 'profile_picture', 'profile_public', 'email_notifications',
-            'followers_count', 'following_count', 'created_at', 'last_active', 'age'
+            'followers_count', 'following_count', 'created_at', 'last_active', 'age',
+            'profile_completed', 'registration_step', 'profile_completion'
         ]
 
     def get_followers_count(self, obj):
@@ -224,6 +226,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             today = date.today()
             return today.year - obj.birth_date.year - ((today.month, today.day) < (obj.birth_date.month, obj.birth_date.day))
         return None
+
+    def get_profile_completion(self, obj):
+        return obj.get_profile_completion_percentage()
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
     genres = serializers.ListField(

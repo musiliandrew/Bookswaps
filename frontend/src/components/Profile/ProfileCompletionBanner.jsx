@@ -47,12 +47,12 @@ const ProfileCompletionBanner = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6 relative"
+      className="bookish-glass bookish-shadow rounded-lg p-4 mb-6 relative border border-[var(--primary)]/20"
     >
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="absolute top-2 right-2 text-[var(--text)] hover:text-[var(--primary)] transition-colors"
       >
         <XMarkIcon className="w-5 h-5" />
       </button>
@@ -101,12 +101,12 @@ const ProfileCompletionBanner = ({
           <h3 className="font-['Lora'] text-lg text-[var(--primary)] mb-1">
             {getCompletionMessage()}
           </h3>
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-[var(--text)] mb-3 font-['Open_Sans']">
             Complete your profile to get better book recommendations and connect with fellow readers.
           </p>
           
           {/* Progress bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+          <div className="w-full bg-[var(--secondary)]/50 rounded-full h-2 mb-3">
             <motion.div
               className={`h-2 rounded-full transition-all duration-500 ${getCompletionColor()}`}
               initial={{ width: 0 }}
@@ -117,7 +117,7 @@ const ProfileCompletionBanner = ({
           {/* Action button */}
           <motion.button
             onClick={handleCompleteProfile}
-            className="bg-[var(--accent)] text-[var(--primary)] px-4 py-2 rounded-lg font-medium hover:bg-[var(--accent)]/90 transition-colors"
+            className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans']"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

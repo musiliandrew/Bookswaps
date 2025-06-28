@@ -1,16 +1,13 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/Auth/LoginForm';
 import AuthLink from '../../components/Auth/AuthLink';
 import GoogleAuthButton from '../../components/Auth/GoogleAuthButton';
-import MultiStepRegister from '../../components/Auth/MultiStepRegister';
 
 const LoginPage = () => {
   const { login, error: authError, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const handleLogin = async (loginCredentials) => {
     const success = await login(loginCredentials);
@@ -23,15 +20,6 @@ const LoginPage = () => {
     // Handle Google OAuth success
     console.log('Google auth success:', userData);
     navigate('/profile/me', { replace: true });
-  };
-
-  const handleRegisterComplete = (userData) => {
-    setShowRegisterModal(false);
-    navigate('/profile/me', { replace: true });
-  };
-
-  const handleShowRegister = () => {
-    setShowRegisterModal(true);
   };
 
   return (
@@ -139,12 +127,7 @@ const LoginPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          <button
-            onClick={handleShowRegister}
-            className="text-[var(--accent)] hover:text-[var(--primary)] font-medium transition-colors"
-          >
-            Don't have an account? Join BookSwap
-          </button>
+          <AuthLink to="/register" text="Don't have an account? Join BookSwap" />
           <br />
           <AuthLink to="/password-reset" text="Forgot your password?" />
         </motion.div>
@@ -159,14 +142,6 @@ const LoginPage = () => {
           </p>
         </motion.div>
       </motion.div>
-
-      {/* Multi-step Registration Modal */}
-      {showRegisterModal && (
-        <MultiStepRegister
-          onComplete={handleRegisterComplete}
-          onClose={() => setShowRegisterModal(false)}
-        />
-      )}
     </div>
   );
 };
