@@ -1,30 +1,39 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  UserIcon, 
-  BookOpenIcon, 
-  MapPinIcon, 
+import {
+  UserIcon,
+  BookOpenIcon,
+  MapPinIcon,
   CalendarIcon,
   CheckIcon,
   XMarkIcon,
-  QrCodeIcon
+  QrCodeIcon,
+  ClockIcon,
+  ShareIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
+import QRCodeModal from './QRCodeModal';
+import LocationManager from './LocationManager';
+import SwapExtensionModal from './SwapExtensionModal';
 
-const SwapList = ({ 
-  swaps, 
-  isLoading, 
-  pagination, 
-  onAccept, 
-  onConfirm, 
-  onCancel, 
+const SwapList = ({
+  swaps,
+  isLoading,
+  pagination,
+  onAccept,
+  onConfirm,
+  onCancel,
   onLoadMore,
   getStatusIcon,
   getStatusColor,
-  currentUserId 
+  currentUserId
 }) => {
   const [selectedSwap, setSelectedSwap] = useState(null);
   const [qrCode, setQrCode] = useState('');
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [selectedSwapForModal, setSelectedSwapForModal] = useState(null);
 
   const handleConfirmSwap = (swapId) => {
     if (!qrCode.trim()) {
@@ -34,6 +43,27 @@ const SwapList = ({
     onConfirm(swapId, { qr_code: qrCode });
     setQrCode('');
     setSelectedSwap(null);
+  };
+
+  const handleShowQR = (swap) => {
+    setSelectedSwapForModal(swap);
+    setShowQRModal(true);
+  };
+
+  const handleShowLocation = (swap) => {
+    setSelectedSwapForModal(swap);
+    setShowLocationModal(true);
+  };
+
+  const handleShowExtension = (swap) => {
+    setSelectedSwapForModal(swap);
+    setShowExtensionModal(true);
+  };
+
+  const handleLocationSelect = (location) => {
+    // Handle location selection - would typically update the swap
+    console.log('Selected location:', location);
+    setShowLocationModal(false);
   };
 
   const isInitiator = (swap) => swap.initiator?.user_id === currentUserId;
@@ -183,6 +213,43 @@ const SwapList = ({
               </motion.button>
             )}
 
+            {/* QR Code Button */}
+            {(swap.status === 'Accepted' || swap.status === 'Confirmed') && (
+              <motion.button
+                onClick={() => handleShowQR(swap)}
+                className="flex items-center gap-1 px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <QrCodeIcon className="w-4 h-4" />
+                Show QR
+              </motion.button>
+            )}
+
+            {/* Location Button */}
+            <motion.button
+              onClick={() => handleShowLocation(swap)}
+              className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <MapPinIcon className="w-4 h-4" />
+              Location
+            </motion.button>
+
+            {/* Extension Button */}
+            {(swap.status === 'Accepted' || swap.status === 'Confirmed') && (
+              <motion.button
+                onClick={() => handleShowExtension(swap)}
+                className="flex items-center gap-1 px-3 py-2 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ClockIcon className="w-4 h-4" />
+                Extend
+              </motion.button>
+            )}
+
             {canCancel(swap) && (
               <motion.button
                 onClick={() => onCancel(swap.swap_id)}
@@ -257,6 +324,28 @@ const SwapList = ({
           </motion.button>
         </div>
       )}
+
+      {/* Modals */}
+      <QRCodeModal
+        isOpen={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        swap={selectedSwapForModal}
+        currentUserId={currentUserId}
+      />
+
+      <LocationManager
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onLocationSelect={handleLocationSelect}
+        selectedLocation={selectedSwapForModal?.meetup_location}
+      />
+
+      <SwapExtensionModal
+        isOpen={showExtensionModal}
+        onClose={() => setShowExtensionModal(false)}
+        swap={selectedSwapForModal}
+        mode="request"
+      />
     </div>
   );
 };

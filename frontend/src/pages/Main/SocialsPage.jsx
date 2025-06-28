@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import EnhancedDiscussionsPage from '../../components/Socials/Discussions/EnhancedDiscussionsPage';
 import ChatPage from '../../components/Socials/ChatPage';
+import SocietiesPage from '../../components/Socials/Societies/SocietiesPage';
 import { ChatBubbleLeftRightIcon, UsersIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 
 const SocialsPage = () => {
@@ -16,8 +17,14 @@ const SocialsPage = () => {
   }, []);
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => activeTab === 'discussions' && setActiveTab('chats'),
-    onSwipedRight: () => activeTab === 'chats' && setActiveTab('discussions'),
+    onSwipedLeft: () => {
+      if (activeTab === 'discussions') setActiveTab('chats');
+      else if (activeTab === 'chats') setActiveTab('societies');
+    },
+    onSwipedRight: () => {
+      if (activeTab === 'societies') setActiveTab('chats');
+      else if (activeTab === 'chats') setActiveTab('discussions');
+    },
     preventDefaultTouchmoveEvent: true,
     trackMouse: true,
   });
@@ -34,6 +41,12 @@ const SocialsPage = () => {
       label: 'Chats',
       icon: <UsersIcon className="w-5 h-5" />,
       description: 'Connect with readers'
+    },
+    {
+      id: 'societies',
+      label: 'Societies',
+      icon: <UsersIcon className="w-5 h-5" />,
+      description: 'Join reading communities'
     },
   ];
 
@@ -116,7 +129,9 @@ const SocialsPage = () => {
             }}
             className="w-full max-w-7xl mx-auto"
           >
-            {activeTab === 'discussions' ? <EnhancedDiscussionsPage /> : <ChatPage />}
+            {activeTab === 'discussions' && <EnhancedDiscussionsPage />}
+            {activeTab === 'chats' && <ChatPage />}
+            {activeTab === 'societies' && <SocietiesPage />}
           </motion.div>
         </AnimatePresence>
       </div>

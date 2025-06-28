@@ -15,6 +15,7 @@ import ProfilePage from './pages/Main/ProfilePage';
 import SocialsPage from './pages/Main/SocialsPage';
 import NotificationsPage from './pages/Main/NotificationsPage';
 import EnhancedPostDetail from './components/Socials/Discussions/EnhancedPostDetail';
+import SocietyDetailPage from './components/Socials/Societies/SocietyDetailPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -111,6 +112,7 @@ function App() {
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/socials" element={<SocialsPage />} />
               <Route path="/socials/discussions/post/:postId" element={<EnhancedPostDetail />} />
+              <Route path="/socials/societies/:societyId" element={<SocietyDetailPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
             </>
           )}
@@ -119,6 +121,7 @@ function App() {
               <Route path="/library" element={<Navigate to="/" replace />} />
               <Route path="/socials" element={<Navigate to="/" replace />} />
               <Route path="/socials/discussions/post/:postId" element={<Navigate to="/" replace />} />
+              <Route path="/socials/societies/:societyId" element={<Navigate to="/" replace />} />
               <Route path="/notifications" element={<Navigate to="/" replace />} />
             </>
           )}

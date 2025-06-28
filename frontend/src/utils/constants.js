@@ -43,6 +43,8 @@ export const API_ENDPOINTS = {
   BULK_NOTIFICATION_OPERATIONS: '/swaps/notifications/bulk/',
   // Society endpoints (chat-focused)
   CREATE_SOCIETY: '/chat/societies/create/',
+  GET_SOCIETY: (societyId) => `/chat/societies/${societyId}/`,
+  GET_SOCIETY_MEMBERS: (societyId) => `/chat/societies/${societyId}/members/`,
   JOIN_SOCIETY: (societyId) => `/chat/societies/${societyId}/join/`,
   LEAVE_SOCIETY: (societyId) => `/chat/societies/${societyId}/leave/`,
   LIST_SOCIETIES: '/chat/societies/',

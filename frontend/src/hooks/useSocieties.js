@@ -8,6 +8,8 @@ import { useWebSocket } from './useWebSocket';
 
 export function useSocieties() {
   const [societies, setSocieties] = useState([]);
+  const [society, setSociety] = useState(null);
+  const [societyMembers, setSocietyMembers] = useState([]);
   const [societyMessages, setSocietyMessages] = useState([]);
   const [societyEvents, setSocietyEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,8 +82,34 @@ export function useSocieties() {
     return result;
   }, []);
 
+  const getSociety = useCallback(async (societyId) => {
+    const result = await handleApiCall(
+      () => api.get(API_ENDPOINTS.GET_SOCIETY(societyId)),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch society'
+    );
+    if (result) setSociety(result);
+    return result;
+  }, []);
+
+  const getSocietyMembers = useCallback(async (societyId) => {
+    const result = await handleApiCall(
+      () => api.get(API_ENDPOINTS.GET_SOCIETY_MEMBERS(societyId)),
+      setIsLoading,
+      setError,
+      null,
+      'Fetch society members'
+    );
+    if (result) setSocietyMembers(result.results || []);
+    return result;
+  }, []);
+
   const listSocieties = useCallback(async (filters = {}, page = 1) => {
     const params = new URLSearchParams({ page });
+    if (filters.search) params.append('search', filters.search);
+    if (filters.visibility) params.append('visibility', filters.visibility);
     if (filters.focus_type) params.append('focus_type', filters.focus_type);
     if (filters.focus_id) params.append('focus_id', filters.focus_id);
     if (filters.my_societies) params.append('my_societies', 'true');
@@ -294,6 +322,8 @@ export function useSocieties() {
     createSociety,
     joinSociety,
     leaveSociety,
+    getSociety,
+    getSocietyMembers,
     listSocieties,
     getSocietyMessages,
     sendSocietyMessage,
@@ -305,6 +335,8 @@ export function useSocieties() {
     createSocietyEvent,
     listSocietyEvents,
     societies,
+    society,
+    societyMembers,
     societyMessages,
     societyEvents,
     isLoading,
