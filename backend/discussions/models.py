@@ -57,8 +57,11 @@ class Upvote(models.Model):
     class Meta:
         db_table = 'upvotes'
         db_table_comment = 'Stores discussion upvotes'
-        unique_together = (('discussion', 'user'),)
+        unique_together = (('discussion', 'user'),)  # Prevent duplicate upvotes
         indexes = [models.Index(fields=['discussion', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} upvoted {self.discussion.title}"
 class Reprint(models.Model):
     reprint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='reprints')
@@ -191,21 +194,6 @@ class SocietyMessage(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.society.name}: {self.content[:50]}..."
-    
-class Upvote(models.Model):
-    upvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='upvotes')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'upvotes'
-        db_table_comment = 'Stores discussion upvotes'
-        unique_together = (('discussion', 'user'),)  # Prevent duplicate upvotes
-        indexes = [models.Index(fields=['discussion', 'user'])]
-
-    def __str__(self):
-        return f"{self.user.username} upvoted {self.discussion.title}"
 
 class Downvote(models.Model):
     downvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
