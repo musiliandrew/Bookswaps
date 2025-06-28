@@ -1,7 +1,10 @@
 export const API_ENDPOINTS = {
-  // Existing endpoints from previous response
+  // Authentication endpoints
   LOGIN: '/users/login/',
   REGISTER: '/users/register/',
+  SIMPLE_REGISTER: '/users/register/simple/',
+  PROFILE_STEP: '/users/register/profile-step/',
+  GOOGLE_AUTH: '/users/auth/google/',
   TOKEN_REFRESH: '/users/token/refresh/',
   PROFILE: '/users/me/profile/',
   LOGOUT: '/users/logout/',

@@ -1,18 +1,37 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from '../../components/Auth/LoginForm';
 import AuthLink from '../../components/Auth/AuthLink';
+import GoogleAuthButton from '../../components/Auth/GoogleAuthButton';
+import MultiStepRegister from '../../components/Auth/MultiStepRegister';
 
 const LoginPage = () => {
   const { login, error: authError, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const handleLogin = async (loginCredentials) => {
     const success = await login(loginCredentials);
     if (success) {
       navigate('/profile/me', { replace: true });
     }
+  };
+
+  const handleGoogleAuth = (userData) => {
+    // Handle Google OAuth success
+    console.log('Google auth success:', userData);
+    navigate('/profile/me', { replace: true });
+  };
+
+  const handleRegisterComplete = (userData) => {
+    setShowRegisterModal(false);
+    navigate('/profile/me', { replace: true });
+  };
+
+  const handleShowRegister = () => {
+    setShowRegisterModal(true);
   };
 
   return (
@@ -90,13 +109,43 @@ const LoginPage = () => {
         >
           <LoginForm onSubmit={handleLogin} error={authError} isLoading={authLoading} />
         </motion.div>
+
+        {/* Google OAuth Section */}
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <GoogleAuthButton
+              onSuccess={handleGoogleAuth}
+              text="Sign in with Google"
+            />
+          </div>
+        </motion.div>
+
         <motion.div
           className="mt-8 text-center space-y-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          <AuthLink to="/register" text="Don't have an account? Join BookSwap" />
+          <button
+            onClick={handleShowRegister}
+            className="text-[var(--accent)] hover:text-[var(--primary)] font-medium transition-colors"
+          >
+            Don't have an account? Join BookSwap
+          </button>
+          <br />
           <AuthLink to="/password-reset" text="Forgot your password?" />
         </motion.div>
         <motion.div
@@ -110,6 +159,14 @@ const LoginPage = () => {
           </p>
         </motion.div>
       </motion.div>
+
+      {/* Multi-step Registration Modal */}
+      {showRegisterModal && (
+        <MultiStepRegister
+          onComplete={handleRegisterComplete}
+          onClose={() => setShowRegisterModal(false)}
+        />
+      )}
     </div>
   );
 };

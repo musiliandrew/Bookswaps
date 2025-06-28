@@ -4,6 +4,7 @@ import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
+import ProfileCompletionBanner from '../../components/Profile/ProfileCompletionBanner';
 import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
@@ -197,6 +198,14 @@ const ProfilePage = () => {
         {/* Enhanced Main Content with Tab Animation */}
         <div className="pt-20 pb-32">
           <div className="max-w-4xl mx-auto px-4">
+            {/* Profile Completion Banner */}
+            {profile && activeTab === 'my-profile' && (
+              <ProfileCompletionBanner
+                completionPercentage={profile.profile_completion || 0}
+                isCompleted={profile.profile_completed || false}
+              />
+            )}
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}

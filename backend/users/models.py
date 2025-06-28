@@ -55,6 +55,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     profile_public = models.BooleanField(default=True)
     email_notifications = models.BooleanField(default=True)
+    profile_completed = models.BooleanField(default=False)
+    registration_step = models.IntegerField(default=1)  # Track registration progress
 
     objects = CustomUserManager()
 
@@ -71,6 +73,33 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
+
+    def get_profile_completion_percentage(self):
+        """Calculate profile completion percentage"""
+        total_fields = 10  # Total important fields
+        completed_fields = 0
+
+        # Essential fields (always required)
+        if self.username: completed_fields += 1
+        if self.email: completed_fields += 1
+
+        # Profile fields
+        if self.birth_date: completed_fields += 1
+        if self.gender: completed_fields += 1
+        if self.city: completed_fields += 1
+        if self.country: completed_fields += 1
+        if self.about_you: completed_fields += 1
+        if self.genres: completed_fields += 1
+        if self.profile_picture: completed_fields += 1
+        if self.ethnicity: completed_fields += 1
+
+        return int((completed_fields / total_fields) * 100)
+
+    def update_profile_completion_status(self):
+        """Update profile_completed based on completion percentage"""
+        completion_percentage = self.get_profile_completion_percentage()
+        self.profile_completed = completion_percentage >= 80
+        return completion_percentage
 
     class Meta:
         db_table = 'users'

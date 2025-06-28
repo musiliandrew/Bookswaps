@@ -7,7 +7,8 @@ from rest_framework.views import APIView
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserProfileSerializer,
     UpdateProfileSerializer, DeleteAccountSerializer, FollowSerializer,
-    UserSearchSerializer, TokenRefreshSerializer
+    UserSearchSerializer, TokenRefreshSerializer, SimpleRegisterSerializer,
+    ProfileStepSerializer, GoogleAuthSerializer
 )
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth import password_validation
@@ -57,6 +58,63 @@ class RegisterView(generics.CreateAPIView):
         }
         logger.info(f"User registered: {user.username} ({user.user_id})")
         return Response(data, status=status.HTTP_201_CREATED)
+
+# New simplified registration views
+class SimpleRegisterView(generics.CreateAPIView):
+    """Step 1: Basic registration with minimal fields"""
+    serializer_class = SimpleRegisterSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+
+        data = {
+            'user_id': str(user.user_id),
+            'username': user.username,
+            'email': user.email,
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+            'registration_step': user.registration_step,
+            'profile_completion': user.get_profile_completion_percentage()
+        }
+        logger.info(f"Simple registration completed: {user.username} ({user.user_id})")
+        return Response(data, status=status.HTTP_201_CREATED)
+
+class ProfileStepView(APIView):
+    """Step 2: Complete essential profile information"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = ProfileStepSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        completion_percentage = user.update_profile_completion_status()
+        user.save()
+
+        data = {
+            'user_id': str(user.user_id),
+            'registration_step': user.registration_step,
+            'profile_completion': completion_percentage,
+            'profile_completed': user.profile_completed
+        }
+        logger.info(f"Profile step completed: {user.username} - {completion_percentage}%")
+        return Response(data, status=status.HTTP_200_OK)
+
+class GoogleAuthView(APIView):
+    """Handle Google OAuth authentication"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # This will be implemented to handle Google OAuth
+        # For now, return a placeholder response
+        return Response(
+            {'detail': 'Google OAuth integration coming soon'},
+            status=status.HTTP_501_NOT_IMPLEMENTED
+        )
 
 class CustomTokenRefreshView(APIView):
     permission_classes = [AllowAny]

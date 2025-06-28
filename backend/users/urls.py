@@ -7,6 +7,9 @@ app_name = 'users'
 urlpatterns = [
     # Authentication endpoints
     path('register/', views.RegisterView.as_view(), name='register'),
+    path('register/simple/', views.SimpleRegisterView.as_view(), name='simple_register'),
+    path('register/profile-step/', views.ProfileStepView.as_view(), name='profile_step'),
+    path('auth/google/', views.GoogleAuthView.as_view(), name='google_auth'),
     path('token/refresh/', views.CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),

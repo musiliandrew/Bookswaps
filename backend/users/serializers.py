@@ -72,7 +72,59 @@ class RegisterSerializer(serializers.ModelSerializer):
             profile_picture=profile_picture_url
         )
         return user
-    
+
+# Simplified registration serializers for multi-step process
+class SimpleRegisterSerializer(serializers.ModelSerializer):
+    """Step 1: Basic registration with minimal required fields"""
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'password')
+
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            registration_step=1
+        )
+        return user
+
+class ProfileStepSerializer(serializers.ModelSerializer):
+    """Step 2: Essential profile information"""
+    birth_date = serializers.DateField(required=True)
+    gender = serializers.ChoiceField(choices=CustomUser.GENDER_CHOICES, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('birth_date', 'gender')
+
+    def validate_birth_date(self, value):
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 13:
+            raise serializers.ValidationError("Users must be at least 13 years old.")
+        if value > today:
+            raise serializers.ValidationError("Birth date cannot be in the future.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.birth_date = validated_data.get('birth_date', instance.birth_date)
+        instance.gender = validated_data.get('gender', instance.gender)
+        instance.registration_step = 2
+        instance.save()
+        return instance
+
+class GoogleAuthSerializer(serializers.Serializer):
+    """Handle Google OAuth authentication"""
+    access_token = serializers.CharField()
+
+    def validate_access_token(self, access_token):
+        # This will be implemented to verify Google token
+        # and extract user information
+        return access_token
+
 class TokenRefreshSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 

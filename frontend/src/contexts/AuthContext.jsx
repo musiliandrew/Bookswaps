@@ -346,6 +346,53 @@ export const AuthProvider = ({ children }) => {
     [navigate, getProfile, clearAuthState]
   );
 
+  // New simplified registration methods
+  const simpleRegister = useCallback(
+    async (userData) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.SIMPLE_REGISTER, userData),
+        setIsLoading,
+        setError,
+        null, // Don't show success toast yet
+        'Simple registration'
+      );
+
+      if (result) {
+        // Store tokens
+        localStorage.setItem('access_token', result.token);
+        localStorage.setItem('refresh_token', result.refresh);
+        api.defaults.headers.Authorization = `Bearer ${result.token}`;
+        setIsAuthenticated(true);
+
+        // Fetch profile data
+        await getProfileInternal(true);
+      }
+
+      return result;
+    },
+    [getProfileInternal]
+  );
+
+  const completeProfileStep = useCallback(
+    async (profileData) => {
+      const result = await handleApiCall(
+        () => api.patch(API_ENDPOINTS.PROFILE_STEP, profileData),
+        setIsLoading,
+        setError,
+        'Profile completed successfully!',
+        'Profile completion'
+      );
+
+      if (result) {
+        // Update profile data
+        await getProfileInternal(true);
+      }
+
+      return result;
+    },
+    [getProfileInternal]
+  );
+
   const requestPasswordReset = useCallback(
     async (email) => {
       return await handleApiCall(
@@ -469,6 +516,8 @@ export const AuthProvider = ({ children }) => {
   const value = {
     login,
     register,
+    simpleRegister,
+    completeProfileStep,
     refreshToken,
     logout,
     requestPasswordReset,
