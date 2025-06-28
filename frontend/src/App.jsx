@@ -14,6 +14,7 @@ import LibraryPage from './pages/Main/LibraryPage';
 import ProfilePage from './pages/Main/ProfilePage';
 import SocialsPage from './pages/Main/SocialsPage';
 import NotificationsPage from './pages/Main/NotificationsPage';
+import SwapsPage from './components/Swaps/SwapsPage';
 import EnhancedPostDetail from './components/Socials/Discussions/EnhancedPostDetail';
 import SocietyDetailPage from './components/Socials/Societies/SocietyDetailPage';
 
@@ -110,6 +111,7 @@ function App() {
           {isAuthenticated && (
             <>
               <Route path="/library" element={<LibraryPage />} />
+              <Route path="/swaps" element={<SwapsPage />} />
               <Route path="/socials" element={<SocialsPage />} />
               <Route path="/socials/discussions/post/:postId" element={<EnhancedPostDetail />} />
               <Route path="/socials/societies/:societyId" element={<SocietyDetailPage />} />
@@ -119,6 +121,7 @@ function App() {
           {!isAuthenticated && (
             <>
               <Route path="/library" element={<Navigate to="/" replace />} />
+              <Route path="/swaps" element={<Navigate to="/" replace />} />
               <Route path="/socials" element={<Navigate to="/" replace />} />
               <Route path="/socials/discussions/post/:postId" element={<Navigate to="/" replace />} />
               <Route path="/socials/societies/:societyId" element={<Navigate to="/" replace />} />

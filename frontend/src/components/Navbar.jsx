@@ -5,6 +5,7 @@ import NotificationBadge from './Notifications/NotificationBadge';
 import UserBadge from './Profile/UserBadge';
 import ChatBadge from './Socials/ChatBadge';
 import LibraryBadge from './Library/LibraryBadge';
+import SwapsBadge from './Swaps/SwapsBadge';
 import appLogo from '../assets/icons/lightIcon.svg';
 
 const Navbar = ({ isSmallScreen }) => {
@@ -19,6 +20,7 @@ const Navbar = ({ isSmallScreen }) => {
   const navItems = [
     { path: '/profile/me', label: 'User', component: <UserBadge /> },
     { path: '/library', label: 'Library', component: <LibraryBadge /> },
+    { path: '/swaps', label: 'Swaps', component: <SwapsBadge /> },
     { path: '/socials', label: 'Socials', component: <ChatBadge /> },
     { path: '/notifications', label: 'Notifications', component: <NotificationBadge /> },
   ];
@@ -54,6 +56,17 @@ const Navbar = ({ isSmallScreen }) => {
             >
               <span className="text-xl font-['Lora'] text-[hsl(49,52%,88%)] cursor-pointer hover:text-[var(--accent)] transition-colors">
                 Library
+              </span>
+            </motion.div>
+
+            {/* Swaps Link */}
+            <motion.div
+              className={`navbar-item ${activeTab === '/swaps' ? 'navbar-item-active' : ''}`}
+              onClick={() => navigate('/swaps')}
+              whileHover={{ scale: 1.05 }}
+            >
+              <span className="text-xl font-['Lora'] text-[hsl(49,52%,88%)] cursor-pointer hover:text-[var(--accent)] transition-colors">
+                Swaps
               </span>
             </motion.div>
 
