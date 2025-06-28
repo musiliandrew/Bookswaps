@@ -85,9 +85,9 @@ const AccountSettingsForm = () => {
       
       {/* Email Section */}
       <div className="space-y-4">
-        <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Email Settings</h3>
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Email Settings</h3>
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Email Address</label>
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Email Address</label>
           <input
             type="email"
             name="email"
@@ -103,7 +103,7 @@ const AccountSettingsForm = () => {
       {/* Password Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Password</h3>
+          <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Password</h3>
           <button
             type="button"
             onClick={() => setShowPasswordFields(!showPasswordFields)}
@@ -112,27 +112,27 @@ const AccountSettingsForm = () => {
             {showPasswordFields ? 'Cancel Password Change' : 'Change Password'}
           </button>
         </div>
-        
+
         {showPasswordFields && (
-          <div className="space-y-4 p-4 bg-[var(--secondary)]/5 rounded-lg">
+          <div className="space-y-4 p-4 bg-[var(--primary)]/5 rounded-lg">
             <div>
-              <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">New Password</label>
+              <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">New Password</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+                className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
                 placeholder="Enter new password"
                 minLength={8}
               />
-              <p className="text-xs text-[var(--secondary)]/60 mt-1">
+              <p className="text-xs text-[var(--text)] mt-1">
                 Must be at least 8 characters long
               </p>
             </div>
-            
+
             <div>
-              <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Confirm New Password</label>
+              <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Confirm New Password</label>
               <input
                 type="password"
                 name="confirmPassword"
@@ -149,42 +149,42 @@ const AccountSettingsForm = () => {
 
       {/* Privacy Settings */}
       <div className="space-y-4">
-        <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Privacy Settings</h3>
-        
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Privacy Settings</h3>
+
         <div className="space-y-3">
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--secondary)]/10">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--primary)]/10">
             <input
               type="checkbox"
               name="profile_public"
               id="profile_public"
               checked={formData.profile_public}
               onChange={handleChange}
-              className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--secondary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
+              className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--primary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
             />
             <div>
-              <label htmlFor="profile_public" className="text-[var(--secondary)] font-['Open_Sans'] font-medium cursor-pointer">
+              <label htmlFor="profile_public" className="text-[var(--primary)] font-['Open_Sans'] font-medium cursor-pointer">
                 Public Profile
               </label>
-              <p className="text-sm text-[var(--secondary)]/70 mt-1">
+              <p className="text-sm text-[var(--text)] mt-1">
                 Allow other users to view your profile and book collections
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--secondary)]/10">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--primary)]/10">
             <input
               type="checkbox"
               name="email_notifications"
               id="email_notifications"
               checked={formData.email_notifications}
               onChange={handleChange}
-              className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--secondary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
+              className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--primary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
             />
             <div>
-              <label htmlFor="email_notifications" className="text-[var(--secondary)] font-['Open_Sans'] font-medium cursor-pointer">
+              <label htmlFor="email_notifications" className="text-[var(--primary)] font-['Open_Sans'] font-medium cursor-pointer">
                 Email Notifications
               </label>
-              <p className="text-sm text-[var(--secondary)]/70 mt-1">
+              <p className="text-sm text-[var(--text)] mt-1">
                 Receive notifications about messages, follows, and book swap updates
               </p>
             </div>
@@ -195,7 +195,7 @@ const AccountSettingsForm = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="bookish-button-enhanced w-full px-6 py-3 rounded-xl text-[var(--secondary)] font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
+        className="bookish-button-enhanced w-full px-6 py-3 rounded-lg text-white font-medium font-['Open_Sans'] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

@@ -11,45 +11,30 @@ const ProfileSettings = () => {
   const { profile, isLoading: authLoading, error: authError, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Enhanced sections with icons and descriptions
+  // Simplified sections for clean navigation
   const sections = [
-    { 
-      id: 'profile', 
-      label: 'Profile', 
-      icon: '👤',
-      description: 'Personal information and preferences',
-      color: 'from-blue-500 to-blue-600'
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: '👤'
     },
-    { 
-      id: 'account', 
-      label: 'Account', 
-      icon: '⚙️',
-      description: 'Security and privacy settings',
-      color: 'from-green-500 to-green-600'
+    {
+      id: 'account',
+      label: 'Account',
+      icon: '⚙️'
     },
-    { 
-      id: 'chat', 
-      label: 'Chat Preferences', 
-      icon: '💬',
-      description: 'Communication and notification settings',
-      color: 'from-purple-500 to-purple-600'
+    {
+      id: 'chat',
+      label: 'Chat',
+      icon: '💬'
     },
-    { 
-      id: 'delete', 
-      label: 'Delete Account', 
-      icon: '🗑️',
-      description: 'Permanently remove your account',
-      color: 'from-red-500 to-red-600'
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: '🗑️'
     },
   ];
-
-  // Filter sections based on search
-  const filteredSections = sections.filter(section =>
-    section.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   useEffect(() => {
     if (authError) {
@@ -113,225 +98,83 @@ const ProfileSettings = () => {
     );
   }
 
-  const activeSessionInfo = sections.find(s => s.id === activeSection);
-
   return (
-    <div className="min-h-screen font-open-sans text-text">
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Header Section */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
-            ⚙️ Settings
-            <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full opacity-20"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 360, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
+    <div className="min-h-screen font-['Open_Sans'] text-[var(--text)]">
+      <div className="container mx-auto px-4 py-6">
+        {/* Simple Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-['Lora'] font-bold text-[var(--primary)] mb-2">
+            Settings
           </h1>
-          <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Customize your BookSwaps experience and manage your account
-          </motion.p>
-        </motion.div>
+          <p className="text-sm text-[var(--text)] font-['Open_Sans']">
+            Manage your profile and account preferences
+          </p>
+        </div>
 
-        <main className="max-w-5xl mx-auto">
-          {/* Search Bar */}
-          <motion.div
-            className="relative max-w-md mx-auto mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search settings..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bookish-input rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
-              />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary/60">
-                🔍
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Enhanced Navigation */}
-          <motion.nav
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="mb-12"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredSections.map((section, index) => (
-                <motion.button
+        <main className="max-w-4xl mx-auto">
+          {/* Clean Tab Navigation */}
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2 p-1 bookish-glass rounded-lg">
+              {sections.map((section) => (
+                <button
                   key={section.id}
                   onClick={() => handleSectionChange(section.id)}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 + index * 0.1, duration: 0.4 }}
-                  className={`relative p-6 rounded-2xl text-left transition-all duration-300 group ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md font-['Open_Sans'] font-medium text-sm transition-all duration-200 ${
                     activeSection === section.id
-                      ? 'bookish-glass border-2 border-accent shadow-xl scale-105'
-                      : 'bookish-glass border border-white/20 hover:border-accent/50 hover:scale-102'
+                      ? 'bg-[var(--accent)] text-[var(--primary)] shadow-sm'
+                      : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/50'
                   }`}
-                  whileHover={{ y: -4 }}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`text-3xl transition-transform duration-300 ${
-                      activeSection === section.id ? 'scale-110' : 'group-hover:scale-110'
-                    }`}>
-                      {section.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-lora font-bold mb-2 text-lg ${
-                        activeSection === section.id ? 'text-accent' : 'text-primary group-hover:text-accent'
-                      }`}>
-                        {section.label}
-                      </h3>
-                      <p className="text-sm text-primary/70 leading-relaxed">
-                        {section.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Active indicator */}
-                  {activeSection === section.id && (
-                    <motion.div
-                      layoutId="activeSettingsIndicator"
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 pointer-events-none"
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-
-                  {/* Hover glow effect */}
-                  <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 pointer-events-none ${
-                    activeSection === section.id
-                      ? 'opacity-100 bg-gradient-to-br from-accent/5 to-primary/5'
-                      : 'opacity-0 group-hover:opacity-100 bg-gradient-to-br from-white/5 to-white/10'
-                  }`} />
-                </motion.button>
+                  <span className="text-base">{section.icon}</span>
+                  <span>{section.label}</span>
+                </button>
               ))}
             </div>
-          </motion.nav>
+          </div>
 
-        {/* Content Section with Enhanced Animation */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="relative"
-          >
-            {/* Section Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-3xl">{activeSessionInfo?.icon}</div>
-              <div>
-                <h2 className="text-2xl font-['Lora'] text-[var(--primary)]">
-                  {activeSessionInfo?.label}
-                </h2>
-                <p className="text-[var(--secondary)] font-['Open_Sans']">
-                  {activeSessionInfo?.description}
+          {/* Content Section */}
+          <div className="bookish-glass rounded-lg p-6">
+            {activeSection === 'profile' && <ProfileForm />}
+            {activeSection === 'account' && <AccountSettingsForm />}
+            {activeSection === 'chat' && <ChatPreferencesForm />}
+            {activeSection === 'delete' && (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h3 className="text-xl font-['Lora'] text-[var(--primary)] mb-4">
+                  Delete Account
+                </h3>
+                <p className="text-[var(--text)] mb-8 max-w-md mx-auto font-['Open_Sans']">
+                  This action cannot be undone. All your data will be permanently deleted
+                  including your books, swaps, and connections.
                 </p>
-              </div>
-            </div>
-
-            {/* Form Container */}
-            <div className="bookish-glass p-6 rounded-xl border border-[var(--secondary)]/10">
-              {activeSection === 'profile' && <ProfileForm />}
-              {activeSection === 'account' && <AccountSettingsForm />}
-              {activeSection === 'chat' && <ChatPreferencesForm />}
-              {activeSection === 'delete' && (
-                <div className="text-center py-8">
-                  <div className="text-6xl mb-4">⚠️</div>
-                  <h3 className="text-xl font-['Lora'] text-[var(--text)] mb-4">
-                    Delete Account
-                  </h3>
-                  <p className="text-[var(--text)]/70 mb-8 max-w-md mx-auto">
-                    This action cannot be undone. All your data will be permanently deleted 
-                    including your books, swaps, and connections.
-                  </p>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleDeleteAccount}
-                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
-                  >
-                    Delete My Account
-                  </motion.button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium font-['Open_Sans'] transition-colors"
+                >
+                  Delete My Account
+                </button>
                 </div>
               )}
-              
-              {/* Logout Button for non-delete sections */}
+
+              {/* Simple Logout Button */}
               {activeSection !== 'delete' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-8 pt-6 border-t border-[var(--secondary)]/20"
-                >
+                <div className="mt-6 pt-4 border-t border-[var(--primary)]/20">
                   <button
                     onClick={handleLogout}
-                    className="bookish-button-enhanced px-6 py-3 rounded-xl text-[var(--secondary)] w-full font-medium hover:scale-105 transition-transform"
+                    className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] transition-colors"
                   >
                     🚪 Log Out
                   </button>
-                </motion.div>
+                </div>
               )}
             </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Quick Stats/Info Section */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          <div className="bookish-glass p-4 rounded-xl text-center">
-            <div className="text-2xl mb-2">📚</div>
-            <p className="text-sm text-[var(--secondary)]">Account Created</p>
-            <p className="font-semibold text-[var(--text)]">
-              {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Recently'}
-            </p>
-          </div>
-          <div className="bookish-glass p-4 rounded-xl text-center">
-            <div className="text-2xl mb-2">🔒</div>
-            <p className="text-sm text-[var(--secondary)]">Privacy</p>
-            <p className="font-semibold text-[var(--text)]">
-              {profile.profile_public ? 'Public Profile' : 'Private Profile'}
-            </p>
-          </div>
-          <div className="bookish-glass p-4 rounded-xl text-center">
-            <div className="text-2xl mb-2">✉️</div>
-            <p className="text-sm text-[var(--secondary)]">Notifications</p>
-            <p className="font-semibold text-[var(--text)]">
-              {profile.email_notifications ? 'Enabled' : 'Disabled'}
-            </p>
-          </div>
-        </motion.div>
+        </main>
 
         {/* Delete Account Modal */}
         <DeleteAccountModal
           isOpen={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
         />
-      </main>
-      {/* Add the missing closing div for min-h-screen */}
       </div>
     </div>
   );

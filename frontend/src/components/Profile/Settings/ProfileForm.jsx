@@ -200,25 +200,25 @@ const ProfileForm = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">City</label>
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">City</label>
           <input
             type="text"
             name="city"
             value={formData.city}
             onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
             placeholder="Your city"
           />
         </div>
-        
+
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Country</label>
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Country</label>
           <input
             type="text"
             name="country"
             value={formData.country}
             onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
             placeholder="Your country"
           />
         </div>
@@ -226,23 +226,23 @@ const ProfileForm = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Birth Date</label>
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Birth Date</label>
           <input
             type="date"
             name="birth_date"
             value={formData.birth_date}
             onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
           />
         </div>
-        
+
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Gender</label>
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Gender</label>
           <select
             name="gender"
             value={formData.gender}
             onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
           >
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
@@ -254,42 +254,42 @@ const ProfileForm = () => {
       </div>
 
       <div>
-        <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">About You</label>
+        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">About You</label>
         <textarea
           name="about_you"
           value={formData.about_you}
           onChange={handleChange}
           rows={4}
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors resize-none"
+          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors resize-none"
           placeholder="Tell us about yourself, your reading interests..."
         />
       </div>
 
       <div>
-        <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">
+        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">
           Favorite Genres
-          <span className="text-sm text-[var(--secondary)]/70 ml-1">(comma-separated)</span>
+          <span className="text-sm text-[var(--text)] ml-1">(comma-separated)</span>
         </label>
         <input
           type="text"
           name="genres"
           value={formData.genres}
           onChange={handleChange}
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
           placeholder="Fiction, Mystery, Romance, Science Fiction..."
         />
       </div>
 
       <div>
-        <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-1">Profile Picture</label>
+        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Profile Picture</label>
         <input
           type="file"
           name="profile_picture"
           onChange={handleChange}
           accept="image/*"
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent)]/10 file:text-[var(--accent)] hover:file:bg-[var(--accent)]/20"
+          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent)]/10 file:text-[var(--accent)] hover:file:bg-[var(--accent)]/20"
         />
-        <p className="text-xs text-[var(--secondary)]/60 mt-1">
+        <p className="text-xs text-[var(--text)] mt-1">
           Supported formats: JPG, PNG, GIF (max 5MB)
         </p>
       </div>
@@ -297,7 +297,7 @@ const ProfileForm = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="bookish-button-enhanced w-full px-6 py-3 rounded-xl text-[var(--secondary)] font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
+        className="bookish-button-enhanced w-full px-6 py-3 rounded-lg text-white font-medium font-['Open_Sans'] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

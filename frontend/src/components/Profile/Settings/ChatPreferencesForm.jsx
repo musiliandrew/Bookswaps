@@ -55,23 +55,23 @@ const ChatPreferencesForm = () => {
       
       {/* Location Settings */}
       <div className="space-y-4">
-        <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Location Settings</h3>
-        
-        <div className="flex items-start gap-3 p-4 rounded-lg border border-[var(--secondary)]/10 bg-[var(--secondary)]/5">
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Location Settings</h3>
+
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-[var(--primary)]/10 bg-[var(--primary)]/5">
           <input
             type="checkbox"
             name="location_enabled"
             id="location_enabled"
             checked={formData.location_enabled}
             onChange={handleChange}
-            className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--secondary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
+            className="mt-1 w-4 h-4 text-[var(--accent)] bg-transparent border-2 border-[var(--primary)]/30 rounded focus:ring-[var(--accent)] focus:ring-2"
           />
           <div>
-            <label htmlFor="location_enabled" className="text-[var(--secondary)] font-['Open_Sans'] font-medium cursor-pointer">
+            <label htmlFor="location_enabled" className="text-[var(--primary)] font-['Open_Sans'] font-medium cursor-pointer">
               Enable Location Sharing
             </label>
-            <p className="text-sm text-[var(--secondary)]/70 mt-1">
-              Allow other users to see your approximate location for local book swaps and meetups. 
+            <p className="text-sm text-[var(--text)] mt-1">
+              Allow other users to see your approximate location for local book swaps and meetups.
               Your exact location is never shared.
             </p>
           </div>
@@ -80,23 +80,23 @@ const ChatPreferencesForm = () => {
 
       {/* Society Management */}
       <div className="space-y-4">
-        <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Society Management</h3>
-        
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Society Management</h3>
+
         <div>
-          <label className="block text-[var(--secondary)] font-['Open_Sans'] mb-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-2 font-medium">
             Muted Societies
-            <span className="text-sm text-[var(--secondary)]/70 ml-1">(comma-separated)</span>
+            <span className="text-sm text-[var(--text)] ml-1">(comma-separated)</span>
           </label>
           <input
             type="text"
             name="mute_societies"
             value={formData.mute_societies}
             onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--secondary)]/20 focus:border-[var(--accent)] transition-colors"
+            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
             placeholder="Fantasy Book Club, Local Reading Group, Book Swap Society..."
           />
-          <p className="text-sm text-[var(--secondary)]/60 mt-2">
-            Enter the names of societies whose notifications you want to mute. You'll still be a member 
+          <p className="text-sm text-[var(--text)] mt-2">
+            Enter the names of societies whose notifications you want to mute. You'll still be a member
             but won't receive chat notifications from these groups.
           </p>
         </div>
@@ -104,19 +104,19 @@ const ChatPreferencesForm = () => {
 
       {/* Notification Preview */}
       <div className="space-y-4">
-        <h3 className="text-lg font-['Lora'] text-[var(--secondary)]">Current Settings</h3>
-        
+        <h3 className="text-lg font-['Lora'] text-[var(--primary)]">Current Settings</h3>
+
         <div className="p-4 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-[var(--secondary)]">Location Sharing:</span>
+              <span className="text-[var(--primary)]">Location Sharing:</span>
               <span className={`font-medium ${formData.location_enabled ? 'text-green-600' : 'text-red-600'}`}>
                 {formData.location_enabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--secondary)]">Muted Societies:</span>
-              <span className="text-[var(--secondary)] text-right max-w-xs">
+              <span className="text-[var(--primary)]">Muted Societies:</span>
+              <span className="text-[var(--text)] text-right max-w-xs">
                 {formData.mute_societies || 'None'}
               </span>
             </div>
@@ -127,7 +127,7 @@ const ChatPreferencesForm = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="bookish-button-enhanced w-full px-6 py-3 rounded-xl text-[var(--secondary)] font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
+        className="bookish-button-enhanced w-full px-6 py-3 rounded-lg text-white font-medium font-['Open_Sans'] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
