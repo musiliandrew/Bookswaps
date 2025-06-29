@@ -126,7 +126,9 @@ const UserProfileCard = ({
   followStatus,
   onFollow,
   onUnfollow,
-  onRefreshProfile // Add this new prop
+  onRefreshProfile, // Add this new prop
+  onShowFollowers, // New prop for showing followers
+  onShowFollowing  // New prop for showing following
 }) => {
   const [localUser, setLocalUser] = useState(user);
   const [localFollowStatus, setLocalFollowStatus] = useState(followStatus);
@@ -374,11 +376,29 @@ const UserProfileCard = ({
                 <div className="text-xs text-[var(--text)]/70">Books</div>
               </div>
 
-              <div className="stats-card p-3 rounded-xl text-center">
+              <motion.div
+                className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onShowFollowers && onShowFollowers()}
+                title="View followers"
+              >
                 <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
                 <div className="text-lg font-bold text-[var(--text)]">{localUser.followers_count || 0}</div>
                 <div className="text-xs text-[var(--text)]/70">Followers</div>
-              </div>
+              </motion.div>
+
+              <motion.div
+                className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onShowFollowing && onShowFollowing()}
+                title="View following"
+              >
+                <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                <div className="text-lg font-bold text-[var(--text)]">{localUser.following_count || 0}</div>
+                <div className="text-xs text-[var(--text)]/70">Following</div>
+              </motion.div>
 
               <div className="stats-card p-3 rounded-xl text-center">
                 <StarSolidIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />

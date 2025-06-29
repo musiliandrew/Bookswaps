@@ -9,6 +9,7 @@ export function useLibrary() {
   const [book, setBook] = useState(null);
   const [books, setBooks] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
+  const [openLibraryResults, setOpenLibraryResults] = useState([]);
   const [userLibrary, setUserLibrary] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -19,6 +20,7 @@ export function useLibrary() {
   const [pagination, setPagination] = useState({
     books: { next: null, previous: null, page: 1, totalPages: 1 },
     search: { next: null, previous: null, page: 1, totalPages: 1 },
+    openLibrary: { next: null, previous: null, page: 1, totalPages: 1 },
     library: { next: null, previous: null, page: 1, totalPages: 1 },
     bookmarks: { next: null, previous: null, page: 1, totalPages: 1 },
     favorites: { next: null, previous: null, page: 1, totalPages: 1 },
@@ -115,6 +117,42 @@ export function useLibrary() {
     if (result) {
       setSearchResults(result.results || []);
       updatePagination(result, 'search', page);
+    }
+    return result;
+  }, []);
+
+  const searchOpenLibrary = useCallback(async (query, searchType = 'general', limit = 10) => {
+    // Validate query parameter
+    if (!query || query.length < 2) {
+      setError('Search query must be at least 2 characters');
+      return null;
+    }
+
+    const params = new URLSearchParams();
+    params.append('q', query);
+    params.append('type', searchType);
+    params.append('limit', limit);
+
+    const result = await handleApiCall(
+      () => api.get(`${API_ENDPOINTS.SEARCH_OPENLIBRARY}?${params.toString()}`),
+      setIsLoading,
+      setError,
+      null,
+      'Search Open Library'
+    );
+
+    if (result) {
+      setOpenLibraryResults(result.results || []);
+      // Update pagination for Open Library results
+      setPagination((prev) => ({
+        ...prev,
+        openLibrary: {
+          next: null,
+          previous: null,
+          page: 1,
+          totalPages: 1,
+        },
+      }));
     }
     return result;
   }, []);
@@ -412,6 +450,7 @@ export function useLibrary() {
     getBook,
     listBooks,
     searchBooks,
+    searchOpenLibrary,
     addBook,
     getUserLibrary,
     updateAvailability,
@@ -427,6 +466,7 @@ export function useLibrary() {
     book,
     books,
     searchResults,
+    openLibraryResults,
     userLibrary,
     bookmarks,
     favorites,

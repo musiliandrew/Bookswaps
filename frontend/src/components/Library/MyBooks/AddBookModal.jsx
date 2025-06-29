@@ -1,16 +1,163 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../Common/Modal';
 import ImageUpload from '../../Common/ImageUpload';
-import { BookOpenIcon, UserIcon, TagIcon, HashtagIcon, CalendarIcon, DocumentTextIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
+import SmartBookSearch from '../BookSearch/SmartBookSearch';
+import {
+  BookOpenIcon,
+  UserIcon,
+  TagIcon,
+  HashtagIcon,
+  CalendarIcon,
+  DocumentTextIcon,
+  ArrowsRightLeftIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  SparklesIcon
+} from '@heroicons/react/24/outline';
 
 const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
+  const [showSmartSearch, setShowSmartSearch] = useState(false);
+  const [addMode, setAddMode] = useState('search'); // 'search' or 'manual'
+
   const inputClasses = "w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
   const labelClasses = "flex items-center space-x-2 text-sm font-medium text-primary mb-2";
 
+  const handleBookSelect = (selectedBook) => {
+    // Auto-populate form with selected book data
+    setNewBook({
+      ...newBook,
+      title: selectedBook.title || '',
+      author: selectedBook.author || '',
+      isbn: selectedBook.isbn || '',
+      year: selectedBook.year || '',
+      genre: selectedBook.genres?.[0] || '',
+      synopsis: selectedBook.synopsis || '',
+      cover_image_url: selectedBook.cover_image_url || '',
+      // Keep existing user preferences
+      condition: newBook.condition,
+      available_for_exchange: newBook.available_for_exchange,
+      available_for_borrow: newBook.available_for_borrow,
+    });
+    setShowSmartSearch(false);
+    setAddMode('manual'); // Switch to manual mode to review/edit
+  };
+
+  const handleManualAdd = () => {
+    setShowSmartSearch(false);
+    setAddMode('manual');
+  };
+
+  const resetForm = () => {
+    setAddMode('search');
+    setShowSmartSearch(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="📚 Add New Book to Your Library">
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+    <>
+      <Modal isOpen={isOpen} onClose={handleClose} title="📚 Add New Book to Your Library">
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+
+          {/* Mode Selection */}
+          {addMode === 'search' && (
+            <motion.div
+              className="text-center space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-4 bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl">
+                    <SparklesIcon className="w-12 h-12 text-accent" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-lora font-bold text-primary mb-2">
+                    How would you like to add your book?
+                  </h3>
+                  <p className="text-primary/70">
+                    Search our database of millions of books or add manually
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                {/* Smart Search Option */}
+                <motion.button
+                  onClick={() => setShowSmartSearch(true)}
+                  className="p-6 bg-gradient-to-r from-accent/20 to-primary/20 rounded-2xl border border-white/20 hover:border-accent/50 transition-all group"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-accent/20 rounded-xl group-hover:bg-accent group-hover:text-white transition-all">
+                      <MagnifyingGlassIcon className="w-8 h-8 text-accent group-hover:text-white" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
+                        🔍 Smart Search (Recommended)
+                      </h4>
+                      <p className="text-sm text-primary/70">
+                        Search millions of books from Open Library. Auto-fills title, author, cover, and more!
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+
+                {/* Manual Add Option */}
+                <motion.button
+                  onClick={handleManualAdd}
+                  className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-primary/50 transition-all group"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-primary/20 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                      <PlusIcon className="w-8 h-8 text-primary group-hover:text-white" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="text-lg font-semibold text-primary group-hover:text-primary transition-colors">
+                        ✏️ Add Manually
+                      </h4>
+                      <p className="text-sm text-primary/70">
+                        Enter book details yourself. Perfect for rare or self-published books.
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Manual Form */}
+          {addMode === 'manual' && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Back Button */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => setAddMode('search')}
+                  className="flex items-center space-x-2 text-primary/70 hover:text-accent transition-colors"
+                >
+                  <span>← Back to search options</span>
+                </button>
+                <button
+                  onClick={() => setShowSmartSearch(true)}
+                  className="flex items-center space-x-2 text-accent hover:text-accent/80 transition-colors text-sm"
+                >
+                  <MagnifyingGlassIcon className="w-4 h-4" />
+                  <span>Search instead</span>
+                </button>
+              </div>
         {/* Basic Information Section */}
         <motion.div
           className="space-y-4 p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-xl border border-white/20"
@@ -219,20 +366,31 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
           </div>
         </motion.div>
 
-        {/* Action Button */}
-        <motion.button
-          onClick={onAddBook}
-          className="w-full bookish-button-enhanced text-white py-4 rounded-xl font-semibold text-lg shadow-lg"
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          ✨ Add Book to Library
-        </motion.button>
-      </div>
-    </Modal>
+              {/* Action Button */}
+              <motion.button
+                onClick={onAddBook}
+                className="w-full bookish-button-enhanced text-white py-4 rounded-xl font-semibold text-lg shadow-lg"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                ✨ Add Book to Library
+              </motion.button>
+            </motion.div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Smart Book Search Modal */}
+      <SmartBookSearch
+        isOpen={showSmartSearch}
+        onClose={() => setShowSmartSearch(false)}
+        onBookSelect={handleBookSelect}
+        onManualAdd={handleManualAdd}
+      />
+    </>
   );
 };
 

@@ -135,6 +135,7 @@ const ProfileSection = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [connectionsActiveList, setConnectionsActiveList] = useState('followers');
 
   // Custom hook for managing profile data and pagination
   const {
@@ -217,6 +218,18 @@ const ProfileSection = () => {
   // Handle going back from user profile view
   const handleBackToMain = useCallback(() => {
     setSelectedUser(null);
+  }, []);
+
+  // Handle showing followers list
+  const handleShowFollowers = useCallback(() => {
+    setConnectionsActiveList('followers');
+    setActiveSubTab('connections');
+  }, []);
+
+  // Handle showing following list
+  const handleShowFollowing = useCallback(() => {
+    setConnectionsActiveList('following');
+    setActiveSubTab('connections');
   }, []);
 
   // Tab configuration with enhanced design
@@ -333,6 +346,9 @@ const ProfileSection = () => {
             onFollow={handleFollow}
             onUnfollow={handleUnfollow}
             onRemoveFollower={handleRemoveFollower}
+            onShowFollowers={handleShowFollowers}
+            onShowFollowing={handleShowFollowing}
+            connectionsActiveList={connectionsActiveList}
           />
         )}
       </div>
@@ -563,6 +579,9 @@ const EnhancedMainProfileView = ({
   onFollow,
   onUnfollow,
   onRemoveFollower,
+  onShowFollowers,
+  onShowFollowing,
+  connectionsActiveList,
 }) => {
   return (
   <>
@@ -605,6 +624,9 @@ const EnhancedMainProfileView = ({
         onFollow={onFollow}
         onUnfollow={onUnfollow}
         onRemoveFollower={onRemoveFollower}
+        onShowFollowers={onShowFollowers}
+        onShowFollowing={onShowFollowing}
+        connectionsActiveList={connectionsActiveList}
       />
     </motion.div>
   </>
@@ -838,6 +860,9 @@ const TabContent = ({
   onFollow,
   onUnfollow,
   onRemoveFollower,
+  onShowFollowers,
+  onShowFollowing,
+  connectionsActiveList,
 }) => {
   switch (activeTab) {
     case 'profile':
@@ -871,6 +896,8 @@ const TabContent = ({
               onFollow={() => {}}
               onUnFollow={() => {}}
               onViewProfile={() => {}}
+              onShowFollowers={onShowFollowers}
+              onShowFollowing={onShowFollowing}
             />
           </div>
         </div>
@@ -892,6 +919,7 @@ const TabContent = ({
             onRemoveFollower={onRemoveFollower}
             userFollowStatuses={userFollowStatuses}
             isLoading={isLoading}
+            initialActiveList={connectionsActiveList}
           />
         </div>
       );

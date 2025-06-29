@@ -11,6 +11,9 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django.db import transaction, IntegrityError
 import logging
+import requests
+import json
+from django.conf import settings
 from .models import Book, Library, Bookmark, Favorite, BookHistory, PopularBook
 from .serializers import (
     LibraryBookSerializer, BookDetailSerializer, BookMiniSerializer,
@@ -447,3 +450,242 @@ class RecommendedBooksView(generics.ListAPIView):
 
         cache.set(cache_key, queryset, timeout=3600)  # 1 hour
         return queryset
+
+
+class OpenLibrarySearchView(APIView):
+    """
+    Search books from Open Library API with intelligent search and auto-complete
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+        search_type = request.query_params.get('type', 'general')  # general, title, author, isbn
+        limit = min(int(request.query_params.get('limit', 10)), 20)  # Max 20 results
+
+        if not query or len(query) < 2:
+            return Response({
+                'results': [],
+                'message': 'Query must be at least 2 characters long'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check cache first
+        cache_key = f"openlibrary_search_{search_type}_{query.lower()}_{limit}"
+        cached_results = cache.get(cache_key)
+        if cached_results:
+            return Response(cached_results, status=status.HTTP_200_OK)
+
+        try:
+            results = self._search_open_library(query, search_type, limit)
+
+            # Cache results for 1 hour
+            response_data = {
+                'results': results,
+                'query': query,
+                'search_type': search_type,
+                'count': len(results)
+            }
+            cache.set(cache_key, response_data, timeout=3600)
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Open Library search error: {str(e)}")
+            return Response({
+                'results': [],
+                'error': 'Search service temporarily unavailable',
+                'message': 'Please try again later or add the book manually'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    def _search_open_library(self, query, search_type, limit):
+        """
+        Search Open Library API with different search strategies
+        """
+        results = []
+
+        if search_type == 'isbn':
+            # Direct ISBN lookup
+            results = self._search_by_isbn(query)
+        elif search_type == 'title':
+            # Title-specific search
+            results = self._search_by_title(query, limit)
+        elif search_type == 'author':
+            # Author-specific search
+            results = self._search_by_author(query, limit)
+        else:
+            # General search - try multiple approaches
+            results = self._general_search(query, limit)
+
+        return results
+
+    def _search_by_isbn(self, isbn):
+        """Search by ISBN using Open Library Books API"""
+        try:
+            # Clean ISBN (remove hyphens, spaces)
+            clean_isbn = ''.join(filter(str.isdigit, isbn))
+            if len(clean_isbn) not in [10, 13]:
+                return []
+
+            url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{clean_isbn}&format=json&jscmd=data"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+
+            data = response.json()
+            book_data = data.get(f"ISBN:{clean_isbn}", {})
+
+            if book_data:
+                return [self._format_book_data(book_data, clean_isbn)]
+            return []
+
+        except Exception as e:
+            logger.error(f"ISBN search error: {str(e)}")
+            return []
+
+    def _search_by_title(self, title, limit):
+        """Search by title using Open Library Search API"""
+        try:
+            url = "https://openlibrary.org/search.json"
+            params = {
+                'title': title,
+                'limit': limit,
+                'fields': 'key,title,author_name,first_publish_year,isbn,cover_i,publisher,subject'
+            }
+
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+
+            data = response.json()
+            books = data.get('docs', [])
+
+            return [self._format_search_result(book) for book in books if book.get('title')]
+
+        except Exception as e:
+            logger.error(f"Title search error: {str(e)}")
+            return []
+
+    def _search_by_author(self, author, limit):
+        """Search by author using Open Library Search API"""
+        try:
+            url = "https://openlibrary.org/search.json"
+            params = {
+                'author': author,
+                'limit': limit,
+                'fields': 'key,title,author_name,first_publish_year,isbn,cover_i,publisher,subject'
+            }
+
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+
+            data = response.json()
+            books = data.get('docs', [])
+
+            return [self._format_search_result(book) for book in books if book.get('title')]
+
+        except Exception as e:
+            logger.error(f"Author search error: {str(e)}")
+            return []
+
+    def _general_search(self, query, limit):
+        """General search that tries multiple approaches"""
+        try:
+            url = "https://openlibrary.org/search.json"
+            params = {
+                'q': query,
+                'limit': limit,
+                'fields': 'key,title,author_name,first_publish_year,isbn,cover_i,publisher,subject'
+            }
+
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+
+            data = response.json()
+            books = data.get('docs', [])
+
+            return [self._format_search_result(book) for book in books if book.get('title')]
+
+        except Exception as e:
+            logger.error(f"General search error: {str(e)}")
+            return []
+
+    def _format_book_data(self, book_data, isbn=None):
+        """Format book data from Books API response"""
+        # Extract cover image
+        cover_url = ''
+        if book_data.get('cover'):
+            cover_url = book_data['cover'].get('large', '') or book_data['cover'].get('medium', '') or book_data['cover'].get('small', '')
+
+        # Extract authors
+        authors = []
+        if book_data.get('authors'):
+            authors = [author.get('name', '') for author in book_data['authors']]
+
+        # Extract subjects/genres
+        subjects = book_data.get('subjects', [])
+        genres = [subject.get('name', '') for subject in subjects[:5]] if subjects else []
+
+        return {
+            'title': book_data.get('title', ''),
+            'author': ', '.join(authors) if authors else '',
+            'authors': authors,
+            'isbn': isbn or '',
+            'year': self._extract_year(book_data.get('publish_date', '')),
+            'publisher': ', '.join([pub.get('name', '') for pub in book_data.get('publishers', [])]),
+            'cover_image_url': cover_url,
+            'synopsis': book_data.get('notes', '') or '',
+            'genres': genres,
+            'page_count': book_data.get('number_of_pages'),
+            'open_library_key': book_data.get('key', ''),
+            'source': 'open_library'
+        }
+
+    def _format_search_result(self, book):
+        """Format book data from Search API response"""
+        # Extract cover image
+        cover_url = ''
+        if book.get('cover_i'):
+            cover_url = f"https://covers.openlibrary.org/b/id/{book['cover_i']}-L.jpg"
+
+        # Extract authors
+        authors = book.get('author_name', [])
+
+        # Extract ISBN
+        isbn = ''
+        if book.get('isbn'):
+            # Get the first valid ISBN
+            for isbn_candidate in book['isbn']:
+                clean_isbn = ''.join(filter(str.isdigit, isbn_candidate))
+                if len(clean_isbn) in [10, 13]:
+                    isbn = clean_isbn
+                    break
+
+        # Extract genres from subjects
+        subjects = book.get('subject', [])
+        genres = subjects[:5] if subjects else []
+
+        return {
+            'title': book.get('title', ''),
+            'author': ', '.join(authors) if authors else '',
+            'authors': authors,
+            'isbn': isbn,
+            'year': book.get('first_publish_year'),
+            'publisher': ', '.join(book.get('publisher', [])) if book.get('publisher') else '',
+            'cover_image_url': cover_url,
+            'synopsis': '',  # Search API doesn't provide synopsis
+            'genres': genres,
+            'page_count': None,
+            'open_library_key': book.get('key', ''),
+            'source': 'open_library'
+        }
+
+    def _extract_year(self, publish_date):
+        """Extract year from publish date string"""
+        if not publish_date:
+            return None
+
+        # Try to extract 4-digit year
+        import re
+        year_match = re.search(r'\b(19|20)\d{2}\b', str(publish_date))
+        if year_match:
+            return int(year_match.group())
+
+        return None

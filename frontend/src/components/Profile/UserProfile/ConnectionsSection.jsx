@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UserList from './UserList';
 import Pagination from '../../Common/Pagination';
 
@@ -15,8 +15,14 @@ const ConnectionsSection = ({
   onRemoveFollower, // Added prop
   userFollowStatuses,
   isLoading,
+  initialActiveList = 'followers', // New prop with default value
 }) => {
-  const [activeList, setActiveList] = useState('followers');
+  const [activeList, setActiveList] = useState(initialActiveList);
+
+  // Update active list when initialActiveList prop changes
+  useEffect(() => {
+    setActiveList(initialActiveList);
+  }, [initialActiveList]);
 
   const lists = [
     { id: 'followers', label: 'Followers', users: followers, type: 'followers' },

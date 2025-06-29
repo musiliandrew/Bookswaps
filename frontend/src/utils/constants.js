@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   GET_BOOK: (bookId) => `/library/books/${bookId}/`,
   LIST_BOOKS: '/library/books/',
   SEARCH_BOOKS: '/library/books/search/',
+  SEARCH_OPENLIBRARY: '/library/books/search/openlibrary/',
   ADD_BOOK: '/library/books/add/',
   USER_LIBRARY: '/library/library/',
   UPDATE_AVAILABILITY: (bookId) => `/library/books/${bookId}/availability/`,
