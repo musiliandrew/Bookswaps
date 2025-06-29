@@ -243,7 +243,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
-            'city', 'country', 'birth_date', 'about_you', 'genres',
+            'username', 'city', 'country', 'birth_date', 'gender', 'about_you', 'genres',
             'profile_picture', 'profile_public', 'email_notifications'
         ]
 
@@ -267,6 +267,40 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             if value > today:
                 raise serializers.ValidationError("Birth date cannot be in the future.")
         return value
+
+    def update(self, instance, validated_data):
+        """
+        Custom update method to handle partial updates properly.
+        Only updates fields that are actually provided in the request.
+        """
+        # Handle genres specially - parse JSON string if needed
+        if 'genres' in validated_data:
+            genres = validated_data['genres']
+            if isinstance(genres, str):
+                try:
+                    import json
+                    genres = json.loads(genres)
+                except (json.JSONDecodeError, TypeError):
+                    # If it's not valid JSON, treat as comma-separated string
+                    genres = [g.strip() for g in genres.split(',') if g.strip()]
+            validated_data['genres'] = genres
+
+        # Only update fields that are present in validated_data
+        for field, value in validated_data.items():
+            if hasattr(instance, field):
+                # Don't update with empty strings unless the original value was also empty
+                if field in ['city', 'country', 'about_you'] and value == '':
+                    # Skip empty string updates to preserve existing data
+                    continue
+                setattr(instance, field, value)
+
+        instance.save()
+
+        # Update profile completion after saving
+        instance.update_profile_completion_status()
+        instance.save(update_fields=['profile_completion', 'profile_completed'])
+
+        return instance
 
 class DeleteAccountSerializer(serializers.Serializer):
     confirm = serializers.BooleanField(

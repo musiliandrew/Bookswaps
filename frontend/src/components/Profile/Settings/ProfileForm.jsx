@@ -264,11 +264,46 @@ const ProfileForm = () => {
       return;
     }
 
-    // Prepare submit data
-    const submitData = { ...formData };
-    if (!submitData.profile_picture) {
-      delete submitData.profile_picture;
+    // Prepare submit data - ONLY include changed fields
+    const submitData = {};
+
+    // Compare each field with original data and only include changed fields
+    Object.keys(formData).forEach(key => {
+      const currentValue = formData[key];
+      const originalValue = originalData[key];
+
+      // Special handling for different field types
+      if (key === 'profile_picture') {
+        // Only include profile_picture if a new file was selected
+        if (currentValue instanceof File) {
+          submitData[key] = currentValue;
+        }
+      } else if (key === 'genres') {
+        // Compare arrays properly
+        const currentGenres = Array.isArray(currentValue) ? currentValue : [];
+        const originalGenres = Array.isArray(originalValue) ? originalValue : [];
+
+        if (JSON.stringify(currentGenres.sort()) !== JSON.stringify(originalGenres.sort())) {
+          submitData[key] = currentGenres;
+        }
+      } else {
+        // For other fields, compare values and only include if changed
+        if (currentValue !== originalValue) {
+          // Don't send empty strings - let backend preserve existing values
+          if (currentValue !== '' || originalValue !== '') {
+            submitData[key] = currentValue;
+          }
+        }
+      }
+    });
+
+    // If no fields changed, show message and return
+    if (Object.keys(submitData).length === 0) {
+      toast.info('No changes to save');
+      return;
     }
+
+    console.log('Submitting only changed fields:', submitData); // Debug log
 
     const result = await updateProfile(submitData);
     if (result) {

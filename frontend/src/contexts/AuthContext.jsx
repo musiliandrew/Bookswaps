@@ -423,16 +423,29 @@ export const AuthProvider = ({ children }) => {
     async (profileData) => {
       if (!isAuthenticated) return false;
 
+      console.log('AuthContext updateProfile received:', profileData); // Debug log
+
       const formData = new FormData();
       Object.keys(profileData).forEach((key) => {
-        if (key === 'genres' && Array.isArray(profileData[key])) {
-          formData.append(key, JSON.stringify(profileData[key]));
-        } else if (profileData[key] instanceof File) {
-          formData.append(key, profileData[key]);
-        } else if (profileData[key] !== undefined && profileData[key] !== null) {
-          formData.append(key, profileData[key]);
+        const value = profileData[key];
+
+        if (key === 'genres' && Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value instanceof File) {
+          formData.append(key, value);
+        } else if (value !== undefined && value !== null) {
+          // Only append non-empty values to avoid overwriting with empty strings
+          if (value !== '' || key === 'about_you') { // Allow empty about_you to clear it
+            formData.append(key, value);
+          }
         }
       });
+
+      // Debug: Log what's being sent to backend
+      console.log('FormData being sent to backend:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
 
       const result = await handleApiCallWithResult(
         () => api.patch(API_ENDPOINTS.UPDATE_PROFILE, formData, {
