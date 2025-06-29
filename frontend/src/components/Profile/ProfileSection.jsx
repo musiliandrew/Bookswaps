@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -116,19 +116,14 @@ const parseGenres = (genres) => {
 };
 
 const ProfileSection = () => {
-  const { profile, getProfile } = useAuth();
+  const { profile } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [connectionsActiveList, setConnectionsActiveList] = useState('followers');
 
-  // Refresh profile data when component mounts or becomes visible
-  useEffect(() => {
-    // Force refresh profile data to ensure we have the latest information
-    if (profile?.user_id && getProfile) {
-      getProfile(true); // Force fresh fetch
-    }
-  }, [profile?.user_id, getProfile]); // Depend on user_id and getProfile function
+  // Only refresh profile data if we don't have it yet (removed excessive refresh)
+  // The AuthContext already handles profile fetching and caching properly
 
   // Custom hook for managing profile data and pagination
   const {
@@ -297,6 +292,7 @@ const ProfileSection = () => {
             onBack={handleBackToMain}
             onFollow={handleFollow}
             onUnfollow={handleUnfollow}
+            currentUserStats={userStats} // Pass current user stats to avoid redundant API calls
           />
         ) : (
           <div>
@@ -403,13 +399,14 @@ const ProfileSection = () => {
 };
 
 // Separate component for user profile view
-const UserProfileView = ({ 
-  user, 
-  currentUserId, 
-  followStatus, 
-  onBack, 
-  onFollow, 
-  onUnfollow 
+const UserProfileView = ({
+  user,
+  currentUserId,
+  followStatus,
+  onBack,
+  onFollow,
+  onUnfollow,
+  currentUserStats = null // Add stats prop to avoid redundant API calls
 }) => (
   <motion.div
     initial={{ opacity: 0, x: 100 }}
@@ -431,6 +428,7 @@ const UserProfileView = ({
       onFollow={() => onFollow(user.user_id, 'Profile')}
       onUnFollow={() => onUnfollow(user.user_id)}
       onRefreshProfile={() => {}} // Handled by the hook
+      stats={user.user_id === currentUserId ? currentUserStats : null} // Pass stats for current user to avoid redundant API calls
     />
   </motion.div>
 );

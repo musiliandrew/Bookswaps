@@ -4,7 +4,6 @@ import { useDebounce } from './useDebounce';
 
 export const useProfileData = (userId) => {
   const {
-    getUserProfile,
     getFollowers,
     getFollowing,
     getRecommendedUsers,
@@ -166,8 +165,9 @@ export const useProfileData = (userId) => {
 
     const fetchInitialData = async () => {
       try {
+        // Removed getUserProfile call to avoid redundant API calls
+        // AuthContext already manages the current user's profile data
         await Promise.all([
-          getUserProfile(userId),
           memoizedGetFollowers(userId, 1),
           memoizedGetFollowing(userId, 1),
           memoizedGetMutualFollowers(userId, 1),
@@ -181,7 +181,7 @@ export const useProfileData = (userId) => {
     };
 
     fetchInitialData();
-  }, [userId, getUserProfile, memoizedGetFollowers, memoizedGetFollowing, memoizedGetMutualFollowers, memoizedGetRecommendedUsers]);
+  }, [userId, memoizedGetFollowers, memoizedGetFollowing, memoizedGetMutualFollowers, memoizedGetRecommendedUsers]);
 
   // Handle search
   const handleSearch = useCallback((e) => {
@@ -262,10 +262,8 @@ export const useProfileData = (userId) => {
       search: false,
       mutual: false,
     };
-    if (userId) {
-      getUserProfile(userId);
-    }
-  }, [userId, getUserProfile]);
+    // Removed getUserProfile call - AuthContext handles profile data
+  }, []);
 
   return {
     publicProfile,

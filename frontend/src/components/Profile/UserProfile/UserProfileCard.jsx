@@ -128,15 +128,21 @@ const UserProfileCard = ({
   onUnfollow,
   onRefreshProfile, // Add this new prop
   onShowFollowers, // New prop for showing followers
-  onShowFollowing  // New prop for showing following
+  onShowFollowing,  // New prop for showing following
+  stats: providedStats = null // New prop to pass stats and avoid redundant API calls
 }) => {
   const [localUser, setLocalUser] = useState(user);
   const [localFollowStatus, setLocalFollowStatus] = useState(followStatus);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
 
-  // Fetch user statistics
-  const { stats: userStats, isLoading: statsLoading } = useUserStats(user?.user_id);
+  // Only fetch user statistics if not provided as props (to avoid redundant API calls)
+  const { stats: fetchedStats, isLoading: statsLoading } = useUserStats(
+    providedStats ? null : user?.user_id
+  );
+
+  // Use provided stats or fetched stats
+  const userStats = providedStats || fetchedStats;
 
   // Update local state when props change
   useEffect(() => {

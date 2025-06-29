@@ -462,13 +462,8 @@ export const AuthProvider = ({ children }) => {
         setProfile(result);
         localStorage.setItem('user_profile', JSON.stringify(result));
 
-        // Force refresh the profile data to ensure all components get updated
-        lastProfileFetch.current = 0; // Reset cache timestamp to force fresh fetch
-
-        // Trigger a fresh profile fetch to ensure consistency
-        setTimeout(() => {
-          getProfileInternal(true);
-        }, 100);
+        // Reset cache timestamp to ensure fresh data on next fetch (if needed)
+        lastProfileFetch.current = 0;
       }
       return result;
     },

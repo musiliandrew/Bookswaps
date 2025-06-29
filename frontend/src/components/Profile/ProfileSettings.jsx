@@ -9,16 +9,11 @@ import DeleteAccountModal from '../Profile/Settings/DeleteAccountModal';
 import { toast } from 'react-toastify';
 
 const ProfileSettings = () => {
-  const { profile, isLoading: authLoading, error: authError, logout, getProfile } = useAuth();
+  const { profile, isLoading: authLoading, error: authError, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Refresh profile data when settings component mounts to ensure latest data
-  useEffect(() => {
-    if (profile?.user_id && getProfile) {
-      getProfile(true); // Force fresh fetch to ensure form has latest data
-    }
-  }, [profile?.user_id, getProfile]);
+  // Removed excessive profile refresh - AuthContext handles profile data properly
 
   // Simplified sections for clean navigation
   const sections = [

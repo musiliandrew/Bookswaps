@@ -59,13 +59,8 @@ const ProfilePage = () => {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId });
 
-    // If switching back to profile tab, refresh profile data to ensure latest info
-    if (tabId === 'my-profile') {
-      setTimeout(() => {
-        getProfile(true); // Force fresh fetch
-      }, 100);
-    }
-  }, [setSearchParams, getProfile]);
+    // Removed excessive profile refresh - profile data is already managed properly
+  }, [setSearchParams]);
 
   // Memoize swipe handlers to prevent unnecessary re-renders
   const handleSwipeLeft = useCallback(() => {
