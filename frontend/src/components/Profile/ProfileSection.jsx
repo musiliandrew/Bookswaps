@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
@@ -117,10 +118,22 @@ const parseGenres = (genres) => {
 
 const ProfileSection = () => {
   const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [connectionsActiveList, setConnectionsActiveList] = useState('followers');
+
+  // Navigation handlers
+  const handleEditProfile = () => {
+    // Navigate to settings tab in ProfilePage
+    setSearchParams({ tab: 'settings' });
+  };
+
+  const handleUploadPhoto = () => {
+    // Navigate to settings tab in ProfilePage
+    setSearchParams({ tab: 'settings' });
+  };
 
   // Only refresh profile data if we don't have it yet (removed excessive refresh)
   // The AuthContext already handles profile fetching and caching properly
@@ -330,6 +343,8 @@ const ProfileSection = () => {
                     profile={profile}
                     stats={profileStats}
                     onShareProfile={() => setShowShareModal(true)}
+                    onEditProfile={handleEditProfile}
+                    onUploadPhoto={handleUploadPhoto}
                   />
                 </motion.div>
               )}

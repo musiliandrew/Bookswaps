@@ -83,7 +83,7 @@ const parseGenres = (genres) => {
   return [];
 };
 
-const SimpleUserProfileCard = ({ profile, stats, onShareProfile }) => {
+const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, onUploadPhoto }) => {
   const [imageError, setImageError] = useState(false);
 
   const formatDate = (dateString) => {
@@ -135,7 +135,11 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile }) => {
                 </div>
               )}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
+            <button
+              onClick={onUploadPhoto}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+              title="Change profile picture"
+            >
               <CameraIcon className="w-3 h-3" />
             </button>
           </div>
@@ -229,6 +233,7 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile }) => {
       {/* Quick Actions */}
       <div className="relative z-10 mt-6 flex gap-3">
         <motion.button
+          onClick={onEditProfile}
           className="flex-1 flex items-center justify-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-[var(--primary)]/10 text-[var(--primary)] text-sm font-medium transition-all"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
