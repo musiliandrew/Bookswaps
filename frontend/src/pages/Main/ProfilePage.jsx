@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import { useSearchParams } from 'react-router-dom';
@@ -7,6 +7,7 @@ import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
 import ProfileCompletionBanner from '../../components/Profile/ProfileCompletionBanner';
 import ProfileCompletionModal from '../../components/Profile/ProfileCompletionModal';
+import { calculateProfileCompletion } from '../../utils/profileCompletion';
 import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
@@ -23,6 +24,11 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  // Calculate profile completion details
+  const completionDetails = useMemo(() => {
+    return calculateProfileCompletion(profile);
+  }, [profile]);
 
   // Handle tab query parameter
   useEffect(() => {
@@ -233,9 +239,9 @@ const ProfilePage = () => {
             {/* Profile Completion Banner */}
             {profile && activeTab === 'my-profile' && (
               <ProfileCompletionBanner
-                completionPercentage={profile.profile_completion || 0}
-                isCompleted={profile.profile_completed || false}
-                completionDetails={profile.profile_completion_details}
+                completionPercentage={completionDetails.percentage}
+                isCompleted={completionDetails.isCompleted}
+                completionDetails={completionDetails}
                 onShowGuide={handleShowCompletionGuide}
               />
             )}
@@ -280,7 +286,7 @@ const ProfilePage = () => {
         <ProfileCompletionModal
           isOpen={showCompletionModal}
           onClose={() => setShowCompletionModal(false)}
-          completionDetails={profile?.profile_completion_details}
+          completionDetails={completionDetails}
           onFieldClick={handleFieldClick}
         />
       </div>

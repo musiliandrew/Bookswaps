@@ -1,303 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { useDiscussions } from '../../hooks/useDiscussions';
-import { useSocieties } from '../../hooks/useSocieties';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
-import NavigationTabs from '../Socials/Discussions/NavigationTabs';
-import PostDetail from '../Socials/Discussions/PostDetail';
-import SocietyDetail from '../Socials/Discussions/SocietyDetail';
-import PostCreationForm from '../Socials/Discussions/PostCreationForm';
-import PostFilters from '../Socials/Discussions/PostFilters';
-import PostFeed from '../Socials/Discussions/PostFeed';
-import TopPostsSidebar from '../Socials/Discussions/TopPostsSidebar';
-import SocietyList from '../Socials/Discussions/SocietyList';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSwipeable } from 'react-swipeable';
+import EnhancedDiscussionsPage from './Discussions/EnhancedDiscussionsPage';
+import SocietiesPage from './Societies/SocietiesPage';
+import { ChatBubbleLeftRightIcon, UsersIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 const DiscussionsPage = () => {
-  const { postId, societyId } = useParams();
-  const navigate = useNavigate();
-  const {
-    createDiscussion,
-    listPosts,
-    getPost,
-    deletePost,
-    addDiscussionNote,
-    listNotes,
-    likeDiscussionNote,
-    upvoteDiscussionPost,
-    reprintDiscussionPost,
-    listTopPosts,
-    posts,
-    post,
-    notes,
-    topPosts,
-    isLoading: isDiscussionsLoading,
-    error: discussionsError,
-    pagination: discussionsPagination,
-  } = useDiscussions();
-  const {
-    listSocieties,
-    createSociety,
-    joinSociety,
-    leaveSociety,
-    createSocietyEvent,
-    listSocietyEvents,
-    getSocietyMessages,
-    sendSocietyMessage,
-    societies,
-    societyEvents,
-    societyMessages,
-    isLoading: isSocietiesLoading,
-    error: societiesError,
-    pagination: societiesPagination,
-    isSocietyWsConnected, // Add for SocietyDetail
-  } = useSocieties();
-
-  const [postFilters, setPostFilters] = useState({ type: '', book_id: '', tag: '' });
-  const [societyFilters, setSocietyFilters] = useState({ focus_type: '', focus_id: '', my_societies: false });
-  const [newPost, setNewPost] = useState({ title: '', content: '', type: 'Article', book_id: '', tags: '', media_urls: '', spoiler: false });
-  const [newNote, setNewNote] = useState('');
-  const [newSocietyEvent, setNewSocietyEvent] = useState({ title: '', description: '', book_id: '', date: '', location: '' });
-  const [newSocietyMessage, setNewSocietyMessage] = useState('');
-  const [activeTab, setActiveTab] = useState('posts');
-  const [showSpoiler, setShowSpoiler] = useState(false);
+  const [activeTab, setActiveTab] = useState('community');
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    if (activeTab === 'posts' && !postId) {
-      listPosts(postFilters, discussionsPagination.posts.page);
-      listTopPosts({}, discussionsPagination.topPosts.page);
-    } else if (activeTab === 'societies' && !societyId) {
-      listSocieties(societyFilters, societiesPagination.societies.page);
-    } else if (postId) {
-      getPost(postId);
-      listNotes(postId, discussionsPagination.notes.page);
-    } else if (societyId) {
-      listSocietyEvents(societyId, societiesPagination.events.page);
-      getSocietyMessages(societyId, societiesPagination.messages.page);
-    }
-  }, [
-    activeTab,
-    postId,
-    societyId,
-    postFilters,
-    societyFilters,
-    discussionsPagination.posts.page,
-    discussionsPagination.topPosts.page,
-    discussionsPagination.notes.page,
-    societiesPagination.societies.page,
-    societiesPagination.events.page,
-    societiesPagination.messages.page,
-    listPosts,
-    listTopPosts,
-    getPost,
-    listNotes,
-    listSocieties,
-    listSocietyEvents,
-    getSocietyMessages,
-  ]);
+    const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const handleCreatePost = async (e) => {
-    e.preventDefault();
-    const data = {
-      ...newPost,
-      tags: newPost.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      media_urls: newPost.media_urls.split(',').map(url => url.trim()).filter(url => url),
-    };
-    const response = await createDiscussion(data);
-    if (response) {
-      setNewPost({ title: '', content: '', type: 'Article', book_id: '', tags: '', media_urls: '', spoiler: false });
-      // Instead of navigating, just refresh the posts list and show success
-      toast.success('Discussion created successfully!');
-      listPosts(postFilters, 1); // Refresh the posts list
-    }
-  };
+  const handlers = useSwipeable({
+    onSwipedLeft: () => activeTab === 'community' && setActiveTab('societies'),
+    onSwipedRight: () => activeTab === 'societies' && setActiveTab('community'),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: true,
+  });
 
-  const handleAddNote = async (e, parentNoteId = null) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
-    const data = { content: newNote, parent_note: parentNoteId };
-    const response = await addDiscussionNote(postId, data);
-    if (response) setNewNote('');
-  };
-
-  const handleCreateSocietyEvent = async (e) => {
-    e.preventDefault();
-    const response = await createSocietyEvent(societyId, newSocietyEvent);
-    if (response) {
-      setNewSocietyEvent({ title: '', description: '', book_id: '', date: '', location: '' });
-    }
-  };
-
-  const handleSendSocietyMessage = async (e) => {
-    e.preventDefault();
-    if (!newSocietyMessage.trim()) return;
-    const response = await sendSocietyMessage(societyId, newSocietyMessage);
-    if (response) setNewSocietyMessage('');
-  };
+  const tabs = [
+    {
+      id: 'community',
+      label: 'Community Discussions',
+      icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />,
+      description: 'Share thoughts & ideas'
+    },
+    {
+      id: 'societies',
+      label: 'Societies',
+      icon: <UsersIcon className="w-5 h-5" />,
+      description: 'Join reading communities'
+    },
+  ];
 
   return (
-    <div className="min-h-screen font-open-sans text-text">
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Header Section */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
-            💬 Discussions
-            <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-          </h1>
-          <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Join vibrant discussions, share your thoughts, and connect with fellow book lovers
-          </motion.p>
-        </motion.div>
+    <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
+      {/* Floating Background Elements */}
+      <div className="floating-elements fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
+        <div className="absolute bottom-40 left-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
+      </div>
 
-        {/* Enhanced Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-        </motion.div>
-
-        {/* Enhanced Error Display */}
-        {(discussionsError || societiesError) && (
-          <motion.div
-            className="mb-8 p-6 bookish-glass rounded-2xl border border-red-300/20 bg-red-50/10"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+      {/* Enhanced Bottom Navigation */}
+      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
+        {tabs.map((tab) => (
+          <motion.button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300`}
+            style={{
+              color: activeTab === tab.id ? 'white' : 'var(--primary)',
+              background: activeTab === tab.id
+                ? 'linear-gradient(135deg, var(--primary), var(--accent))'
+                : 'transparent',
+              boxShadow: activeTab === tab.id ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+              opacity: activeTab === tab.id ? 1 : 0.7
+            }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <div className="flex items-center space-x-3 text-red-600">
-              <div className="text-2xl">⚠️</div>
-              <div>
-                {discussionsError && <div className="font-medium">Discussions Error: {discussionsError}</div>}
-                {societiesError && <div className="font-medium">Societies Error: {societiesError}</div>}
-              </div>
+            <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`}>
+              {tab.icon}
             </div>
-          </motion.div>
-        )}
-      {postId && post && (
-        <PostDetail
-          postId={postId}
-          post={post}
-          showSpoiler={showSpoiler}
-          setShowSpoiler={setShowSpoiler}
-          upvoteDiscussionPost={upvoteDiscussionPost}
-          reprintDiscussionPost={reprintDiscussionPost}
-          deletePost={deletePost}
-          navigate={navigate}
-          isDiscussionsLoading={isDiscussionsLoading}
-          notes={notes}
-          handleAddNote={handleAddNote}
-          newNote={newNote}
-          setNewNote={setNewNote}
-          likeDiscussionNote={likeDiscussionNote}
-        />
-      )}
-      {societyId && (
-        <SocietyDetail
-          societyId={societyId}
-          societies={societies}
-          joinSociety={joinSociety}
-          leaveSociety={leaveSociety}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          societyMessages={societyMessages}
-          newSocietyMessage={newSocietyMessage}
-          setNewSocietyMessage={setNewSocietyMessage}
-          handleSendSocietyMessage={handleSendSocietyMessage}
-          societyEvents={societyEvents}
-          newSocietyEvent={newSocietyEvent}
-          setNewSocietyEvent={setNewSocietyEvent}
-          handleCreateSocietyEvent={handleCreateSocietyEvent}
-          isSocietyWsConnected={isSocietyWsConnected}
-        />
-      )}
-        {/* Enhanced Posts Section */}
-        {activeTab === 'posts' && !postId && (
+            {!isSmallScreen && (
+              <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
+                activeTab === tab.id ? 'text-white' : 'text-primary/70'
+              }`}>
+                {tab.label}
+              </span>
+            )}
+            {activeTab === tab.id && (
+              <motion.div
+                className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              >
+                <SparklesIcon className="w-2 h-2 text-white m-0.5" />
+              </motion.div>
+            )}
+          </motion.button>
+        ))}
+      </nav>
+      {/* Main Content with Enhanced Animations */}
+      <div className="pt-6 pb-32 px-4">
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="grid grid-cols-1 lg:grid-cols-4 gap-8"
+            key={activeTab}
+            initial={{
+              opacity: 0,
+              x: activeTab === 'community' ? 100 : -100,
+              scale: 0.95
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              scale: 1
+            }}
+            exit={{
+              opacity: 0,
+              x: activeTab === 'community' ? -100 : 100,
+              scale: 0.95
+            }}
+            transition={{
+              duration: 0.4,
+              type: "spring",
+              stiffness: 300,
+              damping: 30
+            }}
+            className="w-full max-w-7xl mx-auto"
           >
-            <div className="lg:col-span-3 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-              >
-                <PostCreationForm newPost={newPost} setNewPost={setNewPost} handleCreatePost={handleCreatePost} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
-              >
-                <PostFilters postFilters={postFilters} setPostFilters={setPostFilters} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-              >
-                <PostFeed
-                  posts={posts}
-                  isDiscussionsLoading={isDiscussionsLoading}
-                  listPosts={listPosts}
-                  postFilters={postFilters}
-                  discussionsPagination={discussionsPagination}
-                />
-              </motion.div>
-            </div>
-
-            <motion.div
-              className="lg:col-span-1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.9, duration: 0.6 }}
-            >
-              <TopPostsSidebar topPosts={topPosts} />
-            </motion.div>
+            {activeTab === 'community' && <EnhancedDiscussionsPage />}
+            {activeTab === 'societies' && <SocietiesPage />}
           </motion.div>
-        )}
-
-        {/* Enhanced Societies Section */}
-        {activeTab === 'societies' && !societyId && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            <SocietyList
-              societies={societies}
-              isSocietiesLoading={isSocietiesLoading}
-              createSociety={createSociety}
-              joinSociety={joinSociety}
-              leaveSociety={leaveSociety}
-              listSocieties={listSocieties}
-              societyFilters={societyFilters}
-              setSocietyFilters={setSocietyFilters}
-              societiesPagination={societiesPagination}
-              societiesError={societiesError}
-            />
-          </motion.div>
-        )}
+        </AnimatePresence>
       </div>
     </div>
   );

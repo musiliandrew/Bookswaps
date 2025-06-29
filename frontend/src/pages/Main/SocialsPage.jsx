@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeable } from 'react-swipeable';
 import EnhancedDiscussionsPage from '../../components/Socials/Discussions/EnhancedDiscussionsPage';
-import ChatPage from '../../components/Socials/ChatPage';
 import SocietiesPage from '../../components/Socials/Societies/SocietiesPage';
-import { ChatBubbleLeftRightIcon, UsersIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
+import ChatPage from '../../components/Socials/ChatPage';
+import TabsNavigation from '../../components/Library/common/TabsNavigation';
+import { ChatBubbleLeftRightIcon, UsersIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 const SocialsPage = () => {
   const [activeTab, setActiveTab] = useState('discussions');
+  const [activeSubTab, setActiveSubTab] = useState('community');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -17,14 +19,8 @@ const SocialsPage = () => {
   }, []);
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (activeTab === 'discussions') setActiveTab('chats');
-      else if (activeTab === 'chats') setActiveTab('societies');
-    },
-    onSwipedRight: () => {
-      if (activeTab === 'societies') setActiveTab('chats');
-      else if (activeTab === 'chats') setActiveTab('discussions');
-    },
+    onSwipedLeft: () => activeTab === 'discussions' && setActiveTab('chats'),
+    onSwipedRight: () => activeTab === 'chats' && setActiveTab('discussions'),
     preventDefaultTouchmoveEvent: true,
     trackMouse: true,
   });
@@ -42,12 +38,11 @@ const SocialsPage = () => {
       icon: <UsersIcon className="w-5 h-5" />,
       description: 'Connect with readers'
     },
-    {
-      id: 'societies',
-      label: 'Societies',
-      icon: <UsersIcon className="w-5 h-5" />,
-      description: 'Join reading communities'
-    },
+  ];
+
+  const discussionTabs = [
+    { id: 'community', label: 'Community Discussions', icon: <ChatBubbleLeftRightIcon className="w-4 h-4" /> },
+    { id: 'societies', label: 'Societies', icon: <UsersIcon className="w-4 h-4" /> },
   ];
 
   return (
@@ -94,7 +89,7 @@ const SocialsPage = () => {
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               >
-                <HeartIcon className="w-2 h-2 text-white m-0.5" />
+                <SparklesIcon className="w-2 h-2 text-white m-0.5" />
               </motion.div>
             )}
           </motion.button>
@@ -102,7 +97,7 @@ const SocialsPage = () => {
       </nav>
 
       {/* Main Content with Enhanced Animations */}
-      <div className="pt-6 pb-32 px-4">
+      <div className="pt-20 pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -127,11 +122,57 @@ const SocialsPage = () => {
               stiffness: 300,
               damping: 30
             }}
-            className="w-full max-w-7xl mx-auto"
+            className="container mx-auto px-4"
           >
-            {activeTab === 'discussions' && <EnhancedDiscussionsPage />}
-            {activeTab === 'chats' && <ChatPage />}
-            {activeTab === 'societies' && <SocietiesPage />}
+            {activeTab === 'discussions' ? (
+              <div>
+                {/* Enhanced Header Section */}
+                <motion.div
+                  className="text-center mb-12"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+                    💬 Discussions
+                    <motion.div
+                      className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+                      animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    />
+                  </h1>
+                  <motion.p
+                    className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                  >
+                    Join vibrant discussions, share your thoughts, and connect with fellow book lovers
+                  </motion.p>
+                </motion.div>
+
+                {/* Inner Navigation */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                  <TabsNavigation activeTab={activeSubTab} setActiveTab={setActiveSubTab} tabs={discussionTabs} isSmallScreen={isSmallScreen} />
+                </motion.div>
+
+                {/* Sub Content */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                  {activeSubTab === 'community' && <EnhancedDiscussionsPage />}
+                  {activeSubTab === 'societies' && <SocietiesPage />}
+                </motion.div>
+              </div>
+            ) : (
+              <ChatPage />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

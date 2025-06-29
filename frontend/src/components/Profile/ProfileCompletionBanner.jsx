@@ -13,8 +13,46 @@ const ProfileCompletionBanner = ({
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  if (isDismissed || isCompleted || completionPercentage >= 80) {
+  // Don't show if dismissed or 100% complete
+  if (isDismissed || completionPercentage >= 100) {
     return null;
+  }
+
+  // Show completion celebration at 100%
+  if (completionPercentage >= 100 || isCompleted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 0.5, repeat: 3 }}
+            >
+              🏆
+            </motion.div>
+          </div>
+          <div className="flex-1">
+            <h3 className="font-['Lora'] font-semibold text-green-800">
+              🎉 Profile Complete!
+            </h3>
+            <p className="text-sm text-green-700 font-['Open_Sans']">
+              You've unlocked all BookSwaps features. Great job!
+            </p>
+          </div>
+          <button
+            onClick={handleDismiss}
+            className="text-green-600 hover:text-green-800 transition-colors text-xl"
+          >
+            ×
+          </button>
+        </div>
+      </motion.div>
+    );
   }
 
   const handleCompleteProfile = () => {
@@ -107,13 +145,40 @@ const ProfileCompletionBanner = ({
             Complete your profile to get better book recommendations and connect with fellow readers.
           </p>
 
-          {/* Missing fields preview */}
+          {/* Detailed Missing Fields */}
           {completionDetails && completionDetails.missing_fields && completionDetails.missing_fields.length > 0 && (
-            <div className="mb-3">
-              <p className="text-xs text-[var(--text)] font-['Open_Sans'] mb-2">
-                Missing: {completionDetails.missing_fields.slice(0, 3).map(f => f.label).join(', ')}
-                {completionDetails.missing_fields.length > 3 && ` +${completionDetails.missing_fields.length - 3} more`}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-[var(--primary)] mb-2 font-['Lora']">
+                Missing Fields ({completionDetails.missing_fields.length}):
               </p>
+              <div className="space-y-2">
+                {completionDetails.missing_fields.slice(0, 4).map((field, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
+                    <span className="text-[var(--text)] font-['Open_Sans'] flex-1">
+                      {field.label}
+                    </span>
+                    <span className="text-xs text-[var(--accent)] font-medium">
+                      {field.weight}pts
+                    </span>
+                  </div>
+                ))}
+                {completionDetails.missing_fields.length > 4 && (
+                  <div className="text-xs text-[var(--text)] font-['Open_Sans'] pl-4">
+                    +{completionDetails.missing_fields.length - 4} more fields
+                  </div>
+                )}
+              </div>
+
+              {/* Completion Explanation */}
+              <div className="mt-3 p-3 bg-[var(--accent)]/10 rounded-lg">
+                <p className="text-xs text-[var(--text)] font-['Open_Sans']">
+                  <strong>Why {completionPercentage}%?</strong> You've completed{' '}
+                  {completionDetails.completedWeight || 0} out of{' '}
+                  {completionDetails.totalWeight || 100} total points.{' '}
+                  Complete the missing fields above to reach 100%.
+                </p>
+              </div>
             </div>
           )}
           

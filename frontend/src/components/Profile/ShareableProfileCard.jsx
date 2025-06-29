@@ -2,187 +2,94 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import {
-  ShareIcon,
   ArrowDownTrayIcon,
   BookOpenIcon,
   UsersIcon,
+  XMarkIcon,
+  ShareIcon,
+  CalendarIcon,
   SparklesIcon,
-  QrCodeIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import {
+  StarIcon as StarSolidIcon,
   HeartIcon as HeartSolidIcon,
-  StarIcon as StarSolidIcon
+  BookmarkIcon as BookmarkSolidIcon
 } from '@heroicons/react/24/solid';
 
-// Enhanced helper function to parse genres - handles multiple levels of encoding
+// Helper function to parse genres
 const parseGenres = (genres) => {
   if (!genres) return [];
-
-  // Debug: Log the raw genres data to understand the structure
-  console.log('Raw genres data:', genres, 'Type:', typeof genres);
-
-  // Helper function to clean a single genre string
-  const cleanGenre = (genre) => {
-    if (typeof genre !== 'string') return genre;
-
-    // Remove various quote and bracket combinations
-    let cleaned = genre
-      .replace(/^[[\\]"']+|[[\\]"']+$/g, '') // Remove leading/trailing brackets and quotes
-      .replace(/\\"/g, '"') // Unescape quotes
-      .replace(/\\'/g, "'") // Unescape single quotes
-      .trim();
-
-    return cleaned;
-  };
-
-  // If it's already an array, process each item
+  
   if (Array.isArray(genres)) {
-    return genres
-      .map(genre => {
-        if (typeof genre === 'string') {
-          // Check if this string contains a JSON array
-          if (genre.includes('[') && genre.includes(']')) {
-            try {
-              // Try to parse as JSON
-              const parsed = JSON.parse(genre);
-              if (Array.isArray(parsed)) {
-                return parsed.map(cleanGenre);
-              }
-            } catch {
-              // If JSON parsing fails, manually extract genres
-              const match = genre.match(/\[(.*)\]/);
-              if (match) {
-                return match[1]
-                  .split(',')
-                  .map(g => cleanGenre(g))
-                  .filter(g => g && g.length > 0);
-              }
-            }
-          }
-
-          // Handle comma-separated genres in a single string
-          if (genre.includes(',')) {
-            return genre.split(',').map(cleanGenre);
-          }
-
-          return cleanGenre(genre);
-        }
-        return genre;
-      })
-      .flat() // Flatten nested arrays
-      .filter(genre => genre && typeof genre === 'string' && genre.length > 0)
-      .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1)); // Capitalize
+    return genres.filter(genre => genre && typeof genre === 'string' && genre.length > 0);
   }
-
-  // If it's a string, try multiple parsing approaches
+  
   if (typeof genres === 'string') {
-    console.log('Processing string genres:', genres);
-
-    // Handle the specific case you're seeing: ["["Sci-fi"", ""Fiction""...]
-    // This appears to be a stringified array containing a stringified array
-
-    // Special handling for the exact pattern you described
-    if (genres.includes('["["') || genres.includes('""')) {
-      console.log('Detected malformed double-encoded pattern');
-
-      // Extract content between the outer brackets
-      let extracted = genres;
-      if (extracted.startsWith('[') && extracted.endsWith(']')) {
-        extracted = extracted.slice(1, -1);
-      }
-
-      // Remove the inner quotes and brackets
-      if (extracted.startsWith('"["') && extracted.endsWith('"]"')) {
-        extracted = extracted.slice(3, -3);
-      }
-
-      // Fix the double quotes issue
-      const genreArray = extracted
-        .split('""')
-        .map(genre => genre.replace(/^"|"$/g, '').trim())
-        .filter(genre => genre && genre.length > 0 && genre !== ',')
-        .map(genre => genre.replace(/,$/, '')) // Remove trailing commas
-        .filter(genre => genre.length > 0)
-        .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
-
-      console.log('Extracted genres:', genreArray);
-      return genreArray;
-    }
-
-    // First, try to clean up the malformed JSON structure
-    let cleanedString = genres;
-
-    // Remove outer array brackets if present
-    if (cleanedString.startsWith('[') && cleanedString.endsWith(']')) {
-      cleanedString = cleanedString.slice(1, -1);
-    }
-
-    // Remove quotes around the inner array
-    if (cleanedString.startsWith('"') && cleanedString.endsWith('"')) {
-      cleanedString = cleanedString.slice(1, -1);
-    }
-
-    // Handle escaped quotes and malformed structure
-    cleanedString = cleanedString
-      .replace(/\\"/g, '"') // Unescape quotes
-      .replace(/""/g, '"') // Fix double quotes
-      .replace(/"\s*,\s*"/g, '", "') // Fix spacing around commas
-      .replace(/^"/, '') // Remove leading quote
-      .replace(/"$/, ''); // Remove trailing quote
-
-    console.log('Cleaned string:', cleanedString);
-
-    // Now try to parse as JSON array
     try {
-      // If it looks like an array, wrap it properly
-      if (!cleanedString.startsWith('[')) {
-        cleanedString = `[${cleanedString}]`;
+      const parsed = JSON.parse(genres);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(genre => genre && typeof genre === 'string' && genre.length > 0);
       }
-      const parsed = JSON.parse(cleanedString);
-      console.log('Parsed as JSON:', parsed);
-      return parseGenres(parsed);
-    } catch (e) {
-      console.log('JSON parsing failed:', e.message);
-
-      // Manual extraction as fallback
-      // Split by comma and clean each genre
-      const manualParsed = cleanedString
-        .split(',')
-        .map(genre => {
-          return genre
-            .replace(/^[[\\]"'\s]+|[[\\]"'\s]+$/g, '') // Remove brackets, quotes, spaces
-            .trim();
-        })
-        .filter(genre => genre && genre.length > 0)
-        .map(genre => genre.charAt(0).toUpperCase() + genre.slice(1));
-
-      console.log('Manual parsing result:', manualParsed);
-      return manualParsed;
+    } catch {
+      return genres.split(',').map(g => g.trim()).filter(g => g.length > 0);
     }
   }
-
+  
   return [];
 };
 
+// BookSwaps Icon Component
+const BookSwapsIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor">
+    <rect x="0" y="0" width="2" height="16" />
+    <path d="M11,6 L11,9 L11.885,9 L12,6 L11,6 Z" />
+    <path d="M3,0 L3,16 L13.8208442,16 C14.4713435,16 15,15.5473033 15,14.9895162 L15,1.01048377 C15,0.451686245 14.4723504,0 13.8208442,0 L3,0 Z M13.051,9.053 L12.08,9.053 L12.062,10.063 L7.906,10.063 L7.924,9.042 L6.957,9.042 L6.957,6.99 L7.915,6.99 L7.915,5.948 L10.957,5.938 L10.957,5.051 L7.026,5.051 L7.026,6.048 L6.029,6.048 L6.029,9.958 L7.041,9.958 L7.041,10.975 L11.047,10.975 L11.047,12.014 L6.961,12.014 L6.961,11.063 L5.958,11.063 L5.958,10.032 L4.953,10.032 L4.953,5.991 L5.973,5.991 L5.973,4.973 L6.938,4.973 L6.938,3.938 L11.032,3.938 L11.032,4.959 L12.011,4.959 L12.011,5.949 L13.052,5.949 L13.052,9.053 L13.051,9.053 Z" />
+    <rect x="8" y="7" width="2" height="2" />
+  </svg>
+);
+
 const ShareableProfileCard = ({ user, stats, onClose }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedStats, setSelectedStats] = useState({
+    booksRead: true,
+    followers: true,
+    reviews: true,
+    booksOwned: false,
+    booksShared: false,
+    likesReceived: false,
+    joinDate: true,
+    favoriteGenres: true
+  });
   const cardRef = useRef(null);
+
+  // Available stats with their display info
+  const availableStats = [
+    { key: 'booksRead', label: 'Books Read', value: stats?.booksRead || 0, icon: BookOpenIcon },
+    { key: 'followers', label: 'Followers', value: user?.followers_count || 0, icon: UsersIcon },
+    { key: 'reviews', label: 'Reviews', value: stats?.reviewsWritten || 0, icon: StarSolidIcon },
+    { key: 'booksOwned', label: 'Books Owned', value: stats?.booksOwned || 0, icon: BookmarkSolidIcon },
+    { key: 'booksShared', label: 'Books Shared', value: stats?.booksShared || 0, icon: ShareIcon },
+    { key: 'likesReceived', label: 'Likes Received', value: stats?.likesReceived || 0, icon: HeartSolidIcon },
+  ];
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
-    
+
     setIsGenerating(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2,
+        backgroundColor: '#F0EAD0',
+        scale: 3,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        width: 400,
+        height: 600
       });
-      
+
       const link = document.createElement('a');
-      link.download = `${user.username}-bookswaps-profile.png`;
-      link.href = canvas.toDataURL();
+      link.download = `${user?.username || 'profile'}-bookswaps-library-card.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     } catch (error) {
       console.error('Error generating image:', error);
@@ -191,169 +98,287 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${user.username}'s BookSwaps Profile`,
-          text: `Check out ${user.username}'s reading journey on BookSwaps!`,
-          url: window.location.href
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Profile link copied to clipboard!');
-    }
+  const toggleStat = (statKey) => {
+    setSelectedStats(prev => ({
+      ...prev,
+      [statKey]: !prev[statKey]
+    }));
   };
+
+  const genres = parseGenres(user?.favorite_genres);
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(69, 106, 118, 0.9)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="relative max-w-md w-full"
+        className="relative w-full max-w-4xl bookish-glass rounded-3xl border-2 border-[var(--primary)]/30 overflow-hidden"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
       >
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-lora font-bold text-white">Share Profile</h3>
-          <div className="flex gap-2">
-            <motion.button
-              onClick={handleShare}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm border border-white/20 text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ShareIcon className="w-5 h-5" />
-            </motion.button>
-            <motion.button
-              onClick={handleDownload}
-              disabled={isGenerating}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm border border-white/20 text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ArrowDownTrayIcon className="w-5 h-5" />
-            </motion.button>
-            <motion.button
-              onClick={onClose}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur-sm border border-white/20 text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              ✕
-            </motion.button>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[var(--primary)]/20">
+          <div className="flex items-center gap-3">
+            <BookSwapsIcon className="w-8 h-8 text-[var(--primary)]" />
+            <div>
+              <h3 className="text-xl font-['Lora'] font-bold text-[var(--primary)]">Library Card Generator</h3>
+              <p className="text-sm text-[var(--text)]/70">Create your BookSwaps library card</p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-[var(--primary)]/10 rounded-full transition-colors"
+          >
+            <XMarkIcon className="w-6 h-6 text-[var(--primary)]" />
+          </button>
         </div>
 
-        {/* Shareable Card */}
-        <div
-          ref={cardRef}
-          className="relative w-full bg-gradient-to-br from-[#2C5F7A] via-[#3A7A9A] to-[#4A94BA] rounded-3xl overflow-hidden shadow-2xl"
-          style={{ aspectRatio: '3/4' }}
-        >
-          {/* Flying Books Background */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-8 left-8 text-4xl opacity-20 animate-bounce" style={{ animationDelay: '0s' }}>📚</div>
-            <div className="absolute top-16 right-12 text-3xl opacity-15 animate-bounce" style={{ animationDelay: '1s' }}>📖</div>
-            <div className="absolute bottom-20 left-12 text-3xl opacity-10 animate-bounce" style={{ animationDelay: '2s' }}>📕</div>
-            <div className="absolute top-32 right-8 text-2xl opacity-20 animate-bounce" style={{ animationDelay: '3s' }}>📘</div>
-            <div className="absolute bottom-32 right-16 text-3xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
-          </div>
+        <div className="flex flex-col lg:flex-row">
+          {/* Stats Customization Panel */}
+          <div className="lg:w-1/3 p-6 border-r border-[var(--primary)]/20">
+            <h4 className="text-lg font-['Lora'] font-semibold text-[var(--primary)] mb-4">Customize Your Card</h4>
 
-          {/* BookSwaps Branding */}
-          <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <BookOpenIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-white font-bold text-lg">BookSwaps</span>
-            </div>
-            <QrCodeIcon className="w-6 h-6 text-white/60" />
-          </div>
+            {/* Stats Selection */}
+            <div className="space-y-3 mb-6">
+              <p className="text-sm font-medium text-[var(--text)] mb-3">Select stats to display:</p>
+              {availableStats.map((stat) => {
+                const IconComponent = stat.icon;
+                return (
+                  <label key={stat.key} className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={selectedStats[stat.key]}
+                        onChange={() => toggleStat(stat.key)}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                        selectedStats[stat.key]
+                          ? 'bg-[var(--accent)] border-[var(--accent)]'
+                          : 'border-[var(--primary)]/30 group-hover:border-[var(--accent)]'
+                      }`}>
+                        {selectedStats[stat.key] && (
+                          <CheckIcon className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                    </div>
+                    <IconComponent className="w-4 h-4 text-[var(--primary)]" />
+                    <span className="text-sm text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">
+                      {stat.label} ({stat.value})
+                    </span>
+                  </label>
+                );
+              })}
 
-          {/* Profile Content */}
-          <div className="relative z-10 p-6 pt-20 h-full flex flex-col">
-            {/* Profile Picture */}
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-white/10 rounded-full blur-sm" />
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border-3 border-white/30">
-                  <img
-                    src={user.profile_picture || '/default-avatar.png'}
-                    alt={user.username}
-                    className="w-full h-full object-cover"
+              {/* Additional Options */}
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={selectedStats.joinDate}
+                    onChange={() => toggleStat('joinDate')}
+                    className="sr-only"
                   />
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                    selectedStats.joinDate
+                      ? 'bg-[var(--accent)] border-[var(--accent)]'
+                      : 'border-[var(--primary)]/30 group-hover:border-[var(--accent)]'
+                  }`}>
+                    {selectedStats.joinDate && (
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
+                <CalendarIcon className="w-4 h-4 text-[var(--primary)]" />
+                <span className="text-sm text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">
+                  Join Date
+                </span>
+              </label>
 
-            {/* User Info */}
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-1">{user.username}</h2>
-              <p className="text-white/80 text-sm mb-3">{user.city}, {user.country}</p>
-              
-              {/* Genres */}
-              <div className="flex flex-wrap gap-1 justify-center mb-4">
-                {parseGenres(user.genres)?.slice(0, 3).map((genre) => (
-                  <span
-                    key={genre}
-                    className="px-2 py-1 bg-white/20 text-white text-xs rounded-full backdrop-blur-sm"
-                  >
-                    {genre}
-                  </span>
-                ))}
-              </div>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={selectedStats.favoriteGenres}
+                    onChange={() => toggleStat('favoriteGenres')}
+                    className="sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                    selectedStats.favoriteGenres
+                      ? 'bg-[var(--accent)] border-[var(--accent)]'
+                      : 'border-[var(--primary)]/30 group-hover:border-[var(--accent)]'
+                  }`}>
+                    {selectedStats.favoriteGenres && (
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                </div>
+                <SparklesIcon className="w-4 h-4 text-[var(--primary)]" />
+                <span className="text-sm text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">
+                  Favorite Genres
+                </span>
+              </label>
             </div>
+          </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="text-center p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <BookOpenIcon className="w-5 h-5 mx-auto mb-1 text-white" />
-                <div className="text-lg font-bold text-white">{stats?.booksRead || 0}</div>
-                <div className="text-xs text-white/70">Books</div>
-              </div>
-              <div className="text-center p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <UsersIcon className="w-5 h-5 mx-auto mb-1 text-white" />
-                <div className="text-lg font-bold text-white">{user.followers_count || 0}</div>
-                <div className="text-xs text-white/70">Followers</div>
-              </div>
-              <div className="text-center p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <StarSolidIcon className="w-5 h-5 mx-auto mb-1 text-white" />
-                <div className="text-lg font-bold text-white">{stats?.reviewsWritten || 0}</div>
-                <div className="text-xs text-white/70">Reviews</div>
-              </div>
-            </div>
+          {/* Library Card Preview */}
+          <div className="lg:w-2/3 p-6">
+            <h4 className="text-lg font-['Lora'] font-semibold text-[var(--primary)] mb-4">Preview</h4>
 
-            {/* Call to Action */}
-            <div className="mt-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                <div className="text-center">
-                  <HeartSolidIcon className="w-6 h-6 mx-auto mb-2 text-white" />
-                  <p className="text-white font-semibold text-sm mb-1">Join our community!</p>
-                  <p className="text-white/80 text-xs mb-2">Swap books with fellow readers</p>
-                  <div className="flex items-center justify-center gap-2 text-xs text-white/70">
-                    <SparklesIcon className="w-3 h-3" />
-                    <span>Connect • Discover • Exchange</span>
-                    <SparklesIcon className="w-3 h-3" />
+            <div className="flex justify-center">
+              <div
+                ref={cardRef}
+                className="relative w-80 h-[500px] rounded-2xl overflow-hidden shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, #F0EAD0 0%, #E8DCC0 50%, #D4C5A0 100%)',
+                  border: '3px solid #456A76'
+                }}
+              >
+                {/* Library Card Header */}
+                <div className="relative bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BookSwapsIcon className="w-6 h-6" />
+                      <div>
+                        <h3 className="font-['Lora'] font-bold text-lg">BookSwaps</h3>
+                        <p className="text-xs opacity-90">Community Library</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs opacity-90">Member Since</p>
+                      {selectedStats.joinDate && (
+                        <p className="text-sm font-semibold">
+                          {new Date(user?.date_joined).getFullYear()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Decorative Pattern */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6 h-full flex flex-col" style={{ paddingTop: '1.5rem' }}>
+                  {/* User Info Section */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-[var(--primary)]/30 shadow-lg">
+                        {user?.profile_picture ? (
+                          <img
+                            src={user.profile_picture}
+                            alt={user.username}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                            <span className="text-white font-bold text-xl">
+                              {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Library Card Number */}
+                      <div className="absolute -bottom-2 -right-2 bg-[var(--accent)] text-white text-xs px-2 py-1 rounded-full font-mono">
+                        #{user?.user_id?.slice(-6) || '000000'}
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <h2 className="font-['Lora'] font-bold text-xl text-[var(--primary)] mb-1">
+                        {user?.username || 'Book Lover'}
+                      </h2>
+                      <p className="text-sm text-[var(--text)] mb-1">
+                        {user?.city || 'Unknown'}, {user?.country || 'Unknown'}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-[var(--accent)]">
+                        <SparklesIcon className="w-3 h-3" />
+                        <span>Verified Reader</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {availableStats.filter(stat => selectedStats[stat.key]).map((stat) => {
+                      const IconComponent = stat.icon;
+                      return (
+                        <div key={stat.key} className="bg-white/10 rounded-lg p-3 text-center border border-[var(--primary)]/20">
+                          <IconComponent className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                          <div className="text-lg font-bold text-[var(--primary)]">{stat.value}</div>
+                          <div className="text-xs text-[var(--text)]/70">{stat.label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Favorite Genres */}
+                  {selectedStats.favoriteGenres && genres.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-semibold text-[var(--primary)] mb-2 flex items-center gap-1">
+                        <SparklesIcon className="w-4 h-4" />
+                        Favorite Genres
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {genres.slice(0, 3).map((genre, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--accent)]/20 text-[var(--primary)] text-xs rounded-full border border-[var(--primary)]/30"
+                          >
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="mt-auto">
+                    <div className="border-t border-[var(--primary)]/20 pt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BookSwapsIcon className="w-4 h-4 text-[var(--primary)]" />
+                          <span className="text-xs text-[var(--text)] font-medium">BookSwaps.com</span>
+                        </div>
+                        <div className="text-xs text-[var(--text)]/60">
+                          Join the community
+                        </div>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <p className="text-xs text-[var(--accent)] font-semibold">
+                          "Every book is a new adventure"
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Watermark */}
-            <div className="absolute bottom-4 right-4 text-xs text-white/50">
-              BookSwaps.com
-            </div>
           </div>
+        </div>
+
+        {/* Actions */}
+        <div className="p-6 border-t border-[var(--primary)]/20">
+          <button
+            onClick={handleDownload}
+            disabled={isGenerating}
+            className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowDownTrayIcon className="w-5 h-5" />
+            {isGenerating ? (
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Generating Library Card...
+              </span>
+            ) : (
+              'Download Library Card'
+            )}
+          </button>
         </div>
       </motion.div>
     </motion.div>

@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../hooks/useAuth';
 import { toast } from 'react-toastify';
+import {
+  CameraIcon,
+  XMarkIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  PlusIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
 
 // Enhanced helper function to parse genres - handles multiple levels of encoding
 const parseGenres = (genres) => {
@@ -105,6 +113,7 @@ const parseGenres = (genres) => {
 
 const ProfileForm = () => {
   const { profile, updateProfile, isLoading } = useAuth();
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     username: '',
     city: '',
@@ -112,202 +121,599 @@ const ProfileForm = () => {
     birth_date: '',
     gender: '',
     about_you: '',
-    genres: '',
+    genres: [],
     profile_picture: null,
   });
+
+  const [originalData, setOriginalData] = useState({});
+  const [imagePreview, setImagePreview] = useState(null);
+  const [newGenre, setNewGenre] = useState('');
+  const [errors, setErrors] = useState({});
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Popular genre suggestions
+  const popularGenres = [
+    'Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction',
+    'Fantasy', 'Biography', 'History', 'Self-Help', 'Thriller',
+    'Horror', 'Poetry', 'Drama', 'Adventure', 'Comedy'
+  ];
 
   // Populate form with profile data when profile loads
   useEffect(() => {
     if (profile) {
-      const cleanedGenres = parseGenres(profile.genres);
-      setFormData({
+      const cleanedGenres = parseGenres(profile.favorite_genres);
+      const data = {
         username: profile.username || '',
         city: profile.city || '',
         country: profile.country || '',
         birth_date: profile.birth_date || '',
         gender: profile.gender || '',
         about_you: profile.about_you || '',
-        genres: cleanedGenres.join(', '),
-        profile_picture: null, // Always null for file input
-      });
+        genres: cleanedGenres,
+        profile_picture: null,
+      };
+      setFormData(data);
+      setOriginalData(data);
+      setImagePreview(profile.profile_picture);
     }
   }, [profile]);
 
+  // Check for changes
+  useEffect(() => {
+    const changed = Object.keys(formData).some(key => {
+      if (key === 'profile_picture') return formData[key] !== null;
+      if (key === 'genres') return JSON.stringify(formData[key]) !== JSON.stringify(originalData[key]);
+      return formData[key] !== originalData[key];
+    });
+    setHasChanges(changed);
+  }, [formData, originalData]);
+
+  // Validation
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+
+    switch (name) {
+      case 'username':
+        if (!value.trim()) {
+          newErrors.username = 'Username is required';
+        } else if (value.length < 3) {
+          newErrors.username = 'Username must be at least 3 characters';
+        } else {
+          delete newErrors.username;
+        }
+        break;
+      case 'about_you':
+        if (value.length > 500) {
+          newErrors.about_you = 'Bio must be less than 500 characters';
+        } else {
+          delete newErrors.about_you;
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setFormData((prev) => ({
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    validateField(name, value);
+  };
+
+  const handleImageSelect = (file) => {
+    if (file) {
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be less than 5MB');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select a valid image file');
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, profile_picture: file }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, profile_picture: null }));
+    setImagePreview(profile?.profile_picture || null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const addGenre = (genre) => {
+    if (genre && !formData.genres.includes(genre)) {
+      setFormData(prev => ({
+        ...prev,
+        genres: [...prev.genres, genre]
+      }));
+    }
+    setNewGenre('');
+  };
+
+  const removeGenre = (genreToRemove) => {
+    setFormData(prev => ({
       ...prev,
-      [name]: files ? files[0] : value,
+      genres: prev.genres.filter(genre => genre !== genreToRemove)
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Don't send empty profile_picture
+
+    // Validate all fields
+    const isValid = Object.keys(formData).every(key =>
+      validateField(key, formData[key])
+    );
+
+    if (!isValid) {
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+
+    // Prepare submit data
     const submitData = { ...formData };
     if (!submitData.profile_picture) {
       delete submitData.profile_picture;
     }
 
-    // Convert genres string to array
-    if (submitData.genres) {
-      submitData.genres = submitData.genres.split(',').map((g) => g.trim()).filter(Boolean);
-    }
-
     const result = await updateProfile(submitData);
     if (result) {
       toast.success('Profile updated successfully!');
-      // Reset file input
-      const fileInput = document.querySelector('input[name="profile_picture"]');
-      if (fileInput) fileInput.value = '';
+      // Update original data to reflect changes
+      setOriginalData({ ...formData, profile_picture: null });
+      setFormData(prev => ({ ...prev, profile_picture: null }));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
+  };
+
+  const getFieldStatus = (fieldName) => {
+    if (errors[fieldName]) return 'error';
+    if (formData[fieldName] !== originalData[fieldName]) return 'changed';
+    return 'normal';
   };
 
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-6"
+      className="space-y-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
-          <span className="text-2xl">👤</span>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20 rounded-xl">
+            <UserIcon className="w-6 h-6 text-[var(--primary)]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-['Lora'] font-bold text-[var(--primary)]">Edit Profile</h2>
+            <p className="text-sm text-[var(--text)]/70">Update your personal information</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-lora font-bold text-primary">Edit Profile</h2>
-          <p className="text-sm text-primary/70">Update your personal information</p>
-        </div>
+
+        {hasChanges && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full text-sm font-medium"
+          >
+            <ExclamationTriangleIcon className="w-4 h-4" />
+            Unsaved changes
+          </motion.div>
+        )}
       </div>
 
+      {/* Profile Picture Section */}
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="space-y-4"
       >
-        <label className="block text-primary font-medium mb-2">Username</label>
-        <input
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          className="w-full p-4 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
-          placeholder="Enter your username"
-        />
+        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+          Profile Picture
+        </label>
+
+        <div className="flex items-center gap-6">
+          {/* Current/Preview Image */}
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-3 border-[var(--primary)]/20 bg-[var(--secondary)]/20">
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Profile preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <UserIcon className="w-8 h-8 text-[var(--text)]/40" />
+                </div>
+              )}
+            </div>
+
+            {formData.profile_picture && (
+              <motion.button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </motion.button>
+            )}
+          </div>
+
+          {/* Upload Button */}
+          <div className="flex-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageSelect(e.target.files[0])}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[var(--primary)]/30 rounded-lg hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all"
+            >
+              <CameraIcon className="w-5 h-5 text-[var(--primary)]" />
+              <span className="text-[var(--primary)] font-medium">
+                {imagePreview ? 'Change Photo' : 'Upload Photo'}
+              </span>
+            </button>
+            <p className="text-xs text-[var(--text)]/60 mt-1">
+              JPG, PNG or GIF (max 5MB)
+            </p>
+          </div>
+        </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">City</label>
-          <input
-            type="text"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
-            placeholder="Your city"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Country</label>
-          <input
-            type="text"
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
-            placeholder="Your country"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Birth Date</label>
-          <input
-            type="date"
-            name="birth_date"
-            value={formData.birth_date}
-            onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Gender</label>
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            <option value="Prefer not to say">Prefer not to say</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">About You</label>
-        <textarea
-          name="about_you"
-          value={formData.about_you}
-          onChange={handleChange}
-          rows={4}
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors resize-none"
-          placeholder="Tell us about yourself, your reading interests..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">
-          Favorite Genres
-          <span className="text-sm text-[var(--text)] ml-1">(comma-separated)</span>
-        </label>
-        <input
-          type="text"
-          name="genres"
-          value={formData.genres}
-          onChange={handleChange}
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors"
-          placeholder="Fiction, Mystery, Romance, Science Fiction..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-[var(--primary)] font-['Open_Sans'] mb-1 font-medium">Profile Picture</label>
-        <input
-          type="file"
-          name="profile_picture"
-          onChange={handleChange}
-          accept="image/*"
-          className="bookish-input w-full p-3 rounded-lg border border-[var(--primary)]/20 focus:border-[var(--accent)] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent)]/10 file:text-[var(--accent)] hover:file:bg-[var(--accent)]/20"
-        />
-        <p className="text-xs text-[var(--text)] mt-1">
-          Supported formats: JPG, PNG, GIF (max 5MB)
-        </p>
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="bookish-button-enhanced w-full px-6 py-3 rounded-lg text-white font-medium font-['Open_Sans'] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-[1.02]"
+      {/* Username Field */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="space-y-2"
       >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-            Updating Profile...
-          </span>
-        ) : (
-          'Update Profile'
+        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+          Username
+          {getFieldStatus('username') === 'changed' && (
+            <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+          )}
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            className={`w-full p-3 rounded-lg border transition-all ${
+              getFieldStatus('username') === 'error'
+                ? 'border-red-500 focus:border-red-500 bg-red-50/50'
+                : getFieldStatus('username') === 'changed'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+            }`}
+            placeholder="Enter your username"
+          />
+          {getFieldStatus('username') === 'changed' && (
+            <CheckIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--accent)]" />
+          )}
+        </div>
+        {errors.username && (
+          <p className="text-red-500 text-sm">{errors.username}</p>
         )}
-      </button>
+      </motion.div>
+
+      {/* Location Fields */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
+        <div className="space-y-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+            City
+            {getFieldStatus('city') === 'changed' && (
+              <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+            )}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              className={`w-full p-3 rounded-lg border transition-all ${
+                getFieldStatus('city') === 'changed'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                  : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+              }`}
+              placeholder="Your city"
+            />
+            {getFieldStatus('city') === 'changed' && (
+              <CheckIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--accent)]" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+            Country
+            {getFieldStatus('country') === 'changed' && (
+              <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+            )}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              className={`w-full p-3 rounded-lg border transition-all ${
+                getFieldStatus('country') === 'changed'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                  : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+              }`}
+              placeholder="Your country"
+            />
+            {getFieldStatus('country') === 'changed' && (
+              <CheckIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--accent)]" />
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Birth Date and Gender */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
+        <div className="space-y-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+            Birth Date
+            {getFieldStatus('birth_date') === 'changed' && (
+              <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+            )}
+          </label>
+          <div className="relative">
+            <input
+              type="date"
+              name="birth_date"
+              value={formData.birth_date}
+              onChange={handleChange}
+              className={`w-full p-3 rounded-lg border transition-all ${
+                getFieldStatus('birth_date') === 'changed'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                  : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+              }`}
+            />
+            {getFieldStatus('birth_date') === 'changed' && (
+              <CheckIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--accent)]" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+            Gender
+            {getFieldStatus('gender') === 'changed' && (
+              <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+            )}
+          </label>
+          <div className="relative">
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className={`w-full p-3 rounded-lg border transition-all ${
+                getFieldStatus('gender') === 'changed'
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                  : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+              }`}
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+            {getFieldStatus('gender') === 'changed' && (
+              <CheckIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--accent)]" />
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* About You */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="space-y-2"
+      >
+        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+          About You
+          {getFieldStatus('about_you') === 'changed' && (
+            <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+          )}
+          <span className="ml-2 text-xs text-[var(--text)]/60">
+            ({formData.about_you.length}/500)
+          </span>
+        </label>
+        <div className="relative">
+          <textarea
+            name="about_you"
+            value={formData.about_you}
+            onChange={handleChange}
+            rows={4}
+            maxLength={500}
+            className={`w-full p-3 rounded-lg border transition-all resize-none ${
+              getFieldStatus('about_you') === 'error'
+                ? 'border-red-500 focus:border-red-500 bg-red-50/50'
+                : getFieldStatus('about_you') === 'changed'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                : 'border-[var(--primary)]/20 focus:border-[var(--accent)]'
+            }`}
+            placeholder="Tell us about yourself, your reading interests..."
+          />
+          {getFieldStatus('about_you') === 'changed' && (
+            <CheckIcon className="absolute right-3 top-3 w-5 h-5 text-[var(--accent)]" />
+          )}
+        </div>
+        {errors.about_you && (
+          <p className="text-red-500 text-sm">{errors.about_you}</p>
+        )}
+      </motion.div>
+
+      {/* Interactive Genres Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="space-y-4"
+      >
+        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+          Favorite Genres
+          {JSON.stringify(formData.genres) !== JSON.stringify(originalData.genres) && (
+            <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
+          )}
+        </label>
+
+        {/* Current Genres */}
+        <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-3 border border-[var(--primary)]/20 rounded-lg bg-[var(--secondary)]/10">
+          <AnimatePresence>
+            {formData.genres.map((genre, index) => (
+              <motion.span
+                key={genre}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--accent)]/20 text-[var(--primary)] rounded-full text-sm font-medium"
+              >
+                {genre}
+                <button
+                  type="button"
+                  onClick={() => removeGenre(genre)}
+                  className="ml-1 hover:text-red-500 transition-colors"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </motion.span>
+            ))}
+          </AnimatePresence>
+
+          {formData.genres.length === 0 && (
+            <span className="text-[var(--text)]/50 text-sm">No genres selected</span>
+          )}
+        </div>
+
+        {/* Add New Genre */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newGenre}
+            onChange={(e) => setNewGenre(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addGenre(newGenre);
+              }
+            }}
+            className="flex-1 p-2 border border-[var(--primary)]/20 rounded-lg focus:border-[var(--accent)] transition-colors"
+            placeholder="Add a genre..."
+          />
+          <button
+            type="button"
+            onClick={() => addGenre(newGenre)}
+            disabled={!newGenre.trim()}
+            className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <PlusIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Popular Genres */}
+        <div>
+          <p className="text-sm text-[var(--text)]/70 mb-2">Popular genres:</p>
+          <div className="flex flex-wrap gap-2">
+            {popularGenres
+              .filter(genre => !formData.genres.includes(genre))
+              .slice(0, 8)
+              .map(genre => (
+                <button
+                  key={genre}
+                  type="button"
+                  onClick={() => addGenre(genre)}
+                  className="px-3 py-1 border border-[var(--primary)]/30 text-[var(--primary)] rounded-full text-sm hover:bg-[var(--primary)]/10 transition-colors"
+                >
+                  + {genre}
+                </button>
+              ))
+            }
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Submit Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="pt-4"
+      >
+        <button
+          type="submit"
+          disabled={isLoading || !hasChanges}
+          className={`w-full px-6 py-4 rounded-lg font-medium font-['Open_Sans'] transition-all ${
+            hasChanges
+              ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white hover:shadow-lg hover:scale-[1.02]'
+              : 'bg-[var(--secondary)]/50 text-[var(--text)]/50 cursor-not-allowed'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              Updating Profile...
+            </span>
+          ) : hasChanges ? (
+            <span className="flex items-center justify-center gap-2">
+              <CheckIcon className="w-5 h-5" />
+              Save Changes
+            </span>
+          ) : (
+            'No Changes to Save'
+          )}
+        </button>
+
+        {hasChanges && (
+          <p className="text-center text-sm text-[var(--text)]/60 mt-2">
+            You have unsaved changes. Click "Save Changes" to update your profile.
+          </p>
+        )}
+      </motion.div>
     </motion.form>
   );
 };

@@ -25,22 +25,22 @@ const ConnectionsSection = ({
   }, [initialActiveList]);
 
   const lists = [
-    { id: 'followers', label: 'Followers', users: followers, type: 'followers' },
-    { id: 'following', label: 'Following', users: following, type: 'following' },
-    { id: 'mutual', label: 'Mutual', users: mutualFollowers, type: 'mutual' },
+    { id: 'followers', label: 'Followers', users: followers || [], type: 'followers' },
+    { id: 'following', label: 'Following', users: following || [], type: 'following' },
+    { id: 'mutual', label: 'Mutual', users: mutualFollowers || [], type: 'mutual' },
   ];
 
   return (
     <div className="bookish-glass p-4 rounded-xl">
-      <nav className="flex gap-2 mb-4 border-b border-[var(--secondary)]/20">
+      <nav className="flex gap-2 mb-4 border-b border-[var(--primary)]/20">
         {lists.map((list) => (
           <button
             key={list.id}
             onClick={() => setActiveList(list.id)}
-            className={`px-3 py-1.5 font-['Open_Sans'] text-sm ${
+            className={`px-3 py-1.5 font-['Open_Sans'] text-sm transition-colors ${
               activeList === list.id
                 ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-                : 'text-[#456A76] hover:text-[var(--accent)]'
+                : 'text-[var(--primary)] hover:text-[var(--accent)]'
             }`}
           >
             {list.label}
@@ -64,8 +64,8 @@ const ConnectionsSection = ({
               />
               <Pagination
                 type={list.type}
-                currentPage={currentPage[list.type]}
-                totalPages={pagination[list.type].totalPages}
+                currentPage={currentPage?.[list.type] || 1}
+                totalPages={pagination?.[list.type]?.totalPages || 1}
                 onPageChange={onPageChange}
               />
             </div>
