@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -116,11 +116,19 @@ const parseGenres = (genres) => {
 };
 
 const ProfileSection = () => {
-  const { profile } = useAuth();
+  const { profile, getProfile } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [connectionsActiveList, setConnectionsActiveList] = useState('followers');
+
+  // Refresh profile data when component mounts or becomes visible
+  useEffect(() => {
+    // Force refresh profile data to ensure we have the latest information
+    if (profile?.user_id && getProfile) {
+      getProfile(true); // Force fresh fetch
+    }
+  }, [profile?.user_id, getProfile]); // Depend on user_id and getProfile function
 
   // Custom hook for managing profile data and pagination
   const {

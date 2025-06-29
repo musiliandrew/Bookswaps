@@ -308,9 +308,30 @@ const ProfileForm = () => {
     const result = await updateProfile(submitData);
     if (result) {
       toast.success('Profile updated successfully!');
-      // Update original data to reflect changes
-      setOriginalData({ ...formData, profile_picture: null });
-      setFormData(prev => ({ ...prev, profile_picture: null }));
+
+      // Update form data with the fresh data from backend
+      const cleanedGenres = parseGenres(result.favorite_genres);
+      const updatedData = {
+        username: result.username || '',
+        city: result.city || '',
+        country: result.country || '',
+        birth_date: result.birth_date || '',
+        gender: result.gender || '',
+        about_you: result.about_you || '',
+        genres: cleanedGenres,
+        profile_picture: null, // Reset file input
+      };
+
+      // Update both form data and original data with fresh backend data
+      setFormData(updatedData);
+      setOriginalData(updatedData);
+
+      // Update image preview if profile picture was updated
+      if (result.profile_picture) {
+        setImagePreview(result.profile_picture);
+      }
+
+      // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
