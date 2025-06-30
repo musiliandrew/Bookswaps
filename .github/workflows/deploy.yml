@@ -81,6 +81,11 @@ jobs:
       env:
         DJANGO_SETTINGS_MODULE: backend.settings_test
         PYTHONPATH: .
+        DB_NAME: bookswaps_test
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         # Remove problematic test files that require selenium
         rm -f test_frontend_functionality.py
