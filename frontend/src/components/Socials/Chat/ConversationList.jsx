@@ -54,24 +54,24 @@ const ConversationList = ({ conversations, selectedConversation, onSelectConvers
   if (!conversations || conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
-        <UserCircleIcon className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-600 mb-2">No conversations yet</h3>
-        <p className="text-sm text-gray-500">Start a conversation with someone you follow!</p>
+        <UserCircleIcon className="w-16 h-16 text-[var(--secondary)] mb-4" />
+        <h3 className="text-lg font-lora font-semibold text-[var(--primary)] mb-2">No conversations yet</h3>
+        <p className="text-sm font-open-sans text-[var(--text)]">Start a conversation with someone you follow!</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-[var(--secondary)]/30">
       {conversations.map((conversation, index) => (
         <motion.div
           key={conversation.partner.user_id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
-          className={`p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
-            selectedConversation?.partner?.user_id === conversation.partner.user_id 
-              ? 'bg-[var(--accent)]/10 border-r-4 border-[var(--accent)]' 
+          className={`p-4 cursor-pointer transition-all duration-200 hover:bg-[var(--secondary)]/20 ${
+            selectedConversation?.partner?.user_id === conversation.partner.user_id
+              ? 'bg-[var(--accent)]/10 border-r-4 border-[var(--accent)]'
               : ''
           }`}
           onClick={() => onSelectConversation(conversation)}
@@ -100,25 +100,28 @@ const ConversationList = ({ conversations, selectedConversation, onSelectConvers
             {/* Conversation Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <h3 className="font-semibold text-gray-900 truncate">
+                <h3 className="font-semibold font-open-sans text-[var(--primary)] truncate">
                   {conversation.partner.username}
                 </h3>
                 <div className="flex items-center space-x-1">
                   {getStatusIcon(conversation.latest_message, conversation.current_user_id)}
-                  <span className="text-xs text-gray-500">
-                    {formatTime(conversation.latest_message.created_at)}
+                  <span className="text-xs text-[var(--text)] font-open-sans">
+                    {conversation.latest_message ? formatTime(conversation.latest_message.created_at) : 'New'}
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-600 truncate">
-                  {conversation.latest_message.message_type === 'TEXT' 
-                    ? truncateMessage(conversation.latest_message.content)
-                    : `📎 ${conversation.latest_message.message_type.toLowerCase()}`
-                  }
+                <p className="text-sm text-[var(--text)] font-open-sans truncate">
+                  {conversation.latest_message ? (
+                    conversation.latest_message.message_type === 'TEXT'
+                      ? truncateMessage(conversation.latest_message.content)
+                      : `📎 ${conversation.latest_message.message_type.toLowerCase()}`
+                  ) : (
+                    'Start a conversation...'
+                  )}
                 </p>
-                
+
                 {/* Unread Count */}
                 {conversation.unread_count > 0 && (
                   <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-[var(--accent)] rounded-full min-w-[20px]">

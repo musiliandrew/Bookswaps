@@ -11,14 +11,14 @@ import json
 from datetime import datetime
 
 # Add the backend directory to Python path
-sys.path.insert(0, '/mnt/persist/workspace/backend')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
 # Set up Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 # Base URL for API
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = "http://192.168.3.97:8000/api"
 
 class EndpointTester:
     def __init__(self):

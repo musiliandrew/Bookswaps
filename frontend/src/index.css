@@ -452,3 +452,136 @@
     padding: 1rem;
   }
 }
+
+/* Flying Books Animation for Chat Background */
+.flying-books-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.flying-book {
+  position: absolute;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+/* Individual book animations with different paths and timings */
+.book-1 {
+  top: 10%;
+  left: 5%;
+  animation: flyBook1 25s infinite;
+  transform-origin: center;
+}
+
+.book-2 {
+  top: 60%;
+  right: 10%;
+  animation: flyBook2 30s infinite;
+  transform-origin: center;
+}
+
+.book-3 {
+  top: 30%;
+  left: 70%;
+  animation: flyBook3 35s infinite;
+  transform-origin: center;
+}
+
+.book-4 {
+  bottom: 20%;
+  left: 20%;
+  animation: flyBook4 28s infinite;
+  transform-origin: center;
+}
+
+.book-5 {
+  top: 80%;
+  right: 30%;
+  animation: flyBook5 32s infinite;
+  transform-origin: center;
+}
+
+/* Keyframe animations for different flight paths */
+@keyframes flyBook1 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(100px, -50px) rotate(15deg) scale(1.1); }
+  50% { transform: translate(200px, 30px) rotate(-10deg) scale(0.9); }
+  75% { transform: translate(150px, 80px) rotate(20deg) scale(1.05); }
+  100% { transform: translate(300px, -20px) rotate(-5deg) scale(1); }
+}
+
+@keyframes flyBook2 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  20% { transform: translate(-80px, -100px) rotate(-20deg) scale(1.2); }
+  40% { transform: translate(-150px, 50px) rotate(25deg) scale(0.8); }
+  60% { transform: translate(-200px, -30px) rotate(-15deg) scale(1.1); }
+  80% { transform: translate(-120px, 70px) rotate(30deg) scale(0.9); }
+  100% { transform: translate(-250px, -80px) rotate(-10deg) scale(1); }
+}
+
+@keyframes flyBook3 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  30% { transform: translate(-120px, 100px) rotate(18deg) scale(1.15); }
+  60% { transform: translate(-80px, -60px) rotate(-25deg) scale(0.85); }
+  100% { transform: translate(-200px, 40px) rotate(12deg) scale(1); }
+}
+
+@keyframes flyBook4 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(150px, -80px) rotate(-18deg) scale(1.1); }
+  50% { transform: translate(80px, -150px) rotate(22deg) scale(0.9); }
+  75% { transform: translate(220px, -100px) rotate(-12deg) scale(1.05); }
+  100% { transform: translate(180px, -200px) rotate(8deg) scale(1); }
+}
+
+@keyframes flyBook5 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  20% { transform: translate(-100px, -120px) rotate(25deg) scale(1.2); }
+  40% { transform: translate(50px, -80px) rotate(-20deg) scale(0.8); }
+  60% { transform: translate(-150px, -160px) rotate(15deg) scale(1.1); }
+  80% { transform: translate(20px, -200px) rotate(-30deg) scale(0.9); }
+  100% { transform: translate(-80px, -250px) rotate(10deg) scale(1); }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .flying-book {
+    opacity: 0.3;
+  }
+
+  .book-1, .book-2, .book-3, .book-4, .book-5 {
+    animation-duration: 20s;
+  }
+
+  @keyframes flyBook1 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0.8); }
+    50% { transform: translate(100px, -30px) rotate(15deg) scale(0.9); }
+    100% { transform: translate(150px, -10px) rotate(-5deg) scale(0.8); }
+  }
+
+  @keyframes flyBook2 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0.8); }
+    50% { transform: translate(-80px, -50px) rotate(-20deg) scale(0.9); }
+    100% { transform: translate(-120px, -40px) rotate(-10deg) scale(0.8); }
+  }
+
+  @keyframes flyBook3 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0.8); }
+    50% { transform: translate(-60px, 50px) rotate(18deg) scale(0.9); }
+    100% { transform: translate(-100px, 20px) rotate(12deg) scale(0.8); }
+  }
+
+  @keyframes flyBook4 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0.8); }
+    50% { transform: translate(80px, -40px) rotate(-18deg) scale(0.9); }
+    100% { transform: translate(120px, -80px) rotate(8deg) scale(0.8); }
+  }
+
+  @keyframes flyBook5 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0.8); }
+    50% { transform: translate(-50px, -60px) rotate(25deg) scale(0.9); }
+    100% { transform: translate(-40px, -100px) rotate(10deg) scale(0.8); }
+  }
+}

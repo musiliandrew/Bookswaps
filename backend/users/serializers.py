@@ -298,7 +298,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
         # Update profile completion after saving
         instance.update_profile_completion_status()
-        instance.save(update_fields=['profile_completion', 'profile_completed'])
+        instance.save(update_fields=['profile_completed'])
 
         return instance
 

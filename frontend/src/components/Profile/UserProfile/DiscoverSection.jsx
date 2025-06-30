@@ -16,6 +16,7 @@ const DiscoverSection = ({
   onUnfollow,
   userFollowStatuses,
   isLoading,
+  currentUserId,
 }) => {
   const filteredRecommendedUsers = useMemo(() => {
     return recommendedUsers?.filter(user => {
@@ -56,6 +57,7 @@ const DiscoverSection = ({
                 onUnfollow={onUnfollow}
                 userFollowStatuses={userFollowStatuses}
                 isLoading={isLoading}
+                currentUserId={currentUserId}
               />
               <Pagination
                 type="search"
@@ -83,6 +85,7 @@ const DiscoverSection = ({
             onUnfollow={onUnfollow}
             userFollowStatuses={userFollowStatuses}
             isLoading={isLoading}
+            currentUserId={currentUserId}
           />
           <Pagination
             type="recommended"

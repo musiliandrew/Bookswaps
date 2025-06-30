@@ -16,6 +16,7 @@ const ConnectionsSection = ({
   userFollowStatuses,
   isLoading,
   initialActiveList = 'followers', // New prop with default value
+  currentUserId,
 }) => {
   const [activeList, setActiveList] = useState(initialActiveList);
 
@@ -61,6 +62,7 @@ const ConnectionsSection = ({
                 userFollowStatuses={userFollowStatuses}
                 isLoading={isLoading}
                 listType={list.type} // Pass list type to UserList
+                currentUserId={currentUserId}
               />
               <Pagination
                 type={list.type}

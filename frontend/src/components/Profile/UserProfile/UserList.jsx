@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const UserList = ({ users, onViewProfile, onFollow, onUnfollow, onRemoveFollower, userFollowStatuses, isLoading, listType }) => {
+const UserList = ({ users, onViewProfile, onFollow, onUnfollow, onRemoveFollower, userFollowStatuses, isLoading, listType, currentUserId }) => {
   if (isLoading) {
     return <p className="text-[var(--text)] text-center">Loading...</p>;
   }
@@ -12,7 +12,39 @@ const UserList = ({ users, onViewProfile, onFollow, onUnfollow, onRemoveFollower
     <div className="space-y-3">
       {users.map((user) => {
         const followStatus = userFollowStatuses[user.user_id] || { is_following: false, is_mutual: false };
-        const isFollowerList = listType === 'followers' || listType === 'mutual';
+        const isFollowerList = listType === 'followers';
+        const isMutualList = listType === 'mutual';
+        const isFollowingList = listType === 'following';
+        const isOwnProfile = currentUserId === user.user_id;
+
+        // Determine button text and styling
+        const getButtonConfig = () => {
+          if (isOwnProfile) {
+            return null; // Don't show follow button for own profile
+          }
+
+          // Determine if user is actually following this person
+          const isActuallyFollowing = followStatus.is_following || isFollowingList || isMutualList;
+
+          if (isActuallyFollowing) {
+            return {
+              text: 'Following',
+              action: () => onUnfollow(user.user_id),
+              className: 'bg-gray-500 hover:bg-gray-600 text-white'
+            };
+          } else {
+            // For followers list: if not following them back, show "Follow Back"
+            // For discovery/search: show "Follow"
+            const buttonText = isFollowerList ? 'Follow Back' : 'Follow';
+            return {
+              text: buttonText,
+              action: () => onFollow(user.user_id, 'Connections'),
+              className: 'bg-[var(--primary)] hover:bg-[var(--accent)] text-white'
+            };
+          }
+        };
+
+        const buttonConfig = getButtonConfig();
         
         return (
           <motion.div
@@ -43,24 +75,22 @@ const UserList = ({ users, onViewProfile, onFollow, onUnfollow, onRemoveFollower
               </div>
             </div>
             <div className="flex gap-2">
-              {isFollowerList && (
+              {(isFollowerList || isMutualList) && !isOwnProfile && onRemoveFollower && (
                 <button
                   onClick={() => onRemoveFollower(user.user_id)}
-                  className="bookish-button-enhanced px-4 py-2 rounded-lg text-[var(--secondary)] text-xs font-['Open_Sans']"
+                  className="px-3 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 text-xs font-['Open_Sans'] transition-colors"
                 >
                   Remove
                 </button>
               )}
-              <button
-                onClick={() =>
-                  followStatus.is_following
-                    ? onUnfollow(user.user_id)
-                    : onFollow(user.user_id, 'Connections')
-                }
-                className="bookish-button-enhanced px-4 py-2 rounded-lg text-[var(--secondary)] text-xs font-['Open_Sans']"
-              >
-                {followStatus.is_following ? 'Unfollow' : isFollowerList ? 'Follow Back' : 'Follow'}
-              </button>
+              {buttonConfig && (
+                <button
+                  onClick={buttonConfig.action}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-['Open_Sans'] transition-colors ${buttonConfig.className}`}
+                >
+                  {buttonConfig.text}
+                </button>
+              )}
             </div>
           </motion.div>
         );
