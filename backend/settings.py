@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'backend.library.apps.LibraryConfig',
     'backend.discussions.apps.DiscussionsConfig',
     'backend.swaps.apps.SwapsConfig',
+    'backend.health',
 ]
 
 REST_FRAMEWORK = {

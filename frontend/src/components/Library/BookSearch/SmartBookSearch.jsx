@@ -20,7 +20,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
   const { searchOpenLibrary, openLibraryResults, isLoading, error } = useLibrary();
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState('general');
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [, setSelectedBook] = useState(null);
   const [showResults, setShowResults] = useState(false);
   
   // Debounce search query to avoid too many API calls
@@ -33,7 +33,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
     } else {
       setShowResults(false);
     }
-  }, [debouncedQuery, searchType]);
+  }, [debouncedQuery, searchType, handleSearch]);
 
   const handleSearch = useCallback(async () => {
     if (!debouncedQuery || debouncedQuery.length < 2) return;

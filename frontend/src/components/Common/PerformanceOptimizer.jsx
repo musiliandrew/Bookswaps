@@ -71,6 +71,7 @@ export const VirtualizedList = memo(({
       const newStartIndex = Math.floor(scrollTop / itemHeight);
       setStartIndex(Math.max(0, newStartIndex - overscan));
     }, 16), // 60fps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [itemHeight, overscan]
   );
 
@@ -191,20 +192,24 @@ export const useMemoryLeakPrevention = () => {
   }, []);
 
   useEffect(() => {
+    const currentTimeouts = timeouts.current;
+    const currentIntervals = intervals.current;
+    const currentListeners = listeners.current;
+
     return () => {
       // Clear all timeouts
-      timeouts.current.forEach(clearTimeout);
-      timeouts.current.clear();
+      currentTimeouts.forEach(clearTimeout);
+      currentTimeouts.clear();
 
       // Clear all intervals
-      intervals.current.forEach(clearInterval);
-      intervals.current.clear();
+      currentIntervals.forEach(clearInterval);
+      currentIntervals.clear();
 
       // Remove all event listeners
-      listeners.current.forEach(({ element, event, handler }) => {
+      currentListeners.forEach(({ element, event, handler }) => {
         element.removeEventListener(event, handler);
       });
-      listeners.current.clear();
+      currentListeners.clear();
     };
   }, []);
 

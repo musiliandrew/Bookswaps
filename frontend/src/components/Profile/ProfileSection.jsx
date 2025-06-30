@@ -118,7 +118,7 @@ const parseGenres = (genres) => {
 
 const ProfileSection = () => {
   const { profile } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const [activeSubTab, setActiveSubTab] = useState('profile');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);

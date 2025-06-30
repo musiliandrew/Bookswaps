@@ -152,7 +152,7 @@ const ProfileCompletionTracker = ({
 
       // Get missing fields
       const missingFields = Object.entries(fields)
-        .filter(([_, field]) => !field.completed)
+        .filter(([, field]) => !field.completed)
         .map(([key, field]) => ({ ...field, field: key }))
         .sort((a, b) => b.weight - a.weight); // Sort by weight (importance)
 

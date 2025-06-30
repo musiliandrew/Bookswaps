@@ -10,7 +10,7 @@
 - **Ubuntu 20.04+** ✅ (You have this)
 - **Docker & Docker Compose** ✅ (You have this)
 - **Nginx** ✅ (You have this)
-- **Domain:** quantiq.co.ke ✅ (You have this)
+- **Domain:** bookswaps.quantiq.co.ke ✅ (You have this)
 - **IP:** 178.32.191.152 ✅ (You have this)
 
 ---
@@ -69,8 +69,8 @@ chmod +x deploy.sh
 In your domain registrar (where you bought quantiq.co.ke):
 
 ```
-A Record:  quantiq.co.ke → 178.32.191.152
-A Record:  www.quantiq.co.ke → 178.32.191.152
+A Record:  bookswaps.quantiq.co.ke → 178.32.191.152
+A Record:  www.bookswaps.quantiq.co.ke → 178.32.191.152
 ```
 
 **Wait for DNS propagation (5-30 minutes)**
@@ -86,7 +86,7 @@ The deployment script automatically sets up SSL certificates, but if you need to
 sudo apt install certbot python3-certbot-nginx
 
 # Get SSL certificate
-sudo certbot --nginx -d quantiq.co.ke -d www.quantiq.co.ke
+sudo certbot --nginx -d bookswaps.quantiq.co.ke -d www.bookswaps.quantiq.co.ke
 
 # Set up auto-renewal
 echo "0 12 * * * /usr/bin/certbot renew --quiet" | sudo crontab -
@@ -125,10 +125,10 @@ docker-compose -f docker-compose.prod.yml ps
 ```
 
 **Access your application:**
-- **Website:** https://quantiq.co.ke
-- **Admin Panel:** https://quantiq.co.ke/admin
-- **API Health:** https://quantiq.co.ke/api/health/
-- **MinIO Console:** https://quantiq.co.ke:9001
+- **Website:** https://bookswaps.quantiq.co.ke
+- **Admin Panel:** https://bookswaps.quantiq.co.ke/admin
+- **API Health:** https://bookswaps.quantiq.co.ke/api/health/
+- **MinIO Console:** https://bookswaps.quantiq.co.ke:9001
 
 **Default credentials:**
 - **Admin Username:** admin

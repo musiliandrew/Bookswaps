@@ -661,7 +661,7 @@ const ProfileForm = () => {
         {/* Current Genres */}
         <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-3 border border-[var(--primary)]/20 rounded-lg bg-[var(--secondary)]/10">
           <AnimatePresence>
-            {formData.genres.map((genre, index) => (
+            {formData.genres.map((genre) => (
               <motion.span
                 key={genre}
                 initial={{ opacity: 0, scale: 0.8 }}

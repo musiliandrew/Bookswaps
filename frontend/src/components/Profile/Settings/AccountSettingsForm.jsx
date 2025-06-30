@@ -62,7 +62,7 @@ const AccountSettingsForm = () => {
     const newErrors = { ...errors };
 
     switch (name) {
-      case 'email':
+      case 'email': {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!value.trim()) {
           newErrors.email = 'Email is required';
@@ -72,6 +72,7 @@ const AccountSettingsForm = () => {
           delete newErrors.email;
         }
         break;
+      }
       case 'password':
         if (showPasswordFields) {
           if (!value) {

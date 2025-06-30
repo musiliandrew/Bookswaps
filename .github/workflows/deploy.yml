@@ -143,20 +143,20 @@ jobs:
           DB_PASSWORD=BookSwaps2025SecurePassword123!
           DB_HOST=db
           DB_PORT=5432
-          
+
           # Django Configuration
           SECRET_KEY=django-insecure-bookswaps-production-key-2025-very-secure-random-string-change-this
           DEBUG=False
-          ALLOWED_HOSTS=quantiq.co.ke,www.quantiq.co.ke,178.32.191.152
-          
+          ALLOWED_HOSTS=bookswaps.quantiq.co.ke,www.bookswaps.quantiq.co.ke,quantiq.co.ke,178.32.191.152
+
           # Frontend URL
-          FRONTEND_URL=https://quantiq.co.ke
+          FRONTEND_URL=https://bookswaps.quantiq.co.ke
           
           # MinIO Configuration
           MINIO_ACCESS_KEY=bookswaps_admin_2025
           MINIO_SECRET_KEY=BookSwapsMinIOSecureKey2025!
           MINIO_BUCKET_NAME=bookswaps-prod
-          MINIO_ENDPOINT_URL=https://quantiq.co.ke:9000
+          MINIO_ENDPOINT_URL=https://bookswaps.quantiq.co.ke:9000
           MINIO_REGION=us-east-1
           
           # Redis Configuration
@@ -168,7 +168,7 @@ jobs:
           EMAIL_USE_TLS=True
           EMAIL_HOST_USER=andrewthepyrookie@gmail.com
           EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
-          DEFAULT_FROM_EMAIL=noreply@quantiq.co.ke
+          DEFAULT_FROM_EMAIL=noreply@bookswaps.quantiq.co.ke
           
           # Security Settings
           SECURE_SSL_REDIRECT=True
@@ -181,8 +181,8 @@ jobs:
           X_FRAME_OPTIONS=DENY
           
           # WebSocket URLs
-          VITE_WS_URL=wss://quantiq.co.ke/ws/
-          VITE_API_URL=https://quantiq.co.ke/api/
+          VITE_WS_URL=wss://bookswaps.quantiq.co.ke/ws/
+          VITE_API_URL=https://bookswaps.quantiq.co.ke/api/
           EOF
           fi
           

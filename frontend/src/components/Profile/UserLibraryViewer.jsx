@@ -36,7 +36,7 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
     if (isOpen && userId) {
       loadUserBooks();
     }
-  }, [isOpen, userId, filters]);
+  }, [isOpen, userId, filters, loadUserBooks]);
 
   const loadUserBooks = async (page = 1) => {
     try {
@@ -272,7 +272,7 @@ const SwapRequestModal = ({ book, onClose, onSwapRequest }) => {
 
   useEffect(() => {
     getUserLibrary();
-  }, []);
+  }, [getUserLibrary]);
 
   const availableBooks = userLibrary?.filter(b => b.available_for_exchange) || [];
 

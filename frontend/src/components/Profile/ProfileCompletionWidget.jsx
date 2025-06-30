@@ -54,7 +54,7 @@ const ProfileCompletionWidget = ({
       const percentage = Math.round((completedWeight / totalWeight) * 100);
 
       const missingFields = Object.entries(fields)
-        .filter(([_, field]) => !field.completed)
+        .filter(([, field]) => !field.completed)
         .map(([key, field]) => ({ ...field, field: key }))
         .sort((a, b) => b.weight - a.weight);
 

@@ -20,7 +20,7 @@ const MessagePinning = ({
   showPinButton = true,
   compact = false 
 }) => {
-  const { profile } = useAuth();
+  const { profile: currentUser } = useAuth();
   const { pinSocietyMessage, isLoading } = useSocieties();
   const [showConfirm, setShowConfirm] = useState(false);
 

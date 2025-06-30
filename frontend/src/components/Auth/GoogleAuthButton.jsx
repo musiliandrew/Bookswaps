@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
-const GoogleAuthButton = ({ onSuccess, onError, text = "Continue with Google", className = "" }) => {
+const GoogleAuthButton = ({ onError, text = "Continue with Google", className = "" }) => {
   const handleGoogleAuth = async () => {
     try {
       // For now, show a placeholder message
