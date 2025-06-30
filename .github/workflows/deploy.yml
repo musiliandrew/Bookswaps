@@ -65,15 +65,14 @@ jobs:
     
     - name: Install Python dependencies
       run: |
-        cd backend
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
+        pip install -r backend/requirements.txt
+
     - name: Install Node dependencies
       run: |
         cd frontend
         npm ci
-    
+
     - name: Run Python tests
       env:
         DB_NAME: bookswaps_test
@@ -84,10 +83,10 @@ jobs:
         SECRET_KEY: test-secret-key
         DEBUG: True
         REDIS_URL: redis://localhost:6379/1
+        PYTHONPATH: .
       run: |
-        cd backend
-        python manage.py migrate
-        python manage.py test
+        python backend/manage.py migrate
+        python backend/manage.py test
     
     - name: Run Frontend tests
       run: |
@@ -110,9 +109,9 @@ jobs:
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USERNAME }}
-        password: ${{ secrets.VPS_PASSWORD }}
+        host: 178.32.191.152
+        username: ubuntu
+        password: "*Musili2025"
         port: 22
         script: |
           # Navigate to project directory
@@ -167,7 +166,7 @@ jobs:
           EMAIL_PORT=587
           EMAIL_USE_TLS=True
           EMAIL_HOST_USER=andrewthepyrookie@gmail.com
-          EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_HOST_PASSWORD=your_gmail_app_password_here
           DEFAULT_FROM_EMAIL=noreply@bookswaps.quantiq.co.ke
           
           # Security Settings
