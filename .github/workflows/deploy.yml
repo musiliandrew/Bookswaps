@@ -1,0 +1,313 @@
+name: Deploy BookSwaps to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bookswaps_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Cache Node dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Node dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run Python tests
+      env:
+        DB_NAME: bookswaps_test
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
+        SECRET_KEY: test-secret-key
+        DEBUG: True
+        REDIS_URL: redis://localhost:6379/1
+      run: |
+        cd backend
+        python manage.py migrate
+        python manage.py test
+    
+    - name: Run Frontend tests
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: 22
+        script: |
+          # Navigate to project directory
+          cd /opt/bookswaps || {
+            echo "Creating project directory..."
+            sudo mkdir -p /opt/bookswaps
+            sudo chown $USER:$USER /opt/bookswaps
+            cd /opt/bookswaps
+          }
+          
+          # Clone or update repository
+          if [ -d ".git" ]; then
+            echo "Updating existing repository..."
+            git fetch origin
+            git reset --hard origin/main
+          else
+            echo "Cloning repository..."
+            git clone https://github.com/musiliandrew/Bookswaps.git .
+          fi
+          
+          # Copy production environment file
+          if [ ! -f ".env.production" ]; then
+            echo "Creating production environment file..."
+            cat > .env.production << 'EOF'
+          # Database Configuration
+          DB_NAME=bookswaps_prod
+          DB_USER=bookswaps_user
+          DB_PASSWORD=BookSwaps2025SecurePassword123!
+          DB_HOST=db
+          DB_PORT=5432
+          
+          # Django Configuration
+          SECRET_KEY=django-insecure-bookswaps-production-key-2025-very-secure-random-string-change-this
+          DEBUG=False
+          ALLOWED_HOSTS=quantiq.co.ke,www.quantiq.co.ke,178.32.191.152
+          
+          # Frontend URL
+          FRONTEND_URL=https://quantiq.co.ke
+          
+          # MinIO Configuration
+          MINIO_ACCESS_KEY=bookswaps_admin_2025
+          MINIO_SECRET_KEY=BookSwapsMinIOSecureKey2025!
+          MINIO_BUCKET_NAME=bookswaps-prod
+          MINIO_ENDPOINT_URL=https://quantiq.co.ke:9000
+          MINIO_REGION=us-east-1
+          
+          # Redis Configuration
+          REDIS_URL=redis://redis:6379/0
+          
+          # Email Configuration
+          EMAIL_HOST=smtp.gmail.com
+          EMAIL_PORT=587
+          EMAIL_USE_TLS=True
+          EMAIL_HOST_USER=andrewthepyrookie@gmail.com
+          EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+          DEFAULT_FROM_EMAIL=noreply@quantiq.co.ke
+          
+          # Security Settings
+          SECURE_SSL_REDIRECT=True
+          SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
+          SECURE_HSTS_SECONDS=31536000
+          SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+          SECURE_HSTS_PRELOAD=True
+          SECURE_CONTENT_TYPE_NOSNIFF=True
+          SECURE_BROWSER_XSS_FILTER=True
+          X_FRAME_OPTIONS=DENY
+          
+          # WebSocket URLs
+          VITE_WS_URL=wss://quantiq.co.ke/ws/
+          VITE_API_URL=https://quantiq.co.ke/api/
+          EOF
+          fi
+          
+          # Create production docker-compose file
+          cat > docker-compose.prod.yml << 'EOF'
+          version: '3.8'
+          
+          services:
+            db:
+              image: postgres:15
+              environment:
+                POSTGRES_DB: bookswaps_prod
+                POSTGRES_USER: bookswaps_user
+                POSTGRES_PASSWORD: BookSwaps2025SecurePassword123!
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+            redis:
+              image: redis:7
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+            minio:
+              image: minio/minio:latest
+              command: server /data --console-address ":9001"
+              environment:
+                MINIO_ACCESS_KEY: bookswaps_admin_2025
+                MINIO_SECRET_KEY: BookSwapsMinIOSecureKey2025!
+              volumes:
+                - minio_data:/data
+              ports:
+                - "9000:9000"
+                - "9001:9001"
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+            backend:
+              build:
+                context: ./backend
+                dockerfile: Dockerfile.prod
+              env_file:
+                - .env.production
+              depends_on:
+                - db
+                - redis
+                - minio
+              volumes:
+                - static_volume:/app/staticfiles
+                - media_volume:/app/media
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+            frontend:
+              build:
+                context: ./frontend
+                dockerfile: Dockerfile.prod
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+            nginx:
+              build:
+                context: ./nginx
+                dockerfile: Dockerfile.prod
+              ports:
+                - "80:80"
+                - "443:443"
+              volumes:
+                - static_volume:/app/staticfiles
+                - media_volume:/app/media
+                - ./nginx/ssl:/etc/nginx/ssl
+              depends_on:
+                - backend
+                - frontend
+              restart: unless-stopped
+              networks:
+                - bookswaps-network
+          
+          volumes:
+            postgres_data:
+            minio_data:
+            static_volume:
+            media_volume:
+          
+          networks:
+            bookswaps-network:
+              driver: bridge
+          EOF
+          
+          # Stop existing containers
+          echo "Stopping existing containers..."
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Build and start new containers
+          echo "Building and starting containers..."
+          docker-compose -f docker-compose.prod.yml up -d --build
+          
+          # Wait for database to be ready
+          echo "Waiting for database to be ready..."
+          sleep 30
+          
+          # Run migrations
+          echo "Running database migrations..."
+          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py migrate
+          
+          # Collect static files
+          echo "Collecting static files..."
+          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput
+          
+          # Create superuser if it doesn't exist
+          echo "Creating superuser..."
+          docker-compose -f docker-compose.prod.yml exec -T backend python manage.py shell << 'PYTHON'
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          if not User.objects.filter(username='admin').exists():
+              User.objects.create_superuser('admin', 'admin@quantiq.co.ke', 'BookSwaps2025Admin!')
+              print("Superuser created successfully")
+          else:
+              print("Superuser already exists")
+          PYTHON
+          
+          echo "Deployment completed successfully!"

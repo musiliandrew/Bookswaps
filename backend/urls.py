@@ -6,5 +6,5 @@ urlpatterns = [
     path('api/library/', include('backend.library.urls', namespace='library')),
     path('api/discussions/', include('backend.discussions.urls')),
     path('api/chat/', include('backend.chat.urls')),
-
+    path('api/health/', include('backend.health.urls')),
 ]
