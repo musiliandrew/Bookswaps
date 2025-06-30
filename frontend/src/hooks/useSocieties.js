@@ -129,18 +129,34 @@ export function useSocieties() {
   }, []);
 
   const getSocietyMessages = useCallback(async (societyId, page = 1) => {
-    const result = await handleApiCall(
-      () => api.get(`${API_ENDPOINTS.GET_SOCIETY_MESSAGES(societyId)}?page=${page}`),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch society messages'
-    );
-    if (result) {
-      setSocietyMessages(result.results || []);
-      updatePagination(result, 'messages', page);
+    try {
+      setIsLoading(true);
+      const response = await api.get(`${API_ENDPOINTS.GET_SOCIETY_MESSAGES(societyId)}?page=${page}`);
+      const result = response.data;
+
+      if (result) {
+        setSocietyMessages(result.results || []);
+        updatePagination(result, 'messages', page);
+      }
+      setError(null);
+      return result;
+    } catch (error) {
+      console.error('Error fetching society messages:', error);
+
+      // Set specific error messages based on status code
+      if (error.response?.status === 403) {
+        setError('Access denied - You need to be a member to view messages');
+      } else if (error.response?.status === 404) {
+        setError('Society not found');
+      } else {
+        setError('Failed to fetch society messages');
+      }
+
+      setSocietyMessages([]);
+      throw error; // Re-throw to allow component-level handling
+    } finally {
+      setIsLoading(false);
     }
-    return result;
   }, []);
 
   const sendSocietyMessage = useCallback(async (societyId, content) => {

@@ -173,20 +173,41 @@ const SocietyChatView = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Welcome Message */}
+            {/* Welcome Message or Access Denied */}
             {messages.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-8"
               >
-                <UsersIcon className="w-12 h-12 text-[var(--secondary)] mx-auto mb-3" />
-                <h4 className="font-lora text-[var(--primary)] font-semibold mb-2">
-                  Welcome to {society.name}!
-                </h4>
-                <p className="text-[var(--text)] font-open-sans text-sm">
-                  Start the conversation and connect with fellow book lovers
-                </p>
+                {society.visibility === 'private' && !society.is_member ? (
+                  <>
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-lora text-[var(--primary)] font-semibold mb-2">
+                      Private Society
+                    </h4>
+                    <p className="text-[var(--text)] font-open-sans text-sm mb-4">
+                      This is a private society. You need to be invited by the creator to join and view messages.
+                    </p>
+                    <p className="text-[var(--text)] font-open-sans text-xs">
+                      Contact <strong>{society.creator?.username || 'the creator'}</strong> for access
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <UsersIcon className="w-12 h-12 text-[var(--secondary)] mx-auto mb-3" />
+                    <h4 className="font-lora text-[var(--primary)] font-semibold mb-2">
+                      Welcome to {society.name}!
+                    </h4>
+                    <p className="text-[var(--text)] font-open-sans text-sm">
+                      Start the conversation and connect with fellow book lovers
+                    </p>
+                  </>
+                )}
               </motion.div>
             )}
 
@@ -227,7 +248,20 @@ const SocietyChatView = ({
 
       {/* Message Input */}
       <div className="bg-gradient-to-r from-[#FEF3C7]/50 to-[#FEF3C7]/70 backdrop-blur-sm border-t border-[var(--secondary)] p-4">
-        <div className="flex items-center space-x-3">
+        {society.visibility === 'private' && !society.is_member ? (
+          <div className="text-center py-4">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-9a2 2 0 00-2-2H6a2 2 0 00-2 2v9a2 2 0 002 2z" />
+              </svg>
+              <span className="text-[var(--text)] font-open-sans text-sm font-medium">Private Society</span>
+            </div>
+            <p className="text-[var(--text)] font-open-sans text-xs">
+              You need to be a member to send messages to this society
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-3">
           <button className="p-2 hover:bg-[var(--secondary)]/30 rounded-full transition-colors">
             <PlusIcon className="w-5 h-5 text-[var(--primary)]" />
           </button>
@@ -271,7 +305,8 @@ const SocietyChatView = ({
               <MicrophoneIcon className="w-5 h-5 text-[var(--primary)]" />
             </button>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

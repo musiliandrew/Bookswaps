@@ -117,18 +117,38 @@ const ChatPage = () => {
       setSelectedSociety(society);
       setSelectedConversation(null); // Clear DM selection
 
+      // Check if user has access to this society
+      if (society.visibility === 'private' && !society.is_member) {
+        toast.error(`Cannot access ${society.name} - This is a private society. Contact the creator for access.`);
+        setSocietyMessages([]);
+        setLoading(false);
+        return;
+      }
+
       // Load society messages
       setLoading(true);
       const societyId = society.id || society.society_id;
       const messages = await getSocietyMessages(societyId, 1);
       if (messages && messages.results) {
         setSocietyMessages(messages.results);
+        toast.success(`Opened ${society.name} chat`);
+      } else {
+        setSocietyMessages([]);
+        toast.info(`${society.name} chat is empty - be the first to start the conversation!`);
       }
-
-      toast.success(`Opened ${society.name} chat`);
     } catch (error) {
       console.error('Failed to load society chat:', error);
-      toast.error('Failed to load society chat');
+
+      // Handle specific error types
+      if (error.response?.status === 403) {
+        toast.error(`Access denied to ${society.name} - You need to be a member to view messages`);
+      } else if (error.response?.status === 404) {
+        toast.error(`Society ${society.name} not found`);
+      } else {
+        toast.error('Failed to load society chat');
+      }
+
+      setSocietyMessages([]);
     } finally {
       setLoading(false);
     }
