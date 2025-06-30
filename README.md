@@ -1,5 +1,13 @@
 # 📚 Bookswaps: Connect, Swap, Read! 🚀
 
+> **⚠️ PROPRIETARY SOFTWARE - COMMERCIAL USE PROHIBITED**
+>
+> **This software is protected by copyright law. See [LICENSE](./LICENSE) for terms.**
+>
+> - ✅ **Allowed:** Educational study, learning, contributing via pull requests
+> - ❌ **Prohibited:** Commercial use, redistribution, creating competing platforms
+> - 📧 **Commercial licensing:** andrewthepyrookie@gmail.com
+
 **Powered by QuantIQ Dev**
 *Project Led by CTO: Musili Andrew*
 
@@ -132,9 +140,28 @@ This is a proprietary project under **QuantIQ Dev**. All contributions require p
 * Adhere to coding standards, NDA, and team protocols
 * Submit code via approved private channels
 
-## 📜 License
+## 📜 License & Legal
 
-**Bookswaps** is a proprietary product of QuantIQ Dev. All rights reserved. Unauthorized use, distribution, or modification is strictly prohibited.
+**Bookswaps** is proprietary software owned by Andrew Musili and QuantIQ Dev. All rights reserved.
+
+### 🚫 Restrictions
+- **No Commercial Use:** Cannot be used for commercial purposes or competing platforms
+- **No Redistribution:** Cannot be copied, distributed, or shared without permission
+- **No Derivatives:** Cannot create competing products based on this code
+- **No Public Hosting:** Cannot deploy publicly without explicit permission
+
+### ✅ Permitted Uses
+- Educational study and learning
+- Contributing improvements via pull requests
+- Local development for learning purposes
+- Academic research with proper attribution
+
+### 📞 Contact for Licensing
+For commercial licensing, partnerships, or permissions:
+- **Email:** andrewthepyrookie@gmail.com
+- **GitHub:** @musiliandrew
+
+**Full license terms:** See [LICENSE](./LICENSE) file
 
 ## 🎉 Why Join QuantIQ Dev?
 
