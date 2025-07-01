@@ -1,2 +1,44 @@
+# Environment variables
 .env
+.env.*
+!.env.example
+
+# Python virtual environment
 venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Media files
+media/
+staticfiles/
+
+# QR codes (generated files)
+qr_codes/

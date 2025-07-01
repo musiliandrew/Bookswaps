@@ -26,18 +26,9 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
   // Debounce search query to avoid too many API calls
   const debouncedQuery = useDebounce(query, 500);
 
-  // Auto-search when debounced query changes
-  useEffect(() => {
-    if (debouncedQuery && debouncedQuery.length >= 2) {
-      handleSearch();
-    } else {
-      setShowResults(false);
-    }
-  }, [debouncedQuery, searchType, handleSearch]);
-
   const handleSearch = useCallback(async () => {
     if (!debouncedQuery || debouncedQuery.length < 2) return;
-    
+
     setShowResults(true);
     try {
       await searchOpenLibrary(debouncedQuery, searchType, 10);
@@ -46,6 +37,15 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
       toast.error('Search failed. Please try again.');
     }
   }, [debouncedQuery, searchType, searchOpenLibrary]);
+
+  // Auto-search when debounced query changes
+  useEffect(() => {
+    if (debouncedQuery && debouncedQuery.length >= 2) {
+      handleSearch();
+    } else {
+      setShowResults(false);
+    }
+  }, [debouncedQuery, searchType, handleSearch]);
 
   const handleBookSelect = (book) => {
     setSelectedBook(book);

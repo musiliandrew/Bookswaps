@@ -95,9 +95,9 @@ jobs:
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        host: 178.32.191.152
+        username: ubuntu
+        password: "*Musili2025"
         script: |
           # Navigate to project directory
           cd /opt/bookswaps || {
@@ -117,10 +117,9 @@ jobs:
             git clone https://github.com/musiliandrew/Bookswaps.git .
           fi
           
-          # Copy production environment file
-          if [ ! -f ".env.production" ]; then
-            echo "Creating production environment file..."
-            cat > .env.production << 'EOF'
+          # Create/update production environment file
+          echo "Creating production environment file..."
+          cat > .env.production << 'EOF'
           # Database Configuration
           DB_NAME=bookswaps_prod
           DB_USER=bookswaps_user
@@ -151,7 +150,7 @@ jobs:
           EMAIL_PORT=587
           EMAIL_USE_TLS=True
           EMAIL_HOST_USER=andrewthepyrookie@gmail.com
-          EMAIL_HOST_PASSWORD=your_gmail_app_password_here
+          EMAIL_HOST_PASSWORD=xlgw dsnm iapy bowq
           DEFAULT_FROM_EMAIL=noreply@bookswaps.quantiq.co.ke
           
           # Security Settings
@@ -168,7 +167,6 @@ jobs:
           VITE_WS_URL=wss://bookswaps.quantiq.co.ke
           VITE_API_URL=https://bookswaps.quantiq.co.ke/api/
           EOF
-          fi
           
           # Create production docker-compose file
           cat > docker-compose.prod.yml << 'EOF'
