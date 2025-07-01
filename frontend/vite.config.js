@@ -15,5 +15,20 @@ export default defineConfig({
     host: '0.0.0.0', // Allow external access
     port: 5173,
     strictPort: true,
+    hmr: {
+      port: 5173,
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+        },
+      },
+    },
   },
 });

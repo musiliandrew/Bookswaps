@@ -188,7 +188,7 @@ jobs:
           X_FRAME_OPTIONS=DENY
           
           # WebSocket URLs
-          VITE_WS_URL=wss://bookswaps.quantiq.co.ke/ws/
+          VITE_WS_URL=wss://bookswaps.quantiq.co.ke
           VITE_API_URL=https://bookswaps.quantiq.co.ke/api/
           EOF
           fi
@@ -252,6 +252,9 @@ jobs:
               build:
                 context: ./frontend
                 dockerfile: Dockerfile.prod
+                args:
+                  VITE_API_URL: https://bookswaps.quantiq.co.ke/api/
+                  VITE_WS_URL: wss://bookswaps.quantiq.co.ke
               restart: unless-stopped
               networks:
                 - bookswaps-network
