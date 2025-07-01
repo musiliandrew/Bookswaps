@@ -92,8 +92,12 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - name: Trigger deployment webhook
-      run: |
-        echo "Deployment will be handled by server-side webhook or manual pull"
-        echo "Tests passed successfully - ready for deployment"
-        echo "Server should pull latest changes from: https://github.com/musiliandrew/Bookswaps.git"
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          export BOOKSWAPS_ENV="${{ secrets.BOOKSWAPS_ENV }}"
+          /opt/bookswaps/deploy-from-github.sh
