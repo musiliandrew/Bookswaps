@@ -4,7 +4,7 @@ import axios from 'axios';
 const isDev = import.meta.env.VITE_ENABLED === 'true';
 
 const createApi = (refreshTokenFn) => {
-  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const baseURL = import.meta.env.VITE_API_URL || 'https://bookswaps.quantiq.co.ke/api/';
   const api = axios.create({
     baseURL,
     headers: {
