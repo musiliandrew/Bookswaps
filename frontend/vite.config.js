@@ -1,23 +1,22 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
-  },
+  plugins: [react(), tailwindcss()],
   server: {
-    host: '0.0.0.0', // Allow external access
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
     hmr: {
       port: 5173,
     },
+    allowedHosts: [
+      'bookswaps.quantiq.co.ke',
+      'www.bookswaps.quantiq.co.ke',
+      'localhost',
+      '127.0.0.1'
+    ]
   },
   build: {
     outDir: 'dist',
@@ -31,4 +30,8 @@ export default defineConfig({
       },
     },
   },
-});
+  preview: {
+    host: '0.0.0.0',
+    port: 5173
+  }
+})
