@@ -9,7 +9,7 @@ const DiscoverSection = ({
   searchQuery,
   onSearch, // New prop for handling search input changes
   pagination,
-  currentPage,
+  currentPage = { search: { page: 1 }, recommended: { page: 1 } }, // Default value added
   onPageChange,
   onViewProfile,
   onFollow,
@@ -43,11 +43,10 @@ const DiscoverSection = ({
       {searchQuery && (
         <div className="bookish-glass p-4 rounded-xl">
           <h2 className="text-lg font-['Lora'] text-[#456A76] mb-3">
-            {searchResults.length > 0 
+            {searchResults.length > 0
               ? `Search Results for "${searchQuery}"`
               : `No results found for "${searchQuery}"`}
           </h2>
-          
           {searchResults.length > 0 ? (
             <>
               <UserList
@@ -61,8 +60,8 @@ const DiscoverSection = ({
               />
               <Pagination
                 type="search"
-                currentPage={currentPage.search.page}
-                totalPages={pagination.search.totalPages || 1}
+                currentPage={currentPage?.search?.page || 1}
+                totalPages={pagination?.search?.totalPages || 1}
                 onPageChange={onPageChange}
               />
             </>
@@ -73,7 +72,7 @@ const DiscoverSection = ({
           )}
         </div>
       )}
-      
+
       {/* Recommended Readers */}
       {filteredRecommendedUsers.length > 0 && (
         <div className="bookish-glass p-4 rounded-xl">
@@ -89,13 +88,13 @@ const DiscoverSection = ({
           />
           <Pagination
             type="recommended"
-            currentPage={currentPage.recommended.page}
-            totalPages={pagination.recommended.totalPages || 1}
+            currentPage={currentPage?.recommended?.page || 1}
+            totalPages={pagination?.recommended?.totalPages || 1}
             onPageChange={onPageChange}
           />
         </div>
       )}
-      
+
       {/* No Recommendations */}
       {filteredRecommendedUsers.length === 0 && !isLoading && !searchQuery && (
         <div className="bookish-glass p-4 rounded-xl text-center">
