@@ -14,10 +14,12 @@ import {
   BookOpenIcon,
   TagIcon,
   CalendarIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import CreateSocietyModal from './CreateSocietyModal';
 import Pagination from '../../Common/Pagination';
+import TabsNavigation from '../../Library/common/TabsNavigation';
 
 const SocietiesPage = () => {
   const navigate = useNavigate();
@@ -40,10 +42,17 @@ const SocietiesPage = () => {
     my_societies: false
   });
   const [activeTab, setActiveTab] = useState('all');
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     loadSocieties();
   }, [filters, activeTab]);
+
+  useEffect(() => {
+    const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadSocieties = async (page = 1) => {
     const searchFilters = { ...filters };
@@ -84,8 +93,19 @@ const SocietiesPage = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'All Societies', count: societies?.length || 0 },
-    { id: 'my_societies', label: 'My Societies', count: 0 }, // Would need to calculate this
+    {
+      id: 'all',
+      label: 'All',
+      fullLabel: 'All Societies',
+      icon: <GlobeAltIcon className="w-4 h-4" />,
+      count: societies?.length || 0
+    },
+    {
+      id: 'my_societies',
+      label: 'My Societies',
+      icon: <UserGroupIcon className="w-4 h-4" />,
+      count: 0
+    }, // Would need to calculate this
   ];
 
   return (
@@ -117,27 +137,11 @@ const SocietiesPage = () => {
 
       {/* Tabs */}
       <motion.div
-        className="bookish-glass rounded-2xl border border-white/20 p-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6 }}
       >
-        <div className="flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-accent to-primary text-white shadow-lg'
-                  : 'text-primary/70 hover:text-primary hover:bg-white/10'
-              }`}
-            >
-              <span className="font-medium">{tab.label}</span>
-              <span className="text-xs opacity-70">({tab.count})</span>
-            </button>
-          ))}
-        </div>
+        <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} isSmallScreen={isSmallScreen} />
       </motion.div>
 
       {/* Filters */}

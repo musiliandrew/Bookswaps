@@ -130,6 +130,7 @@ const ProfileForm = () => {
   const [newGenre, setNewGenre] = useState('');
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [savingField, setSavingField] = useState(null);
 
   // Popular genre suggestions
   const popularGenres = [
@@ -279,12 +280,12 @@ const ProfileForm = () => {
           submitData[key] = currentValue;
         }
       } else if (key === 'genres') {
-        // Compare arrays properly
+        // Compare arrays properly and map to backend field name
         const currentGenres = Array.isArray(currentValue) ? currentValue : [];
         const originalGenres = Array.isArray(originalValue) ? originalValue : [];
 
         if (JSON.stringify(currentGenres.sort()) !== JSON.stringify(originalGenres.sort())) {
-          submitData[key] = currentGenres;
+          submitData['favorite_genres'] = currentGenres; // Backend expects 'favorite_genres'
         }
       } else {
         // For other fields, compare values and only include if changed
@@ -319,22 +320,25 @@ const ProfileForm = () => {
         gender: result.gender || '',
         about_you: result.about_you || '',
         genres: cleanedGenres,
-        profile_picture: null, // Reset file input
+        profile_picture: null, // Reset file input (but keep preview)
       };
 
       // Update both form data and original data with fresh backend data
       setFormData(updatedData);
       setOriginalData(updatedData);
 
-      // Update image preview if profile picture was updated
-      if (result.profile_picture) {
-        setImagePreview(result.profile_picture);
-      }
+      // Always update image preview with the latest profile picture from backend
+      setImagePreview(result.profile_picture || null);
 
       // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+
+      // Trigger a custom event to notify other components of profile update
+      window.dispatchEvent(new CustomEvent('profileUpdated', {
+        detail: { profile: result }
+      }));
     }
   };
 
@@ -344,23 +348,71 @@ const ProfileForm = () => {
     return 'normal';
   };
 
+  // Save individual field
+  const saveField = async (fieldName) => {
+    if (!validateField(fieldName, formData[fieldName])) {
+      toast.error(`Please fix the ${fieldName} field before saving`);
+      return;
+    }
+
+    setSavingField(fieldName);
+
+    const submitData = {};
+    if (fieldName === 'genres') {
+      const currentGenres = Array.isArray(formData[fieldName]) ? formData[fieldName] : [];
+      const originalGenres = Array.isArray(originalData[fieldName]) ? originalData[fieldName] : [];
+
+      if (JSON.stringify(currentGenres.sort()) !== JSON.stringify(originalGenres.sort())) {
+        submitData['favorite_genres'] = currentGenres; // Backend expects 'favorite_genres'
+      }
+    } else {
+      if (formData[fieldName] !== originalData[fieldName]) {
+        submitData[fieldName] = formData[fieldName];
+      }
+    }
+
+    if (Object.keys(submitData).length === 0) {
+      toast.info('No changes to save');
+      setSavingField(null);
+      return;
+    }
+
+    const result = await updateProfile(submitData);
+    if (result) {
+      toast.success(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} updated successfully!`);
+
+      // Update original data for this field
+      setOriginalData(prev => ({
+        ...prev,
+        [fieldName]: formData[fieldName]
+      }));
+
+      // Trigger profile update event
+      window.dispatchEvent(new CustomEvent('profileUpdated', {
+        detail: { profile: result }
+      }));
+    }
+
+    setSavingField(null);
+  };
+
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-8"
+      className="space-y-4 sm:space-y-6 md:space-y-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20 rounded-xl">
-            <UserIcon className="w-6 h-6 text-[var(--primary)]" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-[var(--accent)]/20 to-[var(--primary)]/20 rounded-xl">
+            <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--primary)]" />
           </div>
           <div>
-            <h2 className="text-2xl font-['Lora'] font-bold text-[var(--primary)]">Edit Profile</h2>
-            <p className="text-sm text-[var(--text)]/70">Update your personal information</p>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-['Lora'] font-bold text-[var(--primary)]">Edit Profile</h2>
+            <p className="text-xs sm:text-sm text-[var(--text)]/70">Update your personal information</p>
           </div>
         </div>
 
@@ -381,16 +433,16 @@ const ProfileForm = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="space-y-4"
+        className="space-y-3 sm:space-y-4"
       >
-        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+        <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium text-sm sm:text-base">
           Profile Picture
         </label>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           {/* Current/Preview Image */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-3 border-[var(--primary)]/20 bg-[var(--secondary)]/20">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-3 border-[var(--primary)]/20 bg-[var(--secondary)]/20">
               {imagePreview ? (
                 <img
                   src={imagePreview}
@@ -485,10 +537,10 @@ const ProfileForm = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
       >
-        <div className="space-y-2">
-          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">
+        <div className="space-y-1 sm:space-y-2">
+          <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium text-sm sm:text-base">
             City
             {getFieldStatus('city') === 'changed' && (
               <span className="ml-2 text-xs text-[var(--accent)]">• Modified</span>
@@ -545,7 +597,7 @@ const ProfileForm = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
       >
         <div className="space-y-2">
           <label className="block text-[var(--primary)] font-['Open_Sans'] font-medium">

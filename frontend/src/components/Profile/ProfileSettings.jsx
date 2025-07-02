@@ -9,33 +9,61 @@ import DeleteAccountModal from '../Profile/Settings/DeleteAccountModal';
 import { toast } from 'react-toastify';
 
 const ProfileSettings = () => {
-  const { profile, isLoading: authLoading, error: authError, logout } = useAuth();
+  const { profile, isLoading: authLoading, error: authError, logout, getProfile } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [localProfile, setLocalProfile] = useState(profile);
 
   // Removed excessive profile refresh - AuthContext handles profile data properly
 
-  // Simplified sections for clean navigation
+  // Enhanced sections with completion status
+  const getProfileCompletionStatus = () => {
+    if (!localProfile) return { completed: 0, total: 8, needsAttention: [] };
+
+    const fields = [
+      { key: 'username', label: 'Username', completed: !!localProfile.username },
+      { key: 'city', label: 'City', completed: !!localProfile.city },
+      { key: 'country', label: 'Country', completed: !!localProfile.country },
+      { key: 'birth_date', label: 'Birth Date', completed: !!localProfile.birth_date },
+      { key: 'gender', label: 'Gender', completed: !!localProfile.gender },
+      { key: 'about_you', label: 'About You', completed: !!localProfile.about_you },
+      { key: 'favorite_genres', label: 'Favorite Genres', completed: !!(localProfile.favorite_genres && localProfile.favorite_genres.length > 0) },
+      { key: 'profile_picture', label: 'Profile Picture', completed: !!localProfile.profile_picture }
+    ];
+
+    const completed = fields.filter(f => f.completed).length;
+    const needsAttention = fields.filter(f => !f.completed);
+
+    return { completed, total: fields.length, needsAttention };
+  };
+
+  const profileStatus = getProfileCompletionStatus();
+
   const sections = [
     {
       id: 'profile',
       label: 'Profile',
-      icon: '👤'
+      icon: '👤',
+      status: profileStatus.needsAttention.length > 0 ? 'incomplete' : 'complete',
+      count: profileStatus.needsAttention.length
     },
     {
       id: 'account',
       label: 'Account',
-      icon: '⚙️'
+      icon: '⚙️',
+      status: 'normal'
     },
     {
       id: 'chat',
       label: 'Chat',
-      icon: '💬'
+      icon: '💬',
+      status: 'normal'
     },
     {
       id: 'delete',
       label: 'Delete',
-      icon: '🗑️'
+      icon: '🗑️',
+      status: 'danger'
     },
   ];
 
@@ -44,6 +72,23 @@ const ProfileSettings = () => {
       toast.error(authError || 'Failed to load settings.');
     }
   }, [authError]);
+
+  // Update local profile when auth profile changes
+  useEffect(() => {
+    setLocalProfile(profile);
+  }, [profile]);
+
+  // Listen for profile updates from other components
+  useEffect(() => {
+    const handleProfileUpdate = (event) => {
+      const updatedProfile = event.detail.profile;
+      setLocalProfile(updatedProfile);
+      toast.success('Profile updated successfully!');
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -103,33 +148,75 @@ const ProfileSettings = () => {
 
   return (
     <div className="min-h-screen font-['Open_Sans'] text-[var(--text)]">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Simple Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-['Lora'] font-bold text-[var(--primary)] mb-2">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-['Lora'] font-bold text-[var(--primary)] mb-2">
             Settings
           </h1>
-          <p className="text-sm text-[var(--text)] font-['Open_Sans']">
+          <p className="text-xs sm:text-sm text-[var(--text)] font-['Open_Sans']">
             Manage your profile and account preferences
           </p>
+
+          {/* Profile Completion Status */}
+          {localProfile && (
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-blue-600 text-xs sm:text-sm font-bold">
+                    {Math.round((profileStatus.completed / profileStatus.total) * 100)}%
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xs sm:text-sm font-medium text-blue-800">Profile Completion</h3>
+                  <p className="text-xs text-blue-600 truncate">
+                    {profileStatus.needsAttention.length} fields remaining
+                    {profileStatus.needsAttention.length > 0 && (
+                      <span className="hidden sm:inline ml-2 text-orange-600">
+                        ({profileStatus.needsAttention.slice(0, 2).map(f => f.label).join(', ')}
+                        {profileStatus.needsAttention.length > 2 && `, +${profileStatus.needsAttention.length - 2} more`})
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <main className="max-w-4xl mx-auto">
-              {/* Mobile-Optimized Tab Navigation */}
-              <div className="mb-6">
-                <div className={`flex ${window.innerWidth <= 768 ? 'flex-wrap justify-center' : 'flex-wrap'} gap-2 p-1 bookish-glass rounded-lg`}>
+              {/* Mobile-Optimized Tab Navigation - Icons only on mobile */}
+              <div className="mb-4 sm:mb-6">
+                <div className="flex justify-center gap-3 sm:gap-2 p-1 bookish-glass rounded-lg">
                   {sections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => handleSectionChange(section.id)}
-                      className={`flex items-center gap-1.5 ${window.innerWidth <= 768 ? 'px-3 py-2' : 'px-4 py-2'} rounded-md font-['Open_Sans'] font-medium ${window.innerWidth <= 768 ? 'text-xs' : 'text-sm'} transition-all duration-200 ${
+                      className={`relative flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-3 sm:px-3 md:px-4 py-3 sm:py-2 rounded-md font-['Open_Sans'] font-medium text-xs sm:text-sm transition-all duration-200 min-w-[60px] sm:min-w-auto ${
                         activeSection === section.id
                           ? 'bg-[var(--accent)] text-[var(--primary)] shadow-sm'
                           : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/50'
                       }`}
+                      title={section.label} // Tooltip for mobile users
                     >
-                      <span className={`${window.innerWidth <= 768 ? 'text-sm' : 'text-base'}`}>{section.icon}</span>
-                      <span className={window.innerWidth <= 768 ? 'hidden sm:inline' : ''}>{section.label}</span>
+                      <span className="text-lg sm:text-base">{section.icon}</span>
+                      <span className="hidden sm:inline text-xs sm:text-sm">{section.label}</span>
+                      {/* Show label below icon on mobile only when active */}
+                      <span className={`sm:hidden text-xs mt-1 transition-all duration-200 ${
+                        activeSection === section.id ? 'opacity-100' : 'opacity-0'
+                      }`}>
+                        {section.label}
+                      </span>
+
+                      {/* Status indicators */}
+                      {section.status === 'incomplete' && section.count > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          {section.count}
+                        </span>
+                      )}
+                      {section.status === 'danger' && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                      )}
                     </button>
                   ))}
                 </div>

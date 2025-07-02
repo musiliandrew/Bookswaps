@@ -41,8 +41,17 @@ const SocialsPage = () => {
   ];
 
   const discussionTabs = [
-    { id: 'community', label: 'Community Discussions', icon: <ChatBubbleLeftRightIcon className="w-4 h-4" /> },
-    { id: 'societies', label: 'Societies', icon: <UsersIcon className="w-4 h-4" /> },
+    {
+      id: 'community',
+      label: 'Community',
+      fullLabel: 'Community Discussions',
+      icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />
+    },
+    {
+      id: 'societies',
+      label: 'Societies',
+      icon: <UsersIcon className="w-4 h-4" />
+    },
   ];
 
   return (

@@ -270,27 +270,29 @@ const ProfileSection = () => {
     <div className="min-h-screen font-open-sans text-text">
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Header Section */}
+        {/* Mobile-Optimized Header */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-4 sm:mb-8 relative"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
-            👤 My Profile
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-lora font-bold text-gradient mb-2 sm:mb-4 relative">
+            <span className="hidden sm:inline">👤 </span>My Profile
             <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+              className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-accent rounded-full opacity-20"
               animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
               transition={{ duration: 3, repeat: Infinity }}
             />
           </h1>
           <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            className="font-open-sans text-primary/80 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-4 sm:px-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Your reading journey, connections, and literary adventures
+            <span className="hidden sm:inline">Your reading journey, connections, and literary adventures</span>
+            <span className="sm:hidden">Your reading journey & connections</span>
           </motion.p>
         </motion.div>
 
@@ -311,21 +313,28 @@ const ProfileSection = () => {
           <div>
 
 
-            {/* Mobile-Optimized Navigation */}
+            {/* Mobile-Optimized Navigation - Icons only on mobile */}
             <div className="mb-6">
-              <div className={`flex ${window.innerWidth <= 768 ? 'flex-wrap justify-center' : 'flex-wrap'} gap-2 p-1 bookish-glass rounded-lg`}>
+              <div className="flex justify-center gap-3 sm:gap-2 p-1 bookish-glass rounded-lg">
                 {sections.map((section) => (
                   <button
                     key={section.id}
                     onClick={() => setActiveSubTab(section.id)}
-                    className={`flex items-center gap-1.5 ${window.innerWidth <= 768 ? 'px-3 py-2' : 'px-4 py-2'} rounded-md font-['Open_Sans'] font-medium ${window.innerWidth <= 768 ? 'text-xs' : 'text-sm'} transition-all duration-200 ${
+                    className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-3 sm:py-2 rounded-md font-['Open_Sans'] font-medium text-xs sm:text-sm transition-all duration-200 min-w-[60px] sm:min-w-auto ${
                       activeSubTab === section.id
                         ? 'bg-[var(--accent)] text-white shadow-sm'
                         : 'text-[var(--primary)] hover:text-[var(--accent)] hover:bg-white/50'
                     }`}
+                    title={section.label} // Tooltip for mobile users
                   >
-                    <span className={`${window.innerWidth <= 768 ? 'text-sm' : 'text-base'}`}>{section.icon}</span>
-                    <span className={window.innerWidth <= 768 ? 'hidden sm:inline' : ''}>{section.label}</span>
+                    <span className="text-lg sm:text-base">{section.icon}</span>
+                    <span className="hidden sm:inline text-xs sm:text-sm">{section.label}</span>
+                    {/* Show label below icon on mobile only when active */}
+                    <span className={`sm:hidden text-xs mt-1 transition-all duration-200 ${
+                      activeSubTab === section.id ? 'opacity-100' : 'opacity-0'
+                    }`}>
+                      {section.label}
+                    </span>
                   </button>
                 ))}
               </div>

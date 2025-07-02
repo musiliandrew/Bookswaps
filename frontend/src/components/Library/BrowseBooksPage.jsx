@@ -128,8 +128,18 @@ const BrowseBooksPage = () => {
   };
 
   const tabs = [
-    { id: 'recommended', label: 'Recommended Books', icon: <StarIcon className="w-4 h-4" /> },
-    { id: 'browse', label: 'Browse Books', icon: <BuildingLibraryIcon className="w-4 h-4" /> },
+    {
+      id: 'recommended',
+      label: 'Recommended',
+      fullLabel: 'Recommended Books',
+      icon: <StarIcon className="w-4 h-4" />
+    },
+    {
+      id: 'browse',
+      label: 'Browse',
+      fullLabel: 'Browse Books',
+      icon: <BuildingLibraryIcon className="w-4 h-4" />
+    },
   ];
 
   return (

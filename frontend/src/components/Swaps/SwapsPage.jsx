@@ -6,15 +6,16 @@ import SwapList from './SwapList';
 import SwapHistory from './SwapHistory';
 import SwapCreationForm from './SwapCreationForm';
 import SwapFilters from './SwapFilters';
-import { 
-  PlusIcon, 
-  ClockIcon, 
+import {
+  PlusIcon,
+  ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
   ArrowPathIcon,
   QrCodeIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
+import TabsNavigation from '../Library/common/TabsNavigation';
 
 const SwapsPage = () => {
   const {
@@ -38,6 +39,7 @@ const SwapsPage = () => {
     type: 'all' // 'sent', 'received', 'all'
   });
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     getSwaps(filters, 1);
@@ -48,6 +50,12 @@ const SwapsPage = () => {
       getSwapHistory(1);
     }
   }, [activeView, getSwapHistory]);
+
+  useEffect(() => {
+    const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleCreateSwap = async (swapData) => {
     const result = await initiateSwap(swapData);
@@ -192,52 +200,30 @@ const SwapsPage = () => {
 
       {/* Enhanced View Toggle */}
       <motion.div
-        className="flex gap-1 p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
-        {[
-          { id: 'active', label: 'Active Swaps', icon: '🔄', description: 'Ongoing exchanges' },
-          { id: 'history', label: 'History', icon: '📚', description: 'Past swaps' }
-        ].map((view, index) => (
-          <motion.button
-            key={view.id}
-            onClick={() => setActiveView(view.id)}
-            className={`relative flex-1 flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-300 font-medium ${
-              activeView === view.id
-                ? 'text-white shadow-lg'
-                : 'text-primary/70 hover:text-primary hover:bg-white/10'
-            }`}
-            whileHover={{ scale: 1.02, y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 + 0.3, duration: 0.4 }}
-          >
-            {/* Active Background */}
-            {activeView === view.id && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-xl"
-                layoutId="activeSwapView"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
-
-            {/* Content */}
-            <div className="relative z-10 flex items-center gap-3">
-              <span className="text-xl">{view.icon}</span>
-              <div className="text-left">
-                <div className="text-sm font-semibold">{view.label}</div>
-                <div className={`text-xs transition-all duration-300 ${
-                  activeView === view.id ? 'text-white/80' : 'text-primary/50'
-                }`}>
-                  {view.description}
-                </div>
-              </div>
-            </div>
-          </motion.button>
-        ))}
+        <TabsNavigation
+          activeTab={activeView}
+          setActiveTab={setActiveView}
+          tabs={[
+            {
+              id: 'active',
+              label: 'Active',
+              fullLabel: 'Active Swaps',
+              icon: <ArrowPathIcon className="w-4 h-4" />,
+              description: 'Ongoing exchanges'
+            },
+            {
+              id: 'history',
+              label: 'History',
+              icon: <ClockIcon className="w-4 h-4" />,
+              description: 'Past swaps'
+            }
+          ]}
+          isSmallScreen={isSmallScreen}
+        />
       </motion.div>
 
       {/* Enhanced Create Swap Form */}
