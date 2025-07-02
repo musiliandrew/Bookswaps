@@ -8,7 +8,8 @@ const ProfileCompletionBanner = ({
   isCompleted = false,
   completionDetails = null,
   onDismiss,
-  onShowGuide
+  onShowGuide,
+  isMobile = false
 }) => {
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
@@ -97,121 +98,176 @@ const ProfileCompletionBanner = ({
         <XMarkIcon className="w-5 h-5" />
       </button>
 
-      <div className="flex items-center gap-4">
-        {/* Circular progress indicator */}
-        <div className="relative w-16 h-16 flex-shrink-0">
-          <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
-            {/* Background circle */}
-            <circle
-              cx="32"
-              cy="32"
-              r="28"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="4"
-            />
-            {/* Progress circle */}
-            <circle
-              cx="32"
-              cy="32"
-              r="28"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 28}`}
-              strokeDashoffset={`${2 * Math.PI * 28 * (1 - completionPercentage / 100)}`}
-              className={`transition-all duration-500 ${
-                completionPercentage < 30 ? 'text-red-500' :
-                completionPercentage < 60 ? 'text-yellow-500' :
-                'text-green-500'
-              }`}
-            />
-          </svg>
-          {/* Percentage text */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-bold text-gray-700">
-              {completionPercentage}%
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1">
-          <h3 className="font-['Lora'] text-lg text-[var(--primary)] mb-1">
-            {getCompletionMessage()}
-          </h3>
-          <p className="text-sm text-[var(--text)] mb-3 font-['Open_Sans']">
-            Complete your profile to get better book recommendations and connect with fellow readers.
-          </p>
-
-          {/* Detailed Missing Fields */}
-          {completionDetails && completionDetails.missing_fields && completionDetails.missing_fields.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm font-medium text-[var(--primary)] mb-2 font-['Lora']">
-                Missing Fields ({completionDetails.missing_fields.length}):
-              </p>
-              <div className="space-y-2">
-                {completionDetails.missing_fields.slice(0, 4).map((field, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
-                    <span className="text-[var(--text)] font-['Open_Sans'] flex-1">
-                      {field.label}
-                    </span>
-                    <span className="text-xs text-[var(--accent)] font-medium">
-                      {field.weight}pts
-                    </span>
-                  </div>
-                ))}
-                {completionDetails.missing_fields.length > 4 && (
-                  <div className="text-xs text-[var(--text)] font-['Open_Sans'] pl-4">
-                    +{completionDetails.missing_fields.length - 4} more fields
-                  </div>
-                )}
+      <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'}`}>
+        {/* Mobile-optimized layout */}
+        {isMobile ? (
+          <>
+            {/* Compact mobile header */}
+            <div className="flex items-center gap-3">
+              {/* Smaller circular progress indicator */}
+              <div className="relative w-12 h-12 flex-shrink-0">
+                <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                  <circle
+                    cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3"
+                    strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 20}`}
+                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - completionPercentage / 100)}`}
+                    className={`transition-all duration-500 ${
+                      completionPercentage < 30 ? 'text-red-500' :
+                      completionPercentage < 60 ? 'text-yellow-500' : 'text-green-500'
+                    }`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold text-gray-700">{completionPercentage}%</span>
+                </div>
               </div>
-
-              {/* Completion Explanation */}
-              <div className="mt-3 p-3 bg-[var(--accent)]/10 rounded-lg">
+              
+              {/* Compact content */}
+              <div className="flex-1">
+                <h3 className="font-['Lora'] text-base text-[var(--primary)] mb-1">
+                  {getCompletionMessage()}
+                </h3>
                 <p className="text-xs text-[var(--text)] font-['Open_Sans']">
-                  <strong>Why {completionPercentage}%?</strong> You've completed{' '}
-                  {completionDetails.completedWeight || 0} out of{' '}
-                  {completionDetails.totalWeight || 100} total points.{' '}
-                  Complete the missing fields above to reach 100%.
+                  Complete your profile for better recommendations
                 </p>
               </div>
             </div>
-          )}
-          
-          {/* Progress bar */}
-          <div className="w-full bg-[var(--secondary)]/50 rounded-full h-2 mb-3">
-            <motion.div
-              className={`h-2 rounded-full transition-all duration-500 ${getCompletionColor()}`}
-              initial={{ width: 0 }}
-              animate={{ width: `${completionPercentage}%` }}
-            />
-          </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <motion.button
-              onClick={handleCompleteProfile}
-              className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Complete Profile
-            </motion.button>
-            {onShowGuide && (
+            {/* Compact progress bar */}
+            <div className="w-full bg-[var(--secondary)]/50 rounded-full h-1.5 mb-2">
+              <motion.div
+                className={`h-1.5 rounded-full transition-all duration-500 ${getCompletionColor()}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+
+            {/* Simplified missing fields - show only count */}
+            {completionDetails && completionDetails.missing_fields && completionDetails.missing_fields.length > 0 && (
+              <div className="text-xs text-[var(--text)]/70 font-['Open_Sans']">
+                {completionDetails.missing_fields.length} fields remaining
+              </div>
+            )}
+
+            {/* Mobile action buttons */}
+            <div className="flex gap-2">
               <motion.button
-                onClick={onShowGuide}
-                className="bg-white/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors"
-                whileHover={{ scale: 1.02 }}
+                onClick={handleCompleteProfile}
+                className="bookish-button-enhanced text-white px-3 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1 text-sm"
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
               >
-                View Guide
+                Complete Profile
               </motion.button>
-            )}
-          </div>
+              {onShowGuide && (
+                <motion.button
+                  onClick={onShowGuide}
+                  className="bg-white/50 text-[var(--primary)] px-3 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors text-sm"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Guide
+                </motion.button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Desktop layout (original) */}
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                <circle
+                  cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4"
+                  strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 28}`}
+                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - completionPercentage / 100)}`}
+                  className={`transition-all duration-500 ${
+                    completionPercentage < 30 ? 'text-red-500' :
+                    completionPercentage < 60 ? 'text-yellow-500' : 'text-green-500'
+                  }`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-bold text-gray-700">{completionPercentage}%</span>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <h3 className="font-['Lora'] text-lg text-[var(--primary)] mb-1">
+                {getCompletionMessage()}
+              </h3>
+              <p className="text-sm text-[var(--text)] mb-3 font-['Open_Sans']">
+                Complete your profile to get better book recommendations and connect with fellow readers.
+              </p>
+
+              {/* Detailed Missing Fields - Desktop only */}
+              {completionDetails && completionDetails.missing_fields && completionDetails.missing_fields.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-[var(--primary)] mb-2 font-['Lora']">
+                    Missing Fields ({completionDetails.missing_fields.length}):
+                  </p>
+                  <div className="space-y-2">
+                    {completionDetails.missing_fields.slice(0, 4).map((field, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <div className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
+                        <span className="text-[var(--text)] font-['Open_Sans'] flex-1">
+                          {field.label}
+                        </span>
+                        <span className="text-xs text-[var(--accent)] font-medium">
+                          {field.weight}pts
+                        </span>
+                      </div>
+                    ))}
+                    {completionDetails.missing_fields.length > 4 && (
+                      <div className="text-xs text-[var(--text)] font-['Open_Sans'] pl-4">
+                        +{completionDetails.missing_fields.length - 4} more fields
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 p-3 bg-[var(--accent)]/10 rounded-lg">
+                    <p className="text-xs text-[var(--text)] font-['Open_Sans']">
+                      <strong>Why {completionPercentage}%?</strong> You've completed{' '}
+                      {completionDetails.completedWeight || 0} out of{' '}
+                      {completionDetails.totalWeight || 100} total points.{' '}
+                      Complete the missing fields above to reach 100%.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="w-full bg-[var(--secondary)]/50 rounded-full h-2 mb-3">
+                <motion.div
+                  className={`h-2 rounded-full transition-all duration-500 ${getCompletionColor()}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <motion.button
+                  onClick={handleCompleteProfile}
+                  className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Complete Profile
+                </motion.button>
+                {onShowGuide && (
+                  <motion.button
+                    onClick={onShowGuide}
+                    className="bg-white/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    View Guide
+                  </motion.button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
         </div>
       </div>
     </motion.div>

@@ -83,7 +83,7 @@ const parseGenres = (genres) => {
   return [];
 };
 
-const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, onUploadPhoto }) => {
+const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, onUploadPhoto, isMobile = false }) => {
   const [imageError, setImageError] = useState(false);
 
   const formatDate = (dateString) => {
@@ -102,7 +102,7 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
 
   return (
     <motion.div
-      className="relative bookish-glass rounded-3xl p-6 sm:p-8 border border-white/20 bookish-shadow overflow-hidden"
+      className={`relative bookish-glass rounded-3xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'} border border-white/20 bookish-shadow overflow-hidden`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -113,63 +113,126 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
         <div className="absolute bottom-4 left-4 w-16 h-16 bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/10 rounded-full blur-lg animate-pulse delay-1000"></div>
       </div>
 
-      {/* Header with Share Button */}
-      <div className="relative z-10 flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
-          {/* Profile Picture */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--accent)]/30 rounded-full blur-sm"></div>
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-3 border-[var(--primary)]/30">
-              {!imageError && profile?.profile_picture ? (
-                <img
-                  src={profile.profile_picture}
-                  alt={profile.username}
-                  className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
-                  <span className="text-white font-bold text-lg sm:text-xl">
-                    {profile?.username?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
+      {/* Mobile-Optimized Header */}
+      <div className={`relative z-10 ${isMobile ? 'mb-4' : 'mb-6'}`}>
+        {isMobile ? (
+          <>
+            {/* Mobile: Stacked layout */}
+            <div className="flex items-center gap-3 mb-3">
+              {/* Profile Picture - smaller on mobile */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--accent)]/30 rounded-full blur-sm"></div>
+                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--primary)]/30">
+                  {!imageError && profile?.profile_picture ? (
+                    <img
+                      src={profile.profile_picture}
+                      alt={profile.username}
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                      <span className="text-white font-bold text-base">
+                        {profile?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <button
-              onClick={onUploadPhoto}
-              className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
-              title="Change profile picture"
-            >
-              <CameraIcon className="w-3 h-3" />
-            </button>
-          </div>
+                <button
+                  onClick={onUploadPhoto}
+                  className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+                  title="Change profile picture"
+                >
+                  <CameraIcon className="w-2.5 h-2.5" />
+                </button>
+              </div>
 
-          {/* User Info */}
-          <div>
-            <h2 className="text-xl sm:text-2xl font-['Lora'] font-bold text-[var(--primary)] mb-1">
-              {profile?.username || 'Anonymous Reader'}
-            </h2>
-            <div className="flex items-center gap-2 text-[var(--text)] text-sm mb-2">
-              <MapPinIcon className="w-4 h-4" />
-              <span>{profile?.city || 'Unknown'}, {profile?.country || 'Unknown'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-[var(--text)]/70 text-xs">
-              <CalendarIcon className="w-3 h-3" />
-              <span>Joined {formatDate(profile?.date_joined)}</span>
-            </div>
-          </div>
-        </div>
+              {/* User Info - mobile optimized */}
+              <div className="flex-1">
+                <h2 className="text-lg font-['Lora'] font-bold text-[var(--primary)] mb-1 leading-tight">
+                  {profile?.username || 'Anonymous Reader'}
+                </h2>
+                <div className="flex items-center gap-1.5 text-[var(--text)] text-xs mb-1">
+                  <MapPinIcon className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{profile?.city || 'Unknown'}, {profile?.country || 'Unknown'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[var(--text)]/70 text-xs">
+                  <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                  <span>Joined {formatDate(profile?.date_joined)}</span>
+                </div>
+              </div>
 
-        {/* Share Button */}
-        <motion.button
-          onClick={onShareProfile}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white rounded-xl font-semibold text-sm hover:shadow-lg transition-all"
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ShareIcon className="w-4 h-4" />
-          <span className="hidden sm:inline">Share Profile</span>
-        </motion.button>
+              {/* Share Button - mobile optimized */}
+              <motion.button
+                onClick={onShareProfile}
+                className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white rounded-lg hover:shadow-lg transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                title="Share Profile"
+              >
+                <ShareIcon className="w-4 h-4" />
+              </motion.button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Desktop: Original horizontal layout */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--accent)]/30 rounded-full blur-sm"></div>
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-3 border-[var(--primary)]/30">
+                    {!imageError && profile?.profile_picture ? (
+                      <img
+                        src={profile.profile_picture}
+                        alt={profile.username}
+                        className="w-full h-full object-cover"
+                        onError={() => setImageError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                        <span className="text-white font-bold text-lg sm:text-xl">
+                          {profile?.username?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={onUploadPhoto}
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+                    title="Change profile picture"
+                  >
+                    <CameraIcon className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-['Lora'] font-bold text-[var(--primary)] mb-1">
+                    {profile?.username || 'Anonymous Reader'}
+                  </h2>
+                  <div className="flex items-center gap-2 text-[var(--text)] text-sm mb-2">
+                    <MapPinIcon className="w-4 h-4" />
+                    <span>{profile?.city || 'Unknown'}, {profile?.country || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[var(--text)]/70 text-xs">
+                    <CalendarIcon className="w-3 h-3" />
+                    <span>Joined {formatDate(profile?.date_joined)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <motion.button
+                onClick={onShareProfile}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white rounded-xl font-semibold text-sm hover:shadow-lg transition-all"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ShareIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Share Profile</span>
+              </motion.button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Bio */}
@@ -206,27 +269,27 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="text-center p-3 bg-white/5 rounded-xl border border-[var(--primary)]/10">
-          <BookOpenIcon className="w-5 h-5 mx-auto mb-2 text-[var(--primary)]" />
-          <div className="text-lg font-bold text-[var(--primary)]">{stats?.booksRead || 0}</div>
-          <div className="text-xs text-[var(--text)]/60">Books Read</div>
+      {/* Mobile-Optimized Stats Grid */}
+      <div className={`relative z-10 grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 sm:grid-cols-4 gap-4'}`}>
+        <div className={`text-center ${isMobile ? 'p-2' : 'p-3'} bg-white/5 rounded-xl border border-[var(--primary)]/10`}>
+          <BookOpenIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} mx-auto mb-1 text-[var(--primary)]`} />
+          <div className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-[var(--primary)]`}>{stats?.booksRead || 0}</div>
+          <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-[var(--text)]/60 leading-tight`}>Books{isMobile ? '' : ' Read'}</div>
         </div>
-        <div className="text-center p-3 bg-white/5 rounded-xl border border-[var(--primary)]/10">
-          <UsersIcon className="w-5 h-5 mx-auto mb-2 text-[var(--primary)]" />
-          <div className="text-lg font-bold text-[var(--primary)]">{profile?.followers_count || 0}</div>
-          <div className="text-xs text-[var(--text)]/60">Followers</div>
+        <div className={`text-center ${isMobile ? 'p-2' : 'p-3'} bg-white/5 rounded-xl border border-[var(--primary)]/10`}>
+          <UsersIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} mx-auto mb-1 text-[var(--primary)]`} />
+          <div className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-[var(--primary)]`}>{profile?.followers_count || 0}</div>
+          <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-[var(--text)]/60 leading-tight`}>Followers</div>
         </div>
-        <div className="text-center p-3 bg-white/5 rounded-xl border border-[var(--primary)]/10">
-          <UsersIcon className="w-5 h-5 mx-auto mb-2 text-[var(--primary)]" />
-          <div className="text-lg font-bold text-[var(--primary)]">{profile?.following_count || 0}</div>
-          <div className="text-xs text-[var(--text)]/60">Following</div>
+        <div className={`text-center ${isMobile ? 'p-2' : 'p-3'} bg-white/5 rounded-xl border border-[var(--primary)]/10`}>
+          <UsersIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} mx-auto mb-1 text-[var(--primary)]`} />
+          <div className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-[var(--primary)]`}>{profile?.following_count || 0}</div>
+          <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-[var(--text)]/60 leading-tight`}>Following</div>
         </div>
-        <div className="text-center p-3 bg-white/5 rounded-xl border border-[var(--primary)]/10">
-          <StarSolidIcon className="w-5 h-5 mx-auto mb-2 text-[var(--accent)]" />
-          <div className="text-lg font-bold text-[var(--primary)]">{stats?.reviewsWritten || 0}</div>
-          <div className="text-xs text-[var(--text)]/60">Reviews</div>
+        <div className={`text-center ${isMobile ? 'p-2' : 'p-3'} bg-white/5 rounded-xl border border-[var(--primary)]/10`}>
+          <StarSolidIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} mx-auto mb-1 text-[var(--accent)]`} />
+          <div className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-[var(--primary)]`}>{stats?.reviewsWritten || 0}</div>
+          <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-[var(--text)]/60 leading-tight`}>Reviews</div>
         </div>
       </div>
 

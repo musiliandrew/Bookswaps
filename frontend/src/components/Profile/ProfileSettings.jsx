@@ -115,21 +115,21 @@ const ProfileSettings = () => {
         </div>
 
         <main className="max-w-4xl mx-auto">
-              {/* Clean Tab Navigation */}
+              {/* Mobile-Optimized Tab Navigation */}
               <div className="mb-6">
-                <div className="flex flex-wrap gap-2 p-1 bookish-glass rounded-lg">
+                <div className={`flex ${window.innerWidth <= 768 ? 'flex-wrap justify-center' : 'flex-wrap'} gap-2 p-1 bookish-glass rounded-lg`}>
                   {sections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => handleSectionChange(section.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md font-['Open_Sans'] font-medium text-sm transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 ${window.innerWidth <= 768 ? 'px-3 py-2' : 'px-4 py-2'} rounded-md font-['Open_Sans'] font-medium ${window.innerWidth <= 768 ? 'text-xs' : 'text-sm'} transition-all duration-200 ${
                         activeSection === section.id
                           ? 'bg-[var(--accent)] text-[var(--primary)] shadow-sm'
                           : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/50'
                       }`}
                     >
-                      <span className="text-base">{section.icon}</span>
-                      <span>{section.label}</span>
+                      <span className={`${window.innerWidth <= 768 ? 'text-sm' : 'text-base'}`}>{section.icon}</span>
+                      <span className={window.innerWidth <= 768 ? 'hidden sm:inline' : ''}>{section.label}</span>
                     </button>
                   ))}
                 </div>

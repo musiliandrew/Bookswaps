@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Open+Sans:wght@400;600&family=Caveat:wght@400&display=swap');
 @import "tailwindcss";
+@import './styles/mobile-responsive.css';
 
 :root {
   --primary: #456A76;
