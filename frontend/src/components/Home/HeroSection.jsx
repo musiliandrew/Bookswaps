@@ -72,7 +72,7 @@ const HeroSection = () => {
 
   return (
     <div className="relative">
-      <section className="relative h-[70vh] w-full flex items-center justify-center overflow-hidden">
+      <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center overflow-hidden">
         {/* Background Image Layer */}
         <div className="absolute inset-0">
           {currentImageState === 'loaded' ? (
@@ -84,35 +84,35 @@ const HeroSection = () => {
               style={{ opacity: 0.7 }}
             />
           ) : currentImageState === 'error' ? (
-            <div 
+            <div
               className="absolute inset-0 w-full h-full"
-              style={{ 
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' 
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'
               }}
             />
           ) : (
             <div className="absolute inset-0 w-full h-full bg-gray-300 animate-pulse" />
           )}
         </div>
-        
+
         {/* Color Overlay */}
         <div className="absolute inset-0 bg-opacity-40 backdrop-blur-sm" />
-        
+
         {/* Content Container */}
-        <div className="relative z-10 text-center bookish-glass bookish-shadow p-8 rounded-2xl max-w-3xl">
+        <div className="relative z-10 text-center bookish-glass bookish-shadow p-4 md:p-8 rounded-2xl max-w-xs md:max-w-3xl mx-4">
           <h1
-            className="text-4xl md:text-5xl font-bold mb-4 transition-opacity duration-500"
-            style={{ 
+            className="text-2xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 transition-opacity duration-500"
+            style={{
               color: 'var(--primary)',
               fontFamily: 'Lora, serif'
             }}
           >
             {heroImages[currentImage].heading}
           </h1>
-          
+
           <p
-            className="text-lg md:text-xl mb-6 transition-opacity duration-500"
-            style={{ 
+            className="text-sm md:text-lg lg:text-xl mb-4 md:mb-6 transition-opacity duration-500"
+            style={{
               color: 'var(--accent)',
               fontFamily: 'Open Sans, sans-serif'
             }}
@@ -122,8 +122,8 @@ const HeroSection = () => {
           
           <a
             href={heroImages[currentImage].ctaLink}
-            className="inline-block bookish-button-enhanced text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300"
-            style={{ 
+            className="inline-block bookish-button-enhanced text-white px-4 md:px-8 py-2 md:py-4 rounded-xl font-semibold text-sm md:text-lg transition-all duration-300"
+            style={{
               fontFamily: 'Lora, serif',
               boxShadow: '0 4px 15px rgba(69, 106, 118, 0.3)'
             }}

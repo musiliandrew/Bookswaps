@@ -1,4 +1,4 @@
-# Contributing to BookSwaps
+ Contributing to BookSwaps
 
 ## 🚨 IMPORTANT: Proprietary Software Notice
 

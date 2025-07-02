@@ -1,4 +1,4 @@
-# 🛠️ BookSwaps Developer Guide
+ 🛠️ BookSwaps Developer Guide
 
 > **Comprehensive technical documentation for BookSwaps social reading platform**
 > 

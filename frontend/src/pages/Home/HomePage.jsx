@@ -102,20 +102,20 @@ function HomePage() {
         
         <div className="flex items-center space-x-8">
           <div className="flex space-x-8">
-            <a 
-              href="#home" 
+            <button
+              onClick={() => window.location.reload()}
               className="relative text-xl font-['Lora'] font-semibold text-[#456A76] hover:text-[#D4A017] transition-all duration-300 group"
             >
               Home
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#D4A017] transition-all duration-300 group-hover:w-full"></span>
-            </a>
-            <a 
-              href="#trending-books" 
+            </button>
+            <button
+              onClick={() => navigate('/login')}
               className="relative text-xl font-['Lora'] font-semibold text-[#456A76] hover:text-[#D4A017] transition-all duration-300 group"
             >
               Library
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#D4A017] transition-all duration-300 group-hover:w-full"></span>
-            </a>
+            </button>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -148,8 +148,8 @@ function HomePage() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <LoginCTA className="px-4 py-2 text-base font-['Lora'] font-semibold text-[#456A76] border-2 border-[#456A76] rounded-full hover:bg-[#456A76] hover:text-white transition-all duration-300" />
-          <SignupCTA className="px-4 py-2 text-base font-['Lora'] font-semibold text-white bg-gradient-to-r from-[#456A76] to-[#D4A017] rounded-full hover:shadow-md transition-all duration-300" />
+          <LoginCTA className="px-3 py-1.5 text-sm font-['Lora'] font-semibold text-[#456A76] border-2 border-[#456A76] rounded-full hover:bg-[#456A76] hover:text-white transition-all duration-300" />
+          <SignupCTA className="px-3 py-1.5 text-sm font-['Lora'] font-semibold text-white bg-gradient-to-r from-[#456A76] to-[#D4A017] rounded-full hover:shadow-md transition-all duration-300" />
         </div>
       </nav>
 
@@ -157,11 +157,11 @@ function HomePage() {
       <HeroSection />
 
       {/* Features Section */}
-      <section className="py-16 px-4">
-        <h2 className="text-3xl font-['Lora'] text-[var(--primary)] text-center mb-8">
+      <section className="py-8 md:py-16 px-4">
+        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
           Why Choose BookSwaps?
         </h2>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {mockFeatures.map((feature, index) => (
             <FeatureCard key={index} icon={feature.icon} title={feature.title} desc={feature.desc} />
           ))}
@@ -169,8 +169,8 @@ function HomePage() {
       </section>
 
       {/* Trending Books */}
-      <section className="py-16 px-4 bg-[var(--secondary)]">
-        <h2 className="text-3xl font-['Lora'] text-[var(--primary)] text-center mb-8">
+      <section className="py-8 md:py-16 px-4 bg-[var(--secondary)]">
+        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
           Trending Books
         </h2>
         {isLoading ? (
@@ -188,12 +188,12 @@ function HomePage() {
             >
               <ChevronLeftIcon className="h-6 w-6" />
             </button>
-            <div ref={bookCarouselRef} className="flex overflow-x-auto space-x-6 p-4 scrollbar-hide">
+            <div ref={bookCarouselRef} className="flex overflow-x-auto space-x-4 md:space-x-6 p-2 md:p-4 scrollbar-hide">
               {trendingBooks.map((book) => (
-                <div key={book.id} className="min-w-[300px] bookish-glass bookish-shadow p-6 rounded-xl">
-                  <img src={book.cover || '/assets/icons/books.svg'} alt={book.title} className="w-full h-40 object-cover mb-4 rounded-lg" />
-                  <h3 className="text-xl font-['Lora'] text-[var(--primary)]">{book.title}</h3>
-                  <p className="text-[var(--text)] font-['Open_Sans']">{book.author}</p>
+                <div key={book.id} className="min-w-[250px] md:min-w-[300px] bookish-glass bookish-shadow p-4 md:p-6 rounded-xl">
+                  <img src={book.cover || '/assets/icons/books.svg'} alt={book.title} className="w-full h-32 md:h-40 object-cover mb-3 md:mb-4 rounded-lg" />
+                  <h3 className="text-lg md:text-xl font-['Lora'] text-[var(--primary)]">{book.title}</h3>
+                  <p className="text-sm md:text-base text-[var(--text)] font-['Open_Sans']">{book.author}</p>
                 </div>
               ))}
             </div>
@@ -211,8 +211,8 @@ function HomePage() {
       </section>
 
       {/* Meet Book Lovers */}
-      <section className="py-16 px-4">
-        <h2 className="text-3xl font-['Lora'] text-[var(--primary)] text-center mb-8">
+      <section className="py-8 md:py-16 px-4">
+        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
           Meet Book Lovers
         </h2>
         <div className="relative max-w-full mx-auto px-4">
@@ -223,11 +223,11 @@ function HomePage() {
           >
             <ChevronLeftIcon className="h-6 w-6" />
           </button>
-          <div ref={userCarouselRef} className="flex overflow-x-auto space-x-6 p-4 scrollbar-hide">
+          <div ref={userCarouselRef} className="flex overflow-x-auto space-x-4 md:space-x-6 p-2 md:p-4 scrollbar-hide">
             {mockUsers.map((user) => (
-              <div key={user.id} className="min-w-[300px] bookish-glass bookish-shadow p-6 rounded-xl text-center">
-                <img src={user.avatar} alt={user.username} className="w-24 h-24 rounded-full mx-auto mb-4" />
-                <h3 className="text-xl font-['Lora'] text-[var(--primary)]">{user.username}</h3>
+              <div key={user.id} className="min-w-[250px] md:min-w-[300px] bookish-glass bookish-shadow p-4 md:p-6 rounded-xl text-center">
+                <img src={user.avatar} alt={user.username} className="w-16 md:w-24 h-16 md:h-24 rounded-full mx-auto mb-3 md:mb-4" />
+                <h3 className="text-lg md:text-xl font-['Lora'] text-[var(--primary)]">{user.username}</h3>
               </div>
             ))}
           </div>
