@@ -268,7 +268,6 @@ const ProfileCompletionBanner = ({
             </div>
           </>
         )}
-        </div>
       </div>
     </motion.div>
   );

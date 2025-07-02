@@ -52,24 +52,24 @@ const BookSwapsIcon = ({ className = "w-6 h-6" }) => (
 const ShareableProfileCard = ({ user, stats, onClose }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStats, setSelectedStats] = useState({
-    booksRead: true,
-    followers: true,
-    reviews: true,
-    booksOwned: false,
-    booksShared: false,
-    likesReceived: false,
+    booksOwned: true,      // Primary stat - core to your app
+    booksShared: true,     // Secondary stat - sharing activity
+    followers: true,       // Social engagement
+    reviews: true,         // Community participation
+    booksRead: false,      // Less relevant for library management
+    likesReceived: false,  // Secondary social metric
     joinDate: true,
     favoriteGenres: true
   });
   const cardRef = useRef(null);
 
-  // Available stats with their display info
+  // Available stats with their display info (ordered by relevance to BookSwaps)
   const availableStats = [
-    { key: 'booksRead', label: 'Books Read', value: stats?.booksRead || 0, icon: BookOpenIcon },
-    { key: 'followers', label: 'Followers', value: user?.followers_count || 0, icon: UsersIcon },
-    { key: 'reviews', label: 'Reviews', value: stats?.reviewsWritten || 0, icon: StarSolidIcon },
     { key: 'booksOwned', label: 'Books Owned', value: stats?.booksOwned || 0, icon: BookmarkSolidIcon },
     { key: 'booksShared', label: 'Books Shared', value: stats?.booksShared || 0, icon: ShareIcon },
+    { key: 'followers', label: 'Followers', value: user?.followers_count || 0, icon: UsersIcon },
+    { key: 'reviews', label: 'Reviews', value: stats?.reviewsWritten || 0, icon: StarSolidIcon },
+    { key: 'booksRead', label: 'Books Read', value: stats?.booksRead || 0, icon: BookOpenIcon },
     { key: 'likesReceived', label: 'Likes Received', value: stats?.likesReceived || 0, icon: HeartSolidIcon },
   ];
 
@@ -79,12 +79,12 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
     setIsGenerating(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#F0EAD0',
+        backgroundColor: '#1a1a1a',
         scale: 3,
         useCORS: true,
         allowTaint: true,
-        width: 400,
-        height: 600
+        width: 800,  // Landscape width
+        height: 500  // Landscape height
       });
 
       const link = document.createElement('a');
@@ -126,8 +126,8 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
           <div className="flex items-center gap-3">
             <BookSwapsIcon className="w-8 h-8 text-[var(--primary)]" />
             <div>
-              <h3 className="text-xl font-['Lora'] font-bold text-[var(--primary)]">Library Card Generator</h3>
-              <p className="text-sm text-[var(--text)]/70">Create your BookSwaps library card</p>
+              <h3 className="text-xl font-['Lora'] font-bold text-[var(--primary)]">Premium Library Card Generator</h3>
+              <p className="text-sm text-[var(--text)]/70">Create your stunning BookSwaps library card</p>
             </div>
           </div>
           <button
@@ -233,126 +233,192 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
             <div className="flex justify-center">
               <div
                 ref={cardRef}
-                className="relative w-80 h-[500px] rounded-2xl overflow-hidden shadow-2xl"
+                className="relative overflow-hidden shadow-2xl"
                 style={{
-                  background: 'linear-gradient(135deg, #F0EAD0 0%, #E8DCC0 50%, #D4C5A0 100%)',
-                  border: '3px solid #456A76'
+                  width: '800px',
+                  height: '500px',
+                  background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)',
+                  borderRadius: '24px',
+                  border: '2px solid #8B4513',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}
               >
-                {/* Library Card Header */}
-                <div className="relative bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] p-4 text-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BookSwapsIcon className="w-6 h-6" />
-                      <div>
-                        <h3 className="font-['Lora'] font-bold text-lg">BookSwaps</h3>
-                        <p className="text-xs opacity-90">Community Library</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs opacity-90">Member Since</p>
-                      {selectedStats.joinDate && (
-                        <p className="text-sm font-semibold">
-                          {new Date(user?.date_joined).getFullYear()}
-                        </p>
-                      )}
-                    </div>
+                {/* Background Pattern & Logo Watermark */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <BookSwapsIcon className="w-96 h-96 text-white" />
                   </div>
-
-                  {/* Decorative Pattern */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                  {/* Decorative book pattern */}
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                  }} />
                 </div>
 
-                {/* Card Body */}
-                <div className="p-6 h-full flex flex-col" style={{ paddingTop: '1.5rem' }}>
-                  {/* User Info Section */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-[var(--primary)]/30 shadow-lg">
-                        {user?.profile_picture ? (
-                          <img
-                            src={user.profile_picture}
-                            alt={user.username}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
-                            <span className="text-white font-bold text-xl">
-                              {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                            </span>
+                {/* Premium Border Effect */}
+                <div className="absolute inset-0 rounded-[22px]" style={{
+                  background: 'linear-gradient(45deg, #8B4513, #D2691E, #8B4513)',
+                  padding: '3px'
+                }}>
+                  <div className="w-full h-full rounded-[19px]" style={{
+                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)'
+                  }}>
+                    {/* Main Content Container */}
+                    <div className="relative h-full flex">
+
+                      {/* Left Section - User Info */}
+                      <div className="flex-1 p-8 flex flex-col justify-between">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <BookSwapsIcon className="w-12 h-12 text-[#D2691E]" />
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-bold text-black">✓</span>
+                              </div>
+                            </div>
+                            <div>
+                              <h1 className="text-2xl font-bold text-white font-['Lora']">BookSwaps</h1>
+                              <p className="text-[#D2691E] text-sm font-medium">Premium Library Network</p>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      {/* Library Card Number */}
-                      <div className="absolute -bottom-2 -right-2 bg-[var(--accent)] text-white text-xs px-2 py-1 rounded-full font-mono">
-                        #{user?.user_id?.slice(-6) || '000000'}
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <h2 className="font-['Lora'] font-bold text-xl text-[var(--primary)] mb-1">
-                        {user?.username || 'Book Lover'}
-                      </h2>
-                      <p className="text-sm text-[var(--text)] mb-1">
-                        {user?.city || 'Unknown'}, {user?.country || 'Unknown'}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-[var(--accent)]">
-                        <SparklesIcon className="w-3 h-3" />
-                        <span>Verified Reader</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {availableStats.filter(stat => selectedStats[stat.key]).map((stat) => {
-                      const IconComponent = stat.icon;
-                      return (
-                        <div key={stat.key} className="bg-white/10 rounded-lg p-3 text-center border border-[var(--primary)]/20">
-                          <IconComponent className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
-                          <div className="text-lg font-bold text-[var(--primary)]">{stat.value}</div>
-                          <div className="text-xs text-[var(--text)]/70">{stat.label}</div>
+                          <div className="text-right">
+                            <p className="text-gray-400 text-xs">MEMBER ID</p>
+                            <p className="text-white font-mono text-sm font-bold">
+                              #{user?.user_id?.slice(-6) || '000000'}
+                            </p>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
 
-                  {/* Favorite Genres */}
-                  {selectedStats.favoriteGenres && genres.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-sm font-semibold text-[var(--primary)] mb-2 flex items-center gap-1">
-                        <SparklesIcon className="w-4 h-4" />
-                        Favorite Genres
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {genres.slice(0, 3).map((genre, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--accent)]/20 text-[var(--primary)] text-xs rounded-full border border-[var(--primary)]/30"
-                          >
-                            {genre}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        {/* User Profile Section */}
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="relative">
+                            <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-[#D2691E] shadow-xl">
+                              {user?.profile_picture ? (
+                                <img
+                                  src={user.profile_picture}
+                                  alt={user.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#D2691E] to-[#8B4513] flex items-center justify-center">
+                                  <span className="text-white font-bold text-2xl">
+                                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            {/* Premium Badge */}
+                            <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-xs px-2 py-1 rounded-full font-bold">
+                              VIP
+                            </div>
+                          </div>
 
-                  {/* Footer */}
-                  <div className="mt-auto">
-                    <div className="border-t border-[var(--primary)]/20 pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <BookSwapsIcon className="w-4 h-4 text-[var(--primary)]" />
-                          <span className="text-xs text-[var(--text)] font-medium">BookSwaps.com</span>
+                          <div className="flex-1">
+                            <h2 className="font-['Lora'] font-bold text-2xl text-white mb-1">
+                              {user?.username || 'Book Lover'}
+                            </h2>
+                            <p className="text-gray-300 text-sm mb-2">
+                              📍 {user?.city || 'Global'}, {user?.country || 'BookSwaps Community'}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-xs text-[#D2691E] bg-[#D2691E]/20 px-2 py-1 rounded-full">
+                                <SparklesIcon className="w-3 h-3" />
+                                <span>Library Owner</span>
+                              </div>
+                              {selectedStats.joinDate && (
+                                <div className="text-xs text-gray-400">
+                                  Member since {new Date(user?.date_joined).getFullYear()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-xs text-[var(--text)]/60">
-                          Join the community
+
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                          {availableStats.filter(stat => selectedStats[stat.key]).slice(0, 4).map((stat) => {
+                            const IconComponent = stat.icon;
+                            return (
+                              <div key={stat.key} className="bg-white/5 rounded-lg p-3 text-center border border-[#D2691E]/30 backdrop-blur-sm">
+                                <IconComponent className="w-5 h-5 mx-auto mb-1 text-[#D2691E]" />
+                                <div className="text-lg font-bold text-white">{stat.value}</div>
+                                <div className="text-xs text-gray-400">{stat.label}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer CTA */}
+                        <div className="mt-auto">
+                          <div className="bg-gradient-to-r from-[#D2691E]/20 to-[#8B4513]/20 rounded-lg p-4 border border-[#D2691E]/30">
+                            <p className="text-white text-sm font-medium mb-2">📚 Share Your Library, Discover New Books</p>
+                            <p className="text-gray-300 text-xs">Manage your collection • Swap physical books • Connect with book lovers</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <BookSwapsIcon className="w-4 h-4 text-[#D2691E]" />
+                              <span className="text-xs text-[#D2691E] font-bold">BookSwaps.com</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-2 text-center">
-                        <p className="text-xs text-[var(--accent)] font-semibold">
-                          "Every book is a new adventure"
-                        </p>
+
+                      {/* Right Section - Showcase */}
+                      <div className="w-80 relative">
+                        {/* Decorative Side Panel */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#D2691E]/10 to-[#8B4513]/10 rounded-r-[19px]"></div>
+
+                        <div className="relative h-full p-8 flex flex-col justify-center">
+                          {/* Featured Stats */}
+                          <div className="text-center mb-8">
+                            <h3 className="text-white text-xl font-bold font-['Lora'] mb-2">Library Stats</h3>
+                            <div className="w-16 h-1 bg-gradient-to-r from-[#D2691E] to-[#8B4513] mx-auto rounded-full mb-6"></div>
+
+                            {/* Large Featured Stat */}
+                            {availableStats.filter(stat => selectedStats[stat.key]).slice(0, 1).map((stat) => {
+                              const IconComponent = stat.icon;
+                              return (
+                                <div key={stat.key} className="mb-6">
+                                  <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#D2691E] to-[#8B4513] rounded-full flex items-center justify-center shadow-xl">
+                                    <IconComponent className="w-10 h-10 text-white" />
+                                  </div>
+                                  <div className="text-4xl font-bold text-white mb-1">{stat.value}</div>
+                                  <div className="text-[#D2691E] text-sm font-medium">{stat.label}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Favorite Genres */}
+                          {selectedStats.favoriteGenres && genres.length > 0 && (
+                            <div className="mb-6">
+                              <h4 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                                <SparklesIcon className="w-4 h-4 text-[#D2691E]" />
+                                Favorite Genres
+                              </h4>
+                              <div className="space-y-2">
+                                {genres.slice(0, 3).map((genre, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-gradient-to-r from-[#D2691E]/20 to-[#8B4513]/20 text-white text-xs px-3 py-2 rounded-lg border border-[#D2691E]/30 text-center"
+                                  >
+                                    {genre}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* QR Code Placeholder */}
+                          <div className="mt-auto text-center">
+                            <div className="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center mb-2">
+                              <div className="w-12 h-12 bg-black rounded grid grid-cols-4 gap-px">
+                                {[...Array(16)].map((_, i) => (
+                                  <div key={i} className={`${Math.random() > 0.5 ? 'bg-white' : 'bg-black'}`}></div>
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-gray-400 text-xs">Scan to connect</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -376,7 +442,7 @@ const ShareableProfileCard = ({ user, stats, onClose }) => {
                 Generating Library Card...
               </span>
             ) : (
-              'Download Library Card'
+              'Download Premium Library Card'
             )}
           </button>
         </div>
