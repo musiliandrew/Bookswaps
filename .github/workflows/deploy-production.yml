@@ -24,8 +24,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          cd backend
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
 
       - name: Install Node.js dependencies
         run: |
@@ -34,7 +33,6 @@ jobs:
 
       - name: Run Python tests
         run: |
-          cd backend
           python manage.py test --settings=backend.settings_test
 
       - name: Build frontend
@@ -82,10 +80,10 @@ jobs:
             sleep 30
             
             # Run migrations
-            docker-compose -f docker-compose.prod.yml exec -T backend python manage.py migrate
-            
+            docker-compose -f docker-compose.prod.yml exec -T backend python /app/manage.py migrate
+
             # Collect static files
-            docker-compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput
+            docker-compose -f docker-compose.prod.yml exec -T backend python /app/manage.py collectstatic --noinput
             
             # Health check
             sleep 10
