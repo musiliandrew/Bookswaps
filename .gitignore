@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Docker development overrides (local only)
+docker-compose.override.yml
+
 # Python virtual environment
 venv
 __pycache__/
