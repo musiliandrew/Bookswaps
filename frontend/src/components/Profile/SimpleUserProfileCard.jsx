@@ -14,6 +14,8 @@ import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
+import OptimizedImage from '../Common/OptimizedImage';
+import { getProfilePictureUrl } from '../../utils/imageUtils';
 
 // Enhanced helper function to parse genres
 const parseGenres = (genres) => {
@@ -123,15 +125,21 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--accent)]/30 rounded-full blur-sm"></div>
                 <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--primary)]/30">
-                  {!imageError && profile?.profile_picture ? (
-                    <img
-                      src={profile.profile_picture}
-                      alt={profile.username}
-                      className="w-full h-full object-cover"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                  <OptimizedImage
+                    src={getProfilePictureUrl(profile, 'S')}
+                    alt={profile?.username || 'User'}
+                    placeholder="user"
+                    className="w-full h-full object-cover"
+                    containerClassName="w-full h-full"
+                    showLoadingSpinner={true}
+                    showErrorState={false}
+                    retryOnError={true}
+                    maxRetries={2}
+                    lazy={false}
+                  />
+                  {/* Fallback to initials if no image */}
+                  {!getProfilePictureUrl(profile, 'S') && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
                       <span className="text-white font-bold text-base">
                         {profile?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
@@ -182,15 +190,21 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/30 to-[var(--accent)]/30 rounded-full blur-sm"></div>
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-3 border-[var(--primary)]/30">
-                    {!imageError && profile?.profile_picture ? (
-                      <img
-                        src={profile.profile_picture}
-                        alt={profile.username}
-                        className="w-full h-full object-cover"
-                        onError={() => setImageError(true)}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                    <OptimizedImage
+                      src={getProfilePictureUrl(profile, 'M')}
+                      alt={profile?.username || 'User'}
+                      placeholder="user"
+                      className="w-full h-full object-cover"
+                      containerClassName="w-full h-full"
+                      showLoadingSpinner={true}
+                      showErrorState={false}
+                      retryOnError={true}
+                      maxRetries={2}
+                      lazy={false}
+                    />
+                    {/* Fallback to initials if no image */}
+                    {!getProfilePictureUrl(profile, 'M') && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
                         <span className="text-white font-bold text-lg sm:text-xl">
                           {profile?.username?.charAt(0)?.toUpperCase() || 'U'}
                         </span>

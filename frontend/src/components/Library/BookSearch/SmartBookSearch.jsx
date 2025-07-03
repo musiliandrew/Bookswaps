@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MagnifyingGlassIcon, 
-  XMarkIcon, 
-  SparklesIcon, 
+import {
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  SparklesIcon,
   BookOpenIcon,
   UserIcon,
   HashtagIcon,
@@ -13,6 +13,7 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 import { useLibrary } from '../../../hooks/useLibrary';
+import { getBookCoverUrl } from '../../../utils/imageUtils';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { toast } from 'react-toastify';
 
@@ -272,26 +273,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
 
 // Helper function to get the best available cover image
 const getBestCoverImage = (book) => {
-  // Primary: Use the provided cover_image_url
-  if (book.cover_image_url) {
-    return book.cover_image_url;
-  }
-
-  // Fallback 1: Try ISBN-based cover
-  if (book.isbn) {
-    const cleanIsbn = book.isbn.replace(/[^0-9]/g, '');
-    if (cleanIsbn.length >= 10) {
-      return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`;
-    }
-  }
-
-  // Fallback 2: Try OpenLibrary key
-  if (book.open_library_key) {
-    const olKey = book.open_library_key.replace('/works/', '').replace('/books/', '');
-    return `https://covers.openlibrary.org/b/olid/${olKey}-L.jpg`;
-  }
-
-  return null;
+  return getBookCoverUrl(book, 'L');
 };
 
 // Book Search Result Component

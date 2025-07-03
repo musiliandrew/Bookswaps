@@ -89,7 +89,7 @@ const EnhancedPostCard = ({
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow group relative"
+      className="bookish-glass rounded-2xl sm:rounded-2xl rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow group relative mobile-post-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, scale: 1.01 }}
@@ -169,12 +169,12 @@ const EnhancedPostCard = ({
           </div>
         </div>
       )}
-      {/* Header */}
-      <div className="p-6 pb-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            {/* User Avatar */}
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
+      {/* Header - Mobile Optimized */}
+      <div className="p-3 sm:p-6 pb-2 sm:pb-4">
+        <div className="flex items-start justify-between mb-2 sm:mb-4">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* User Avatar - Smaller on mobile */}
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
               {post.user?.profile_picture ? (
                 <img
                   src={post.user.profile_picture}
@@ -182,19 +182,20 @@ const EnhancedPostCard = ({
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (
-                <UserIcon className="w-5 h-5 text-white" />
+                <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               )}
             </div>
 
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold font-open-sans text-primary">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <span className="font-semibold font-open-sans text-primary text-sm sm:text-base truncate">
                   {isOwnPost ? (
                     <span className="flex items-center space-x-1">
                       <span>You</span>
                       {isRecentPost && (
-                        <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
-                          posted
+                        <span className="text-xs bg-accent/20 text-accent px-1.5 sm:px-2 py-0.5 rounded-full">
+                          <span className="hidden sm:inline">posted</span>
+                          <span className="sm:hidden">•</span>
                         </span>
                       )}
                     </span>
@@ -202,10 +203,10 @@ const EnhancedPostCard = ({
                     post.user?.username || 'Anonymous'
                   )}
                 </span>
-                <span className="text-primary/40">•</span>
-                <span className="text-sm text-primary/60 flex items-center space-x-1 font-open-sans">
-                  <ClockIcon className="w-3 h-3" />
-                  <span>
+                <span className="text-primary/40 text-xs sm:text-sm">•</span>
+                <span className="text-xs sm:text-sm text-primary/60 flex items-center space-x-1 font-open-sans">
+                  <ClockIcon className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
+                  <span className="truncate">
                     {(() => {
                       if (!post.created_at) return 'Recently';
                       const date = new Date(post.created_at);
@@ -250,15 +251,15 @@ const EnhancedPostCard = ({
 
 
 
-        {/* Title */}
+        {/* Title - Compact for mobile */}
         <Link to={`/socials/discussions/post/${post.discussion_id}`}>
-          <h2 className="text-xl font-lora font-bold text-primary mb-3 hover:text-accent transition-colors cursor-pointer">
+          <h2 className="text-base sm:text-xl font-lora font-bold text-primary mb-2 sm:mb-3 hover:text-accent transition-colors cursor-pointer line-clamp-2">
             {post.title}
           </h2>
         </Link>
 
-        {/* Content */}
-        <div className="text-primary/80 leading-relaxed font-open-sans">
+        {/* Content - More compact */}
+        <div className="text-primary/80 leading-relaxed font-open-sans text-sm sm:text-base">
           {post.spoiler_flag && !showSpoiler ? (
             <div className="bg-error/5 border border-error/20 rounded-lg p-6 text-center">
               <EyeSlashIcon className="w-12 h-12 text-error/60 mx-auto mb-3" />

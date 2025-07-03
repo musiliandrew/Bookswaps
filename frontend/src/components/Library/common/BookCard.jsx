@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { BookmarkIcon, HeartIcon, TrashIcon, PhotoIcon, StarIcon, ArrowsRightLeftIcon, BookOpenIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon, HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { motion } from 'framer-motion';
+import OptimizedImage from '../../Common/OptimizedImage';
+import { getBookCoverUrl } from '../../../utils/imageUtils';
 
 const BookCard = ({
   book,
@@ -137,30 +139,18 @@ const BookCard = ({
             )}
           </div>
 
-          {book.cover_image_url || book.book_image_url ? (
-            <div className="relative w-full h-full">
-              {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-              <img
-                src={book.cover_image_url || book.book_image_url}
-                alt={book.title}
-                className="w-full h-full object-cover transition-opacity duration-300"
-                style={{ opacity: imageLoading ? 0 : 1 }}
-                onLoad={() => setImageLoading(false)}
-                onError={() => {
-                  setImageError(true);
-                  setImageLoading(false);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-              <BookOpenIcon className="w-8 h-8 text-primary/60" />
-            </div>
-          )}
+          <OptimizedImage
+            src={getBookCoverUrl(book, 'M')}
+            alt={book.title}
+            placeholder="book"
+            className="w-full h-full object-cover"
+            containerClassName="w-full h-full"
+            showLoadingSpinner={true}
+            showErrorState={true}
+            retryOnError={true}
+            maxRetries={3}
+            lazy={false}
+          />
         </div>
 
         {/* Book Details */}
@@ -315,48 +305,18 @@ const BookCard = ({
           )}
         </div>
 
-        {book.cover_image_url || book.book_image_url ? (
-          <>
-            {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                <motion.div
-                  className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-              </div>
-            )}
-            <motion.img
-              src={book.cover_image_url || book.book_image_url}
-              alt={book.title}
-              className={`w-full h-full object-cover transition-all duration-300 ${
-                imageLoading ? 'opacity-0' : 'opacity-100'
-              } ${isHovered ? 'scale-110' : 'scale-100'}`}
-              onLoad={() => setImageLoading(false)}
-              onError={() => {
-                setImageLoading(false);
-                setImageError(true);
-              }}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-primary/60 bg-gradient-to-br from-primary/20 to-accent/20">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <BookOpenIcon className="w-16 h-16" />
-            </motion.div>
-          </div>
-        )}
-
-        {imageError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-            <BookOpenIcon className="w-16 h-16 text-primary/60" />
-          </div>
-        )}
+        <OptimizedImage
+          src={getBookCoverUrl(book, 'L')}
+          alt={book.title}
+          placeholder="book"
+          className={`w-full h-full object-cover transition-all duration-300 ${isHovered ? 'scale-110' : 'scale-100'}`}
+          containerClassName="w-full h-full"
+          showLoadingSpinner={true}
+          showErrorState={true}
+          retryOnError={true}
+          maxRetries={3}
+          lazy={false}
+        />
 
         {/* Hover Overlay */}
         <motion.div

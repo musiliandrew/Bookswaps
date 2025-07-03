@@ -68,13 +68,13 @@ const EnhancedReactionBar = ({
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 bg-white/30 backdrop-blur-sm border-t border-white/20">
-      <div className="flex items-center space-x-6">
-        {/* Traditional Voting (for sorting) */}
+    <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-4 bg-white/30 backdrop-blur-sm border-t border-white/20">
+      <div className="flex items-center space-x-3 sm:space-x-6">
+        {/* Traditional Voting (for sorting) - Mobile optimized */}
         <div className="flex items-center space-x-1">
           <motion.button
             onClick={() => onUpvote && onUpvote(post.discussion_id)}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-lg transition-all font-open-sans ${
+            className={`flex items-center space-x-1 px-1.5 sm:px-2 py-1 rounded-lg transition-all font-open-sans ${
               isUpvoted
                 ? 'bg-success/20 text-success'
                 : 'hover:bg-white/50 text-primary/70'
@@ -83,11 +83,11 @@ const EnhancedReactionBar = ({
             whileTap={{ scale: 0.95 }}
           >
             {isUpvoted ? (
-              <ArrowUpSolid className="w-4 h-4" />
+              <ArrowUpSolid className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
             ) : (
-              <ArrowUpIcon className="w-4 h-4" />
+              <ArrowUpIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
             )}
-            <span className="text-sm font-medium">{post.upvotes || 0}</span>
+            <span className="text-xs sm:text-sm font-medium">{post.upvotes || 0}</span>
           </motion.button>
 
           <motion.button
