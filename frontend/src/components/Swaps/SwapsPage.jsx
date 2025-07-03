@@ -162,22 +162,22 @@ const SwapsPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="space-y-8"
+      className="space-y-4 sm:space-y-8"
     >
       {/* Enhanced Header */}
       <motion.div
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-6 bookish-glass rounded-2xl border border-white/20"
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 p-4 sm:p-6 bookish-glass rounded-2xl border border-white/20"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6 }}
       >
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
-            <ArrowPathIcon className="w-8 h-8 text-primary" />
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-lg sm:rounded-xl">
+            <ArrowPathIcon className="w-6 sm:w-8 h-6 sm:h-8 text-primary" />
           </div>
           <div>
-            <h2 className="text-3xl font-lora font-bold text-primary">Book Swaps</h2>
-            <p className="text-primary/70 mt-1 text-lg">
+            <h2 className="text-xl sm:text-3xl font-lora font-bold text-primary">Book Swaps</h2>
+            <p className="text-primary/70 mt-1 text-sm sm:text-lg hidden sm:block">
               Exchange books with other readers in your community
             </p>
           </div>
@@ -185,7 +185,7 @@ const SwapsPage = () => {
 
         <motion.button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
+          className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold shadow-lg transition-all duration-300 text-sm sm:text-base mobile-swap-button ${
             showCreateForm
               ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700'
               : 'bookish-button-enhanced text-white'
@@ -193,8 +193,9 @@ const SwapsPage = () => {
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
         >
-          <PlusIcon className={`w-5 h-5 transition-transform duration-300 ${showCreateForm ? 'rotate-45' : ''}`} />
-          {showCreateForm ? 'Cancel' : 'Propose Swap'}
+          <PlusIcon className={`w-4 sm:w-5 h-4 sm:h-5 transition-transform duration-300 ${showCreateForm ? 'rotate-45' : ''}`} />
+          <span className="hidden sm:inline">{showCreateForm ? 'Cancel' : 'Propose Swap'}</span>
+          <span className="sm:hidden">{showCreateForm ? 'Cancel' : 'New'}</span>
         </motion.button>
       </motion.div>
 
@@ -234,17 +235,17 @@ const SwapsPage = () => {
             animate={{ opacity: 1, height: 'auto', y: 0 }}
             exit={{ opacity: 0, height: 0, y: -20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bookish-glass p-8 rounded-2xl border border-white/20"
+            className="bookish-glass p-4 sm:p-6 lg:p-8 rounded-2xl border border-white/20"
           >
-            <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center space-x-3 mb-4 sm:mb-6">
               <div className="p-2 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
-                <PlusIcon className="w-6 h-6 text-primary" />
+                <PlusIcon className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-2xl font-lora font-bold text-primary">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-lora font-bold text-primary">
                   Propose a Book Swap
                 </h3>
-                <p className="text-sm text-primary/70">Connect with fellow readers and exchange books</p>
+                <p className="text-xs sm:text-sm text-primary/70 hidden sm:block">Connect with fellow readers and exchange books</p>
               </div>
             </div>
             <SwapCreationForm

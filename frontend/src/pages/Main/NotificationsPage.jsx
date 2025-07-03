@@ -114,7 +114,7 @@ const NotificationsPage = () => {
               stiffness: 300,
               damping: 30
             }}
-            className="container mx-auto px-4"
+            className="container mx-auto px-2 sm:px-4"
           >
             {activeTab === 'notifications' ? <NotificationList /> : <SwapsPage />}
           </motion.div>

@@ -25,14 +25,14 @@ const SearchBar = ({ searchQuery, onSearch }) => {
           onChange={(e) => onSearch(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className={`w-full px-6 py-4 pl-14 pr-12 bookish-input rounded-2xl border-0 bg-white/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 ${
+          className={`w-full px-6 py-4 pl-14 pr-12 bookish-input rounded-2xl border-0 bg-white/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 mobile-search-input ${
             isFocused ? 'bg-white/30 shadow-lg' : 'bg-white/10'
           }`}
         />
 
         {/* Search Icon */}
         <motion.div
-          className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 mobile-search-icon ${
             isFocused ? 'text-accent' : 'text-primary/60'
           }`}
           animate={isFocused ? { scale: [1, 1.1, 1] } : {}}
@@ -45,7 +45,7 @@ const SearchBar = ({ searchQuery, onSearch }) => {
         {searchQuery && (
           <motion.button
             onClick={handleClear}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full bg-primary/20 hover:bg-primary/30 text-primary transition-all duration-200"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full bg-primary/20 hover:bg-primary/30 text-primary transition-all duration-200 mobile-search-clear"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}

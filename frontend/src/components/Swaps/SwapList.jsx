@@ -108,44 +108,44 @@ const SwapList = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {swaps.map((swap) => (
         <motion.div
           key={swap.swap_id}
-          className="bg-[var(--card-bg)] p-6 rounded-lg border border-[var(--secondary)] hover:shadow-md transition-all duration-200"
+          className="bg-[var(--card-bg)] p-4 sm:p-6 rounded-lg border border-[var(--secondary)] hover:shadow-md transition-all duration-200 mobile-swap-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           layout
         >
           {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               {getStatusIcon(swap.status)}
               <div>
-                <h3 className="font-semibold text-[var(--text-primary)]">
+                <h3 className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">
                   {isInitiator(swap) ? 'Swap Proposed' : 'Swap Received'}
                 </h3>
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
                   {formatDistanceToNow(new Date(swap.created_at), { addSuffix: true })}
                 </p>
               </div>
             </div>
-            <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(swap.status)}`}>
+            <span className={`px-2 sm:px-3 py-1 text-xs rounded-full ${getStatusColor(swap.status)}`}>
               {swap.status}
             </span>
           </div>
 
           {/* Participants */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
             {/* Initiator */}
-            <div className="flex items-start gap-3 p-3 bg-[var(--secondary)]/20 rounded-lg">
-              <UserIcon className="w-5 h-5 text-[var(--accent)] mt-1" />
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[var(--secondary)]/20 rounded-lg">
+              <UserIcon className="w-4 sm:w-5 h-4 sm:h-5 text-[var(--accent)] mt-1" />
               <div className="flex-1">
-                <p className="font-medium text-[var(--text-primary)]">
+                <p className="font-medium text-[var(--text-primary)] text-sm sm:text-base">
                   {swap.initiator?.username || 'Unknown User'}
                   {isInitiator(swap) && <span className="text-xs text-[var(--accent)] ml-1">(You)</span>}
                 </p>
-                <p className="text-sm text-[var(--text-secondary)]">Proposing</p>
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Proposing</p>
                 {swap.initiator_book && (
                   <div className="flex items-center gap-2 mt-2">
                     <BookOpenIcon className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -201,28 +201,30 @@ const SwapList = ({
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mobile-swap-actions">
             {canAccept(swap) && (
               <motion.button
                 onClick={() => handleShowAcceptModal(swap)}
-                className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-xs sm:text-sm rounded-lg hover:bg-green-600 transition-colors mobile-swap-button"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <CheckIcon className="w-4 h-4" />
-                Accept Swap
+                <CheckIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                <span className="hidden sm:inline">Accept Swap</span>
+                <span className="sm:hidden">Accept</span>
               </motion.button>
             )}
 
             {canConfirm(swap) && (
               <motion.button
                 onClick={() => setSelectedSwap(swap.swap_id)}
-                className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-600 transition-colors mobile-swap-button"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <QrCodeIcon className="w-4 h-4" />
-                Confirm Swap
+                <QrCodeIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                <span className="hidden sm:inline">Confirm Swap</span>
+                <span className="sm:hidden">Confirm</span>
               </motion.button>
             )}
 

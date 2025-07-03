@@ -29,13 +29,13 @@ const DiscoverSection = ({
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="relative w-full max-w-md mx-auto mb-4">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#456A76]" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#456A76] mobile-search-icon" />
         <input
           type="text"
           value={searchQuery}
           onChange={onSearch}
           placeholder="Search book readers..."
-          className="bookish-input w-full pl-10 pr-4 py-2 rounded-xl text-[var(--text)] text-sm focus:outline-none"
+          className="bookish-input w-full pl-10 pr-4 py-2 rounded-xl text-[var(--text)] text-sm focus:outline-none mobile-search-input"
         />
       </div>
 

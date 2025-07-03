@@ -41,7 +41,7 @@ const QuickCreateButton = ({ onOpenModal }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div className="fixed bottom-6 right-6 z-40 mobile-fab">
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -82,10 +82,13 @@ const QuickCreateButton = ({ onOpenModal }) => {
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
-          isExpanded 
-            ? 'bg-gray-600 hover:bg-gray-700' 
-            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+          isExpanded
+            ? 'bg-gray-600 hover:bg-gray-700'
+            : 'hover:shadow-xl'
         }`}
+        style={{
+          backgroundColor: !isExpanded ? '#456A76' : undefined
+        }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         animate={{ rotate: isExpanded ? 45 : 0 }}

@@ -134,36 +134,13 @@ const EnhancedDiscussionsPage = () => {
 
       {/* Enhanced Header Section */}
       <div className="relative z-10">
-        <div className="container mx-auto px-4 py-8">
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
-              💬 Discussions
-              <motion.div
-                className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-            </h1>
-            <motion.p
-              className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              Share your thoughts, discover new books, and connect with fellow readers
-            </motion.p>
-          </motion.div>
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
 
           {/* Main Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
           >
             <EnhancedPostFeed
               posts={posts}

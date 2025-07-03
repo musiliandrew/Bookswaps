@@ -129,14 +129,14 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
               placeholder={`Search by ${searchTypes.find(t => t.value === searchType)?.description || 'anything'}...`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 bookish-input rounded-xl sm:rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base"
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 bookish-input rounded-xl sm:rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base mobile-search-input"
               autoFocus
             />
-            <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 sm:w-6 h-5 sm:h-6 text-primary/60" />
+            <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 sm:w-6 h-5 sm:h-6 text-primary/60 mobile-search-icon" />
             {query && (
               <button
                 onClick={handleClear}
-                className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full bg-primary/20 hover:bg-primary/30 text-primary transition-all duration-200"
+                className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full bg-primary/20 hover:bg-primary/30 text-primary transition-all duration-200 mobile-search-clear"
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>

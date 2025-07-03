@@ -248,16 +248,16 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bookish-glass rounded-2xl bookish-shadow w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/20">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl">
-                    <PencilSquareIcon className="w-6 h-6 text-primary" />
+            <div className="bookish-glass rounded-2xl bookish-shadow w-full max-w-4xl sm:max-h-[90vh] max-h-[95vh] overflow-hidden border border-white/20 mobile-modal">
+              {/* Header - Mobile Optimized */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/20">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl">
+                    <PencilSquareIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-lora font-bold text-primary">Create New Post</h2>
-                    <p className="text-sm text-primary/70 font-open-sans">
+                    <h2 className="text-lg sm:text-2xl font-lora font-bold text-primary">Create New Post</h2>
+                    <p className="text-xs sm:text-sm text-primary/70 font-open-sans hidden sm:block">
                       Step {step} of 3 - {step === 1 ? 'Content & Type' : step === 2 ? 'Book Context' : 'Tags & Settings'}
                     </p>
                   </div>
@@ -281,20 +281,20 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                 />
               </div>
 
-              {/* Content */}
-              <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              {/* Content - Mobile Optimized */}
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-140px)] mobile-modal-content mobile-reduced-motion">
                 {step === 1 && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6"
                   >
                     {/* Post Type Selection */}
                     <div>
                       <label className="block text-sm font-medium text-primary mb-3 font-open-sans">
                         Choose Post Type
                       </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {postTypes.map((type) => {
                           const IconComponent = type.icon;
                           return (
@@ -302,7 +302,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                               key={type.value}
                               type="button"
                               onClick={() => setPostData({ ...postData, type: type.value })}
-                              className={`p-4 rounded-xl border-2 transition-all font-open-sans ${
+                              className={`p-3 sm:p-4 rounded-xl border-2 transition-all font-open-sans ${
                                 postData.type === type.value
                                   ? 'border-primary bg-primary/10 bookish-shadow'
                                   : 'border-white/30 hover:border-primary/50 hover:bg-white/20'
@@ -335,7 +335,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                           type="text"
                           value={postData.debate_question}
                           onChange={(e) => setPostData({ ...postData, debate_question: e.target.value })}
-                          className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans text-sm sm:text-base mobile-form-input"
                           placeholder="e.g., Did the protagonist make the right choice?"
                           maxLength={200}
                         />
@@ -354,7 +354,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                         type="text"
                         value={postData.title}
                         onChange={(e) => setPostData({ ...postData, title: e.target.value })}
-                        className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans text-sm sm:text-base mobile-form-input"
                         placeholder="What's your post about?"
                         maxLength={200}
                       />
@@ -371,9 +371,9 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <textarea
                         value={postData.content}
                         onChange={(e) => setPostData({ ...postData, content: e.target.value })}
-                        className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans resize-none"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans resize-none text-sm sm:text-base mobile-form-textarea"
                         placeholder="Share your thoughts, insights, or questions..."
-                        rows={8}
+                        rows={6}
                         maxLength={maxChars}
                       />
                       <div className={`text-xs mt-1 font-open-sans ${charCount > maxChars * 0.9 ? 'text-error' : 'text-primary/60'}`}>
@@ -387,7 +387,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6"
                   >
                     {/* Book Selection */}
                     <div>
@@ -811,14 +811,14 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                   </motion.div>
                 )}
 
-                {/* Footer */}
-                <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/20">
+                {/* Footer - Mobile Optimized */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/20 space-y-3 sm:space-y-0">
                   <div className="flex space-x-3">
                     {step > 1 && (
                       <motion.button
                         type="button"
                         onClick={prevStep}
-                        className="px-4 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans"
+                        className="px-3 sm:px-4 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans text-sm sm:text-base"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -827,11 +827,11 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                     )}
                   </div>
 
-                  <div className="flex space-x-3">
+                  <div className="flex space-x-2 sm:space-x-3">
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-6 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans"
+                      className="px-4 sm:px-6 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans text-sm sm:text-base"
                     >
                       Cancel
                     </button>
@@ -840,17 +840,22 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <motion.button
                         type="button"
                         onClick={nextStep}
-                        className="px-6 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans"
+                        className="px-4 sm:px-6 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans text-sm sm:text-base"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        {step === 1 ? 'Add Book Context →' : 'Add Tags & Settings →'}
+                        <span className="hidden sm:inline">
+                          {step === 1 ? 'Add Book Context →' : 'Add Tags & Settings →'}
+                        </span>
+                        <span className="sm:hidden">
+                          {step === 1 ? 'Next →' : 'Tags →'}
+                        </span>
                       </motion.button>
                     ) : (
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        className="px-8 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50"
+                        className="px-6 sm:px-8 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50 text-sm sm:text-base"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -860,7 +865,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                             <span>Creating...</span>
                           </div>
                         ) : (
-                          '✨ Create Post'
+                          <span>✨ Create Post</span>
                         )}
                       </motion.button>
                     )}

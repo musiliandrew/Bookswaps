@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  PlusIcon, 
-  FunnelIcon, 
+import {
+  FunnelIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
   FireIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
 import EnhancedPostCard from './EnhancedPostCard';
-import PostCreationModal from './PostCreationModal';
+import MobileFilterDropdown from './MobileFilterDropdown';
 
 const EnhancedPostFeed = ({ 
   posts, 
@@ -24,7 +23,7 @@ const EnhancedPostFeed = ({
   filters,
   onFiltersChange
 }) => {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -42,10 +41,7 @@ const EnhancedPostFeed = ({
     { value: 'Query', label: 'Questions', count: posts?.filter(p => p.type === 'Query').length || 0 },
   ];
 
-  const handleCreatePost = async (postData) => {
-    const success = await onCreatePost(postData);
-    return success;
-  };
+
 
   const filteredPosts = posts?.filter(post => {
     const matchesSearch = !searchQuery || 
@@ -62,93 +58,121 @@ const EnhancedPostFeed = ({
     <div className="max-w-4xl mx-auto">
       {/* Enhanced Controls Section */}
       <motion.div
-        className="bookish-glass rounded-2xl border border-white/20 p-6 mb-8"
+        className="bookish-glass rounded-2xl border border-white/20 p-6 mb-8 mobile-discussion-container"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
-              <span className="text-2xl">💬</span>
-            </div>
-            <div>
-              <h2 className="text-xl font-lora font-semibold text-primary mb-1">Community Discussions</h2>
-              <p className="text-primary/70 text-sm">Join the conversation with fellow book lovers</p>
-            </div>
+        {/* Header Section - Mobile Optimized */}
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-lg sm:rounded-xl">
+            <span className="text-lg sm:text-2xl">💬</span>
           </div>
-
-          {/* Create Post Button */}
-          <motion.button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bookish-button-enhanced text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2"
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span>Create Post</span>
-          </motion.button>
+          <div>
+            <h2 className="text-lg sm:text-xl font-lora font-semibold text-primary mb-0 sm:mb-1">Community Discussions</h2>
+            <p className="text-primary/70 text-xs sm:text-sm hidden sm:block">Join the conversation with fellow book lovers</p>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-primary/50" />
+        {/* Search Bar - Mobile Optimized */}
+        <div className="relative mb-4 sm:mb-6">
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-primary/50 mobile-search-icon" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search discussions..."
-            className="bookish-input w-full pl-12 pr-4 py-4 rounded-xl text-primary placeholder-primary/50 font-open-sans"
+            className="bookish-input w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-primary placeholder-primary/50 font-open-sans mobile-form-input mobile-search-input"
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          {/* Filter Tabs */}
-          <div className="flex space-x-1 bg-white/50 rounded-xl p-1 backdrop-blur-sm border border-white/20">
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setActiveFilter(option.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium font-open-sans transition-all ${
-                  activeFilter === option.value
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-primary/70 hover:text-primary hover:bg-white/50'
-                }`}
-              >
-                {option.label}
-                {option.count > 0 && (
-                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                    activeFilter === option.value
-                      ? 'bg-white/20 text-white'
-                      : 'bg-primary/10 text-primary'
-                  }`}>
-                    {option.count}
-                  </span>
-                )}
-              </button>
-            ))}
+        {/* Mobile-First Filter Navigation */}
+        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+          {/* Mobile: Dropdown Filter */}
+          <div className="block sm:hidden">
+            <MobileFilterDropdown
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              filterOptions={filterOptions}
+            />
           </div>
 
-          {/* Sort Options */}
-          <div className="flex items-center space-x-3">
-            <FunnelIcon className="w-4 h-4 text-primary/50" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bookish-input border-0 rounded-lg px-3 py-2 text-sm font-open-sans text-primary bg-white/50 backdrop-blur-sm"
-            >
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+          {/* Desktop: Tab-style Filter */}
+          <div className="hidden sm:flex sm:items-center sm:justify-between">
+            <div className="flex justify-around gap-2 p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl">
+              {filterOptions.map((option, index) => (
+                <motion.button
+                  key={option.value}
+                  onClick={() => setActiveFilter(option.value)}
+                  className="relative flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-300 font-medium"
+                  style={{
+                    color: activeFilter === option.value ? 'white' : 'var(--primary)',
+                    background: activeFilter === option.value
+                      ? 'linear-gradient(135deg, var(--primary), var(--accent))'
+                      : 'transparent',
+                    boxShadow: activeFilter === option.value ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+                    opacity: activeFilter === option.value ? 1 : 0.7
+                  }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.4 }}
+                  title={option.label}
+                >
+                  <div className="relative z-10 flex items-center gap-3">
+                    <span className="text-sm font-semibold">{option.label}</span>
+                    {option.count > 0 && (
+                      <span className={`px-2 py-0.5 text-xs rounded-full transition-all duration-300 ${
+                        activeFilter === option.value
+                          ? 'bg-white/20 text-white'
+                          : 'bg-primary/10 text-primary'
+                      }`}>
+                        {option.count}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Active indicator sparkle */}
+                  {activeFilter === option.value && (
+                    <motion.div
+                      className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    >
+                      <SparklesIcon className="w-2 h-2 text-white m-0.5" />
+                    </motion.div>
+                  )}
+                </motion.button>
               ))}
-            </select>
+            </div>
+
+            {/* Sort Options - Desktop Only */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bookish-glass border border-white/20 rounded-xl px-4 py-3 text-sm font-medium text-primary bg-transparent backdrop-blur-xl appearance-none cursor-pointer min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent/50"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value} className="bg-white text-primary">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </motion.div>
           </div>
         </div>
       </motion.div>
 
-      {/* Posts Feed */}
-      <div className="space-y-6">
+      {/* Posts Feed - Mobile Optimized */}
+      <div className="space-y-4 sm:space-y-6 mobile-post-feed mobile-scroll-container">
         {isLoading && posts?.length === 0 ? (
           // Loading skeleton
           <div className="space-y-6">
@@ -239,25 +263,14 @@ const EnhancedPostFeed = ({
                 : 'Be the first to start a meaningful conversation with the community!'
               }
             </p>
-            <motion.button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bookish-button-enhanced text-white px-8 py-3 rounded-xl font-medium transition-all duration-300"
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Create First Post
-            </motion.button>
+            <p className="text-primary/50 text-sm font-open-sans">
+              Use the + button to create your first post!
+            </p>
           </motion.div>
         )}
       </div>
 
-      {/* Post Creation Modal */}
-      <PostCreationModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreatePost={handleCreatePost}
-        isLoading={isLoading}
-      />
+
     </div>
   );
 };

@@ -158,24 +158,24 @@ const NotificationList = ({ className = '' }) => {
 
   return (
     <div className="min-h-screen font-open-sans text-text">
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Header Section */}
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        {/* Enhanced Header Section - Mobile Optimized */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-6 sm:mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+          <h1 className="text-2xl sm:text-5xl md:text-6xl font-lora font-bold text-gradient mb-2 sm:mb-4 relative">
             🔔 Notifications
             <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+              className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-4 sm:w-8 h-4 sm:h-8 bg-accent rounded-full opacity-20"
               animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
               transition={{ duration: 3, repeat: Infinity }}
             />
           </h1>
           <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            className="font-open-sans text-primary/80 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed hidden sm:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
@@ -191,11 +191,11 @@ const NotificationList = ({ className = '' }) => {
           transition={{ delay: 0.4, duration: 0.6 }}
         >
           {/* Enhanced Header */}
-          <div className="p-6 border-b border-white/10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
-                  <BellIcon className="w-6 h-6 text-primary" />
+          <div className="p-4 sm:p-6 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-accent/20 to-primary/20 rounded-lg sm:rounded-xl">
+                  <BellIcon className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-lora font-bold text-primary">
@@ -218,31 +218,68 @@ const NotificationList = ({ className = '' }) => {
               </div>
 
               <div className="flex items-center gap-3">
-                {/* Enhanced Filter buttons */}
-                <div className="flex bg-white/10 rounded-xl p-1 backdrop-blur-sm border border-white/20">
+                {/* Enhanced Filter buttons - Library Style Navigation */}
+                <div className="flex justify-around gap-2 p-1 sm:p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl">
                   <motion.button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-2 text-sm rounded-lg transition-all duration-300 font-medium ${
-                      filter === 'all'
-                        ? 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-lg'
-                        : 'text-primary/70 hover:text-primary hover:bg-white/10'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    className="relative flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-300 font-medium min-w-[80px] sm:min-w-auto"
+                    style={{
+                      color: filter === 'all' ? 'white' : 'var(--primary)',
+                      background: filter === 'all'
+                        ? 'linear-gradient(135deg, var(--primary), #5A7A88)'
+                        : 'transparent',
+                      boxShadow: filter === 'all' ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+                      opacity: filter === 'all' ? 1 : 0.7
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    All
+                    <span className="text-sm font-semibold">All</span>
+                    {filter === 'all' && (
+                      <motion.div
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      >
+                        <span className="block w-2 h-2 bg-white rounded-full m-0.5"></span>
+                      </motion.div>
+                    )}
                   </motion.button>
                   <motion.button
                     onClick={() => setFilter('unread')}
-                    className={`px-4 py-2 text-sm rounded-lg transition-all duration-300 font-medium ${
-                      filter === 'unread'
-                        ? 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-lg'
-                        : 'text-primary/70 hover:text-primary hover:bg-white/10'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    className="relative flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-300 font-medium min-w-[80px] sm:min-w-auto"
+                    style={{
+                      color: filter === 'unread' ? 'white' : 'var(--primary)',
+                      background: filter === 'unread'
+                        ? 'linear-gradient(135deg, var(--primary), #5A7A88)'
+                        : 'transparent',
+                      boxShadow: filter === 'unread' ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+                      opacity: filter === 'unread' ? 1 : 0.7
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Unread
+                    <span className="text-sm font-semibold">Unread</span>
+                    {unreadCount > 0 && (
+                      <span className={`px-2 py-0.5 text-xs rounded-full transition-all duration-300 ${
+                        filter === 'unread'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-primary/10 text-primary'
+                      }`}>
+                        {unreadCount}
+                      </span>
+                    )}
+                    {filter === 'unread' && (
+                      <motion.div
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      >
+                        <span className="block w-2 h-2 bg-white rounded-full m-0.5"></span>
+                      </motion.div>
+                    )}
                   </motion.button>
                 </div>
 
@@ -403,7 +440,7 @@ const NotificationList = ({ className = '' }) => {
                   <motion.div
                     key={notification.notification_id}
                     ref={index === filteredNotifications.length - 1 ? lastNotificationRef : null}
-                    className={`group bookish-glass rounded-2xl border transition-all duration-300 hover:shadow-lg ${
+                    className={`group bookish-glass rounded-2xl border transition-all duration-300 hover:shadow-lg mobile-notification-card ${
                       notification.is_read
                         ? 'border-white/10 bg-white/5'
                         : 'border-accent/30 bg-white/10 shadow-md'
@@ -418,7 +455,7 @@ const NotificationList = ({ className = '' }) => {
                     whileHover={{ y: -2, scale: 1.01 }}
                     layout
                   >
-                    <div className="flex items-start gap-4 p-6">
+                    <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6">
                       {/* Enhanced Selection checkbox */}
                       <motion.div
                         className="flex-shrink-0 mt-1"
@@ -434,7 +471,7 @@ const NotificationList = ({ className = '' }) => {
                       </motion.div>
 
                       {/* Enhanced Notification icon */}
-                      <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl text-lg transition-all duration-300 ${
+                      <div className={`flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl text-base sm:text-lg transition-all duration-300 ${
                         notification.is_read
                           ? 'bg-white/10 text-primary/60'
                           : 'bg-gradient-to-br from-accent/20 to-primary/20 text-accent'

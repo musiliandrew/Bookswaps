@@ -153,13 +153,13 @@ const SocietiesPage = () => {
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary/50" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary/50 mobile-search-icon" />
             <input
               type="text"
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               placeholder="Search societies..."
-              className="w-full pl-10 pr-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+              className="w-full pl-10 pr-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary mobile-search-input"
             />
           </div>
 
