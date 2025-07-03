@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUsers } from './useUsers';
-import { useDebounce } from './useDebounce';
+import { debounce } from 'lodash';
 
 export const useProfileData = (userId) => {
   const {
@@ -149,16 +149,59 @@ export const useProfileData = (userId) => {
     }
   }, [searchUsers]);
 
-  // Create debounced versions using useDebounce
-  const debouncedGetFollowers = useDebounce(memoizedGetFollowers, 300);
-  const debouncedGetFollowing = useDebounce(memoizedGetFollowing, 300);
-  const debouncedGetMutualFollowers = useDebounce(memoizedGetMutualFollowers, 300);
-  const debouncedGetRecommendedUsers = useDebounce(memoizedGetRecommendedUsers, 300);
-  const debouncedSearchUsers = useDebounce(memoizedSearchUsers, 300);
+  // Create debounced versions using useCallback with setTimeout
+  const debouncedGetFollowers = useCallback(
+    debounce((id, page) => {
+      if (id && typeof id === 'string') {
+        memoizedGetFollowers(id, page);
+      }
+    }, 300),
+    [memoizedGetFollowers]
+  );
+
+  const debouncedGetFollowing = useCallback(
+    debounce((id, page) => {
+      if (id && typeof id === 'string') {
+        memoizedGetFollowing(id, page);
+      }
+    }, 300),
+    [memoizedGetFollowing]
+  );
+
+  const debouncedGetMutualFollowers = useCallback(
+    debounce((id, page) => {
+      if (id && typeof id === 'string') {
+        memoizedGetMutualFollowers(id, page);
+      }
+    }, 300),
+    [memoizedGetMutualFollowers]
+  );
+
+  const debouncedGetRecommendedUsers = useCallback(
+    debounce((page) => {
+      if (page && typeof page === 'number') {
+        memoizedGetRecommendedUsers(page);
+      }
+    }, 300),
+    [memoizedGetRecommendedUsers]
+  );
+
+  const debouncedSearchUsers = useCallback(
+    debounce((query, page) => {
+      if (query && typeof query === 'string') {
+        memoizedSearchUsers(query, page);
+      }
+    }, 300),
+    [memoizedSearchUsers]
+  );
 
   // Load initial data - only when userId changes
   useEffect(() => {
-    if (!userId || userId === lastUserIdRef.current) return;
+    // Validate userId is a string and not a Promise
+    if (!userId || typeof userId !== 'string' || userId === lastUserIdRef.current) {
+      console.warn('Invalid userId for profile data:', userId);
+      return;
+    }
 
     lastUserIdRef.current = userId;
     setDataLoaded(false);
@@ -203,6 +246,12 @@ export const useProfileData = (userId) => {
 
   // Handle page changes - memoized with stable dependencies
   const handlePageChange = useCallback((type, page, forceRefresh = false) => {
+    // Validate inputs
+    if (!userId || typeof userId !== 'string') {
+      console.warn('Invalid userId for page change:', userId);
+      return;
+    }
+
     const maxPage = pagination[type]?.totalPages || 1;
     if (page > 0 && page <= maxPage) {
       setPagination((prev) => ({

@@ -198,16 +198,16 @@ const MyBooksPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-lora font-bold text-gradient mb-3 sm:mb-4 relative">
             📚 My Library
             <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+              className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-6 sm:w-8 h-6 sm:h-8 bg-accent rounded-full opacity-20"
               animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
               transition={{ duration: 3, repeat: Infinity }}
             />
           </h1>
           <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            className="font-open-sans text-primary/80 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed px-4 sm:px-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
@@ -218,7 +218,7 @@ const MyBooksPage = () => {
 
         {/* Enhanced Navigation and Add Button */}
         <motion.div
-          className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
+          className="flex flex-col md:flex-row justify-between items-center mb-6 sm:mb-8 gap-3 sm:gap-4 px-4 sm:px-0"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -226,7 +226,7 @@ const MyBooksPage = () => {
           <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} isSmallScreen={isSmallScreen} />
 
           <motion.button
-            className="bookish-button-enhanced flex items-center px-6 py-3 rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            className="bookish-button-enhanced flex items-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
             onClick={() => setIsAddModalOpen(true)}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
@@ -235,9 +235,10 @@ const MyBooksPage = () => {
               animate={{ rotate: [0, 90, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
+              <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5 mr-1.5 sm:mr-2" />
             </motion.div>
-            Add New Book
+            <span className="hidden sm:inline">Add New Book</span>
+            <span className="sm:hidden">Add Book</span>
           </motion.button>
         </motion.div>
 
@@ -276,10 +277,10 @@ const MyBooksPage = () => {
               </motion.div>
             )}
 
-            {/* Library Tab - Enhanced Grid */}
+            {/* Library Tab - Mobile Full Width, Desktop Grid */}
             {activeTab === 'library' && !isLoading && !error && (
               <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
@@ -308,32 +309,33 @@ const MyBooksPage = () => {
             {/* Enhanced Empty State for Library */}
             {activeTab === 'library' && !isLoading && !error && (!userLibrary || userLibrary.length === 0) && (
               <motion.div
-                className="text-center py-20"
+                className="text-center py-12 sm:py-20 px-4"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6 }}
               >
-                <div className="text-8xl mb-6">📚</div>
-                <h3 className="text-2xl font-lora font-bold text-primary mb-4">Your Library is Empty</h3>
-                <p className="text-primary/70 mb-8 max-w-md mx-auto">
+                <div className="text-6xl sm:text-8xl mb-4 sm:mb-6">📚</div>
+                <h3 className="text-xl sm:text-2xl font-lora font-bold text-primary mb-3 sm:mb-4">Your Library is Empty</h3>
+                <p className="text-sm sm:text-base text-primary/70 mb-6 sm:mb-8 max-w-md mx-auto">
                   Start building your personal collection by adding your first book!
                 </p>
                 <motion.button
-                  className="bookish-button-enhanced px-8 py-3 rounded-xl text-white font-semibold"
+                  className="bookish-button-enhanced px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-white font-semibold text-sm sm:text-base"
                   onClick={() => setIsAddModalOpen(true)}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <PlusIcon className="w-5 h-5 mr-2 inline" />
-                  Add Your First Book
+                  <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5 mr-1.5 sm:mr-2 inline" />
+                  <span className="hidden sm:inline">Add Your First Book</span>
+                  <span className="sm:hidden">Add First Book</span>
                 </motion.button>
               </motion.div>
             )}
 
-            {/* Bookmarks Tab - Enhanced Grid */}
+            {/* Bookmarks Tab - Mobile Full Width, Desktop Grid */}
             {activeTab === 'bookmarks' && !isLoading && !error && (
               <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
@@ -373,10 +375,10 @@ const MyBooksPage = () => {
               </motion.div>
             )}
 
-            {/* Favorites Tab - Enhanced Grid */}
+            {/* Favorites Tab - Mobile Full Width, Desktop Grid */}
             {activeTab === 'favorites' && !isLoading && !error && (
               <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}

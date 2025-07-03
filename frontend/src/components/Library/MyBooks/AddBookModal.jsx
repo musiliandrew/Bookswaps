@@ -61,49 +61,49 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
   return (
     <>
       <Modal isOpen={isOpen} onClose={handleClose} title="📚 Add New Book to Your Library">
-        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+        <div className="space-y-4 sm:space-y-6 max-h-[70vh] overflow-y-auto pr-1 sm:pr-2">
 
           {/* Mode Selection */}
           {addMode === 'search' && (
             <motion.div
-              className="text-center space-y-6"
+              className="text-center space-y-4 sm:space-y-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-center">
-                  <div className="p-4 bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl">
-                    <SparklesIcon className="w-12 h-12 text-accent" />
+                  <div className="p-3 sm:p-4 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl sm:rounded-2xl">
+                    <SparklesIcon className="w-8 sm:w-12 h-8 sm:h-12 text-accent" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-lora font-bold text-primary mb-2">
+                  <h3 className="text-lg sm:text-2xl font-lora font-bold text-primary mb-2">
                     How would you like to add your book?
                   </h3>
-                  <p className="text-primary/70">
+                  <p className="text-sm sm:text-base text-primary/70 px-2 sm:px-0">
                     Search our database of millions of books or add manually
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:gap-4">
                 {/* Smart Search Option */}
                 <motion.button
                   onClick={() => setShowSmartSearch(true)}
-                  className="p-6 bg-gradient-to-r from-accent/20 to-primary/20 rounded-2xl border border-white/20 hover:border-accent/50 transition-all group"
+                  className="p-4 sm:p-6 bg-gradient-to-r from-accent/20 to-primary/20 rounded-xl sm:rounded-2xl border border-white/20 hover:border-accent/50 transition-all group"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-accent/20 rounded-xl group-hover:bg-accent group-hover:text-white transition-all">
-                      <MagnifyingGlassIcon className="w-8 h-8 text-accent group-hover:text-white" />
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="p-2 sm:p-3 bg-accent/20 rounded-lg sm:rounded-xl group-hover:bg-accent group-hover:text-white transition-all">
+                      <MagnifyingGlassIcon className="w-6 sm:w-8 h-6 sm:h-8 text-accent group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h4 className="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
-                        🔍 Smart Search (Recommended)
+                      <h4 className="text-base sm:text-lg font-semibold text-primary group-hover:text-accent transition-colors">
+                        🔍 Smart Search <span className="hidden sm:inline">(Recommended)</span>
                       </h4>
-                      <p className="text-sm text-primary/70">
+                      <p className="text-xs sm:text-sm text-primary/70">
                         Search millions of books from Open Library. Auto-fills title, author, cover, and more!
                       </p>
                     </div>
@@ -113,19 +113,19 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
                 {/* Manual Add Option */}
                 <motion.button
                   onClick={handleManualAdd}
-                  className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-primary/50 transition-all group"
+                  className="p-4 sm:p-6 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-primary/50 transition-all group"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-primary/20 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
-                      <PlusIcon className="w-8 h-8 text-primary group-hover:text-white" />
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="p-2 sm:p-3 bg-primary/20 rounded-lg sm:rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                      <PlusIcon className="w-6 sm:w-8 h-6 sm:h-8 text-primary group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h4 className="text-lg font-semibold text-primary group-hover:text-primary transition-colors">
+                      <h4 className="text-base sm:text-lg font-semibold text-primary group-hover:text-primary transition-colors">
                         ✏️ Add Manually
                       </h4>
-                      <p className="text-sm text-primary/70">
+                      <p className="text-xs sm:text-sm text-primary/70">
                         Enter book details yourself. Perfect for rare or self-published books.
                       </p>
                     </div>

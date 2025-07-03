@@ -301,6 +301,8 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   }, [clearAuthState]);
 
+
+
   const register = useCallback(
     async (userData) => {
       const formData = new FormData();

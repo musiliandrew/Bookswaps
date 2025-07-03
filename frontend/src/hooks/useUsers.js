@@ -239,8 +239,10 @@ export function useUsers() {
 
   const searchUsers = useCallback(async (filters = {}, page = 1) => {
     const params = new URLSearchParams({ page });
-    if (filters.query) params.append('q', filters.query.trim());
-    if (filters.genres?.length) params.append('genres', filters.genres.join(','));
+    if (filters?.query && typeof filters.query === 'string') {
+      params.append('q', filters.query.trim());
+    }
+    if (filters?.genres?.length) params.append('genres', filters.genres.join(','));
 
     const result = await handleApiCall(
       () => api.get(`${API_ENDPOINTS.SEARCH_USERS}?${params.toString()}`),

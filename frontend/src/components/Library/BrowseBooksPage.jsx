@@ -144,24 +144,24 @@ const BrowseBooksPage = () => {
 
   return (
     <div className="min-h-screen font-open-sans text-text" {...handlers}>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Enhanced Header Section */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-lora font-bold text-gradient mb-3 sm:mb-4 relative">
             🌍 Browse Books
             <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full opacity-20"
+              className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-6 sm:w-8 h-6 sm:h-8 bg-primary rounded-full opacity-20"
               animate={{ scale: [1, 1.2, 1], rotate: [0, -180, -360] }}
               transition={{ duration: 3, repeat: Infinity }}
             />
           </h1>
           <motion.p
-            className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+            className="font-open-sans text-primary/80 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed px-4 sm:px-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
@@ -172,6 +172,7 @@ const BrowseBooksPage = () => {
 
         {/* Enhanced Navigation */}
         <motion.div
+          className="px-2 sm:px-0"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -217,7 +218,7 @@ const BrowseBooksPage = () => {
                     </motion.div>
 
                     <motion.div
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                      className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.6 }}
@@ -327,7 +328,7 @@ const BrowseBooksPage = () => {
                     </motion.div>
 
                     <motion.div
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8"
+                      className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 sm:space-y-0"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.5, duration: 0.6 }}

@@ -609,10 +609,23 @@ class OpenLibrarySearchView(APIView):
 
     def _format_book_data(self, book_data, isbn=None):
         """Format book data from Books API response"""
-        # Extract cover image
+        # Extract cover image - try multiple sources
         cover_url = ''
+
+        # Primary: Direct cover from API
         if book_data.get('cover'):
             cover_url = book_data['cover'].get('large', '') or book_data['cover'].get('medium', '') or book_data['cover'].get('small', '')
+
+        # Fallback 1: Try ISBN-based cover from OpenLibrary
+        if not cover_url and isbn:
+            clean_isbn = ''.join(filter(str.isdigit, isbn))
+            if len(clean_isbn) in [10, 13]:
+                cover_url = f"https://covers.openlibrary.org/b/isbn/{clean_isbn}-L.jpg"
+
+        # Fallback 2: Try OpenLibrary key-based cover
+        if not cover_url and book_data.get('key'):
+            ol_key = book_data['key'].replace('/books/', '')
+            cover_url = f"https://covers.openlibrary.org/b/olid/{ol_key}-L.jpg"
 
         # Extract authors
         authors = []
@@ -640,10 +653,29 @@ class OpenLibrarySearchView(APIView):
 
     def _format_search_result(self, book):
         """Format book data from Search API response"""
-        # Extract cover image
+        # Extract cover image - try multiple sources and sizes
         cover_url = ''
+
+        # Primary: cover_i (cover ID)
         if book.get('cover_i'):
             cover_url = f"https://covers.openlibrary.org/b/id/{book['cover_i']}-L.jpg"
+
+        # Fallback 1: Try ISBN-based cover
+        elif book.get('isbn'):
+            # Get the first valid ISBN
+            for isbn_candidate in book['isbn']:
+                clean_isbn = ''.join(filter(str.isdigit, isbn_candidate))
+                if len(clean_isbn) in [10, 13]:
+                    cover_url = f"https://covers.openlibrary.org/b/isbn/{clean_isbn}-L.jpg"
+                    break
+
+        # Fallback 2: Try OCLC number
+        elif book.get('oclc'):
+            cover_url = f"https://covers.openlibrary.org/b/oclc/{book['oclc'][0]}-L.jpg"
+
+        # Fallback 3: Try LCCN
+        elif book.get('lccn'):
+            cover_url = f"https://covers.openlibrary.org/b/lccn/{book['lccn'][0]}-L.jpg"
 
         # Extract authors
         authors = book.get('author_name', [])

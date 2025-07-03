@@ -4,6 +4,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework.views import APIView
+from django.utils import timezone
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserProfileSerializer,
     UpdateProfileSerializer, DeleteAccountSerializer, FollowSerializer,

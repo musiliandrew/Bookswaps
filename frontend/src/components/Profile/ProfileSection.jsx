@@ -152,7 +152,7 @@ const ProfileSection = () => {
     handleSearch,
     handlePageChange,
     retryLoad,
-  } = useProfileData(profile?.user_id);
+  } = useProfileData(profile?.user_id && typeof profile.user_id === 'string' ? profile.user_id : null);
 
   // Custom hook for user interactions (follow/unfollow)
   const {
@@ -161,7 +161,7 @@ const ProfileSection = () => {
     handleUnfollow,
     handleRemoveFollower,
     viewUserProfile,
-  } = useUserInteractions(profile?.user_id, {
+  } = useUserInteractions(profile?.user_id && typeof profile.user_id === 'string' ? profile.user_id : null, {
     onDataChange: () => {
       // Refresh relevant data when interactions happen
       handlePageChange('followers', pagination.followers.page, true);

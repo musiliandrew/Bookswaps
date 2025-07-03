@@ -6,14 +6,14 @@ const GoogleAuthButton = ({ onError, text = "Continue with Google", className = 
     try {
       // For now, show a placeholder message
       toast.info('Google OAuth integration coming soon!');
-      
+
       // TODO: Implement actual Google OAuth flow
       // This will involve:
       // 1. Loading Google OAuth SDK
       // 2. Initiating OAuth flow
       // 3. Handling the callback
       // 4. Sending the token to our backend
-      
+
       console.log('Google OAuth clicked - integration pending');
     } catch (error) {
       console.error('Google OAuth error:', error);
@@ -29,8 +29,8 @@ const GoogleAuthButton = ({ onError, text = "Continue with Google", className = 
     <motion.button
       onClick={handleGoogleAuth}
       className={`
-        w-full flex items-center justify-center gap-3 px-6 py-3 
-        border border-gray-300 rounded-lg bg-white text-gray-700 
+        w-full flex items-center justify-center gap-3 px-6 py-3
+        border border-gray-300 rounded-lg bg-white text-gray-700
         hover:bg-gray-50 hover:border-gray-400 transition-all duration-200
         font-medium shadow-sm hover:shadow-md
         ${className}

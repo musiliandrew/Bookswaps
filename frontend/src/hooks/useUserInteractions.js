@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useUsers } from './useUsers';
-import { useDebounce } from './useDebounce';
+import { debounce } from 'lodash';
 import { toast } from 'react-toastify';
 
 export const useUserInteractions = (currentUserId, options = {}) => {
@@ -19,29 +19,40 @@ export const useUserInteractions = (currentUserId, options = {}) => {
   const { onDataChange } = options;
 
   // Debounced follow status fetching
-  const debouncedGetFollowStatus = useDebounce(async (userId, otherUserId) => {
-    try {
-      const status = await getFollowStatus(userId, otherUserId);
-      setUserFollowStatuses((prev) => ({
-        ...prev,
-        [otherUserId]: status,
-      }));
-    } catch (error) {
-      console.error('Error fetching follow status:', error);
-    }
-  }, 300);
+  const debouncedGetFollowStatus = useCallback(
+    debounce(async (userId, otherUserId) => {
+      try {
+        if (!userId || !otherUserId) {
+          console.warn('Invalid user IDs for follow status:', { userId, otherUserId });
+          return;
+        }
+        const status = await getFollowStatus(userId, otherUserId);
+        setUserFollowStatuses((prev) => ({
+          ...prev,
+          [otherUserId]: status,
+        }));
+      } catch (error) {
+        console.error('Error fetching follow status:', error);
+      }
+    }, 300),
+    [getFollowStatus]
+  );
 
   // Fetch follow statuses for all relevant users
   useEffect(() => {
-    if (currentUserId && followers.length > 0 || following.length > 0) {
+    if (!currentUserId) return;
+
+    if (followers.length > 0 || following.length > 0) {
       const allUsers = [...followers, ...following];
       const userIds = allUsers
-        .map((user) => user.user_id)
-        .filter((userId) => userId && !userFollowStatuses[userId]);
+        .map((user) => user?.user_id)
+        .filter((userId) => userId && typeof userId === 'string' && !userFollowStatuses[userId]);
 
       if (userIds.length > 0) {
         userIds.forEach((userId) => {
-          debouncedGetFollowStatus(currentUserId, userId);
+          if (userId !== currentUserId) { // Don't fetch follow status for self
+            debouncedGetFollowStatus(currentUserId, userId);
+          }
         });
       }
     }
@@ -176,7 +187,7 @@ export const useUserInteractions = (currentUserId, options = {}) => {
 
   // Refresh follow status for a specific user
   const refreshFollowStatus = useCallback(async (userId) => {
-    if (currentUserId && userId) {
+    if (currentUserId && userId && typeof userId === 'string' && userId !== currentUserId) {
       await debouncedGetFollowStatus(currentUserId, userId);
     }
   }, [currentUserId, debouncedGetFollowStatus]);

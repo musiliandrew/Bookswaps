@@ -121,9 +121,51 @@ class GoogleAuthSerializer(serializers.Serializer):
     access_token = serializers.CharField()
 
     def validate_access_token(self, access_token):
-        # This will be implemented to verify Google token
-        # and extract user information
-        return access_token
+        """Verify Google ID token and extract user information"""
+        from google.auth.transport import requests
+        from google.oauth2 import id_token
+        from django.conf import settings
+        import os
+
+        try:
+            # Get Google Client ID from settings
+            client_id = settings.SOCIALACCOUNT_PROVIDERS['google']['APP']['client_id']
+            if not client_id:
+                client_id = os.getenv('GOOGLE_OAUTH_CLIENT_ID')
+
+            if not client_id:
+                raise serializers.ValidationError('Google OAuth not configured')
+
+            # Verify the token with Google
+            idinfo = id_token.verify_oauth2_token(
+                access_token,
+                requests.Request(),
+                client_id
+            )
+
+            # Verify the issuer
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise serializers.ValidationError('Invalid token issuer')
+
+            # Extract user information
+            self.validated_data = {
+                'google_id': idinfo['sub'],
+                'email': idinfo['email'],
+                'first_name': idinfo.get('given_name', ''),
+                'last_name': idinfo.get('family_name', ''),
+                'name': idinfo.get('name', ''),
+                'picture': idinfo.get('picture', ''),
+                'email_verified': idinfo.get('email_verified', False)
+            }
+
+            return access_token
+
+        except ValueError as e:
+            logger.error(f"Google token validation failed: {str(e)}")
+            raise serializers.ValidationError('Invalid Google ID token')
+        except Exception as e:
+            logger.error(f"Google OAuth error: {str(e)}")
+            raise serializers.ValidationError('Google authentication failed')
 
 class TokenRefreshSerializer(serializers.Serializer):
     refresh = serializers.CharField()
