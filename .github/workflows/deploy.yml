@@ -65,7 +65,7 @@ jobs:
     - name: Run Python tests
       env:
         DJANGO_SETTINGS_MODULE: backend.settings_test
-        PYTHONPATH: .
+        PYTHONPATH: ${{ github.workspace }}
         DB_NAME: bookswaps_test
         DB_USER: postgres
         DB_PASSWORD: postgres
@@ -78,12 +78,9 @@ jobs:
         rm -f test_frontend_manual.py
         rm -f test_*.py
 
-        # Change to backend directory where manage.py is located
-        cd backend
-
-        # Run Django migrations and tests with test settings
+        # Run Django migrations and tests with test settings using root manage.py
         python manage.py migrate --verbosity=0
-        python manage.py test health users library chat discussions swaps --verbosity=1
+        python manage.py test backend.health backend.users backend.library backend.chat backend.discussions backend.swaps --verbosity=1
 
     - name: Run Frontend tests
       run: |
