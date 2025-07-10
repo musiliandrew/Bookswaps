@@ -148,10 +148,10 @@ const SimpleUserProfileCard = ({ profile, stats, onShareProfile, onEditProfile, 
                 </div>
                 <button
                   onClick={onUploadPhoto}
-                  className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+                  className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[var(--accent)] rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
                   title="Change profile picture"
                 >
-                  <CameraIcon className="w-2.5 h-2.5" />
+                  <CameraIcon className="w-2 h-2" />
                 </button>
               </div>
 

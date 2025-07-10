@@ -164,14 +164,109 @@ export function useDiscussions() {
     []
   );
 
-  const upvoteDiscussionPost = useCallback(
-    async (discussionId) => {
+  const agreeWithDiscussionNote = useCallback(
+    async (noteId) => {
       const result = await handleApiCall(
-        () => api.post(API_ENDPOINTS.UPVOTE_POST(discussionId)),
+        () => api.post(API_ENDPOINTS.AGREE_NOTE(noteId)),
         setIsLoading,
         setError,
-        'Post upvoted!',
-        'Upvote post'
+        'Agreed with note!',
+        'Agree with note'
+      );
+      if (result) {
+        setNotes((prev) =>
+          prev.map((n) => n.note_id === noteId ? {
+            ...n,
+            agree_count: result.upvotes_count || n.agree_count,
+            disagree_count: result.downvotes_count || n.disagree_count,
+            is_agreed: result.is_upvoted,
+            is_disagreed: result.is_downvoted
+          } : n)
+        );
+      }
+      return result;
+    },
+    []
+  );
+
+  const disagreeWithDiscussionNote = useCallback(
+    async (noteId) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.DISAGREE_NOTE(noteId)),
+        setIsLoading,
+        setError,
+        'Disagreed with note!',
+        'Disagree with note'
+      );
+      if (result) {
+        setNotes((prev) =>
+          prev.map((n) => n.note_id === noteId ? {
+            ...n,
+            agree_count: result.upvotes_count || n.agree_count,
+            disagree_count: result.downvotes_count || n.disagree_count,
+            is_agreed: result.is_upvoted,
+            is_disagreed: result.is_downvoted
+          } : n)
+        );
+      }
+      return result;
+    },
+    []
+  );
+
+  const reprintDiscussionNote = useCallback(
+    async (noteId, data = {}) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.REPRINT_NOTE(noteId), data),
+        setIsLoading,
+        setError,
+        'Note echoed!',
+        'Echo note'
+      );
+      if (result) {
+        setNotes((prev) =>
+          prev.map((n) => n.note_id === noteId ? {
+            ...n,
+            echo_count: (n.echo_count || 0) + 1,
+            is_echoed: true
+          } : n)
+        );
+      }
+      return result;
+    },
+    []
+  );
+
+  const bookmarkDiscussionNote = useCallback(
+    async (noteId) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.BOOKMARK_NOTE(noteId)),
+        setIsLoading,
+        setError,
+        'Note bookmarked!',
+        'Bookmark note'
+      );
+      if (result) {
+        setNotes((prev) =>
+          prev.map((n) => n.note_id === noteId ? {
+            ...n,
+            is_bookmarked: result.is_bookmarked
+          } : n)
+        );
+      }
+      return result;
+    },
+    []
+  );
+
+  const agreeWithDiscussionPost = useCallback(
+    async (discussionId) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.AGREE_POST(discussionId)),
+        setIsLoading,
+        setError,
+        'Agreed with post!',
+        'Agree with post'
       );
       if (result) {
         setPosts((prev) =>
@@ -198,14 +293,14 @@ export function useDiscussions() {
     [post]
   );
 
-  const downvoteDiscussionPost = useCallback(
+  const disagreeWithDiscussionPost = useCallback(
     async (discussionId) => {
       const result = await handleApiCall(
-        () => api.post(API_ENDPOINTS.DOWNVOTE_POST(discussionId)),
+        () => api.post(API_ENDPOINTS.DISAGREE_POST(discussionId)),
         setIsLoading,
         setError,
         null,
-        'Downvote post'
+        'Disagree with post'
       );
       if (result) {
         setPosts((prev) =>
@@ -231,6 +326,9 @@ export function useDiscussions() {
     },
     [post]
   );
+
+
+
 
   const reprintDiscussionPost = useCallback(
     async (discussionId, data) => {
@@ -243,6 +341,42 @@ export function useDiscussions() {
       );
     },
     []
+  );
+
+  const bookmarkDiscussionPost = useCallback(
+    async (discussionId) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.BOOKMARK_POST(discussionId)),
+        setIsLoading,
+        setError,
+        null, // Don't show default success message
+        'Bookmark post'
+      );
+
+      if (result) {
+        // Update posts state with bookmark status
+        setPosts((prev) =>
+          prev.map((p) => (p.discussion_id === discussionId ? {
+            ...p,
+            is_bookmarked: result.is_bookmarked
+          } : p))
+        );
+
+        // Update single post state if viewing post detail
+        if (post?.discussion_id === discussionId) {
+          setPost((prev) => ({
+            ...prev,
+            is_bookmarked: result.is_bookmarked
+          }));
+        }
+
+        // Show appropriate message
+        toast.success(result.is_bookmarked ? 'Post bookmarked! 📖' : 'Bookmark removed');
+      }
+
+      return result;
+    },
+    [post]
   );
 
   const listTopPosts = useCallback(
@@ -288,18 +422,7 @@ export function useDiscussions() {
         )
       );
     }
-    if (discussionData.upvotes?.length) {
-      setPosts((prev) =>
-        prev.map((p) =>
-          discussionData.upvotes.find((u) => u?.discussion_id === p.discussion_id)
-            ? { ...p, upvotes: (p.upvotes || 0) + 1 }
-            : p
-        )
-      );
-      if (post && discussionData.upvotes.find((u) => u?.discussion_id === post.discussion_id)) {
-        setPost((prev) => ({ ...prev, upvotes: (prev.upvotes || 0) + 1 }));
-      }
-    }
+
     if (discussionData.reprints?.length) {
       setPosts((prev) =>
         prev.map((p) =>
@@ -351,9 +474,14 @@ export function useDiscussions() {
     addDiscussionNote,
     listNotes,
     likeDiscussionNote,
-    upvoteDiscussionPost,
-    downvoteDiscussionPost,
+    agreeWithDiscussionNote,
+    disagreeWithDiscussionNote,
+    reprintDiscussionNote,
+    bookmarkDiscussionNote,
+    agreeWithDiscussionPost,
+    disagreeWithDiscussionPost,
     reprintDiscussionPost,
+    bookmarkDiscussionPost,
     listTopPosts,
     posts,
     post,
@@ -365,7 +493,6 @@ export function useDiscussions() {
     isDiscussionWsConnected,
     addNote,
     likeNote,
-    upvotePost,
     reprintPost,
   };
 }

@@ -205,8 +205,8 @@ const BrowseBooksPage = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3, duration: 0.6 }}
                     >
-                      <h2 className="text-3xl font-lora font-bold text-primary flex items-center">
-                        <StarIcon className="w-8 h-8 mr-3 text-accent" />
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-lora font-bold text-primary flex items-center">
+                        <StarIcon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mr-2 sm:mr-3 text-accent" />
                         Recommended for You
                       </h2>
                       <motion.div

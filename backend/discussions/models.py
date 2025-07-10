@@ -48,20 +48,109 @@ class Like(models.Model):
         unique_together = (('note', 'user'),)
         indexes = [models.Index(fields=['note', 'user'])]
 
-class Upvote(models.Model):
-    upvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='upvotes')
+class NoteUpvote(models.Model):
+    """Model for tracking user agreements (upvotes) on notes"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='upvotes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'note_upvotes'
+        db_table_comment = 'Stores user agreements on notes'
+        unique_together = ('user', 'note')
+        indexes = [
+            models.Index(fields=['note', 'user'], name='note_upvotes_note_user_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} agreed with note {self.note.note_id}"
+
+class NoteDownvote(models.Model):
+    """Model for tracking user disagreements (downvotes) on notes"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='downvotes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'note_downvotes'
+        db_table_comment = 'Stores user disagreements on notes'
+        unique_together = ('user', 'note')
+        indexes = [
+            models.Index(fields=['note', 'user'], name='note_downvotes_note_user_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} disagreed with note {self.note.note_id}"
+
+class NoteReprint(models.Model):
+    reprint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='reprints')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    comment = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'note_reprints'
+        db_table_comment = 'Stores note echoes (reposts)'
+        unique_together = (('note', 'user'),)
+        indexes = [models.Index(fields=['note', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} echoed note {self.note.note_id}"
+
+class NoteBookmark(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'note_bookmarks'
+        db_table_comment = 'Stores user bookmarks on notes'
+        unique_together = ('user', 'note')
+        indexes = [
+            models.Index(fields=['note', 'user'], name='note_bookmarks_note_user_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked note {self.note.note_id}"
+
+
+class Upvote(models.Model):
+    """Model for tracking user agreements (upvotes) on discussions"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='upvotes')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'upvotes'
-        db_table_comment = 'Stores discussion upvotes'
-        unique_together = (('discussion', 'user'),)  # Prevent duplicate upvotes
-        indexes = [models.Index(fields=['discussion', 'user'])]
+        db_table_comment = 'Stores user agreements on discussions'
+        unique_together = ('user', 'discussion')
+        indexes = [
+            models.Index(fields=['discussion', 'user'], name='upvotes_discuss_user_idx'),
+        ]
 
     def __str__(self):
-        return f"{self.user.username} upvoted {self.discussion.title}"
+        return f"{self.user.username} agreed with {self.discussion.title}"
+
+
+class Downvote(models.Model):
+    """Model for tracking user disagreements (downvotes) on discussions"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='downvotes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'downvotes'
+        db_table_comment = 'Stores user disagreements on discussions'
+        unique_together = ('user', 'discussion')
+        indexes = [
+            models.Index(fields=['discussion', 'user'], name='downvotes_discuss_user_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} disagreed with {self.discussion.title}"
+
+
 class Reprint(models.Model):
     reprint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='reprints')
@@ -71,9 +160,30 @@ class Reprint(models.Model):
 
     class Meta:
         db_table = 'reprints'
-        db_table_comment = 'Stores discussion reprints'
+        db_table_comment = 'Stores discussion echoes (reposts)'
         unique_together = (('discussion', 'user'),)
         indexes = [models.Index(fields=['discussion', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} echoed {self.discussion.title}"
+
+# Alias for backward compatibility and semantic clarity
+Echo = Reprint
+
+class DiscussionBookmark(models.Model):
+    bookmark_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='bookmarks')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'discussion_bookmarks'
+        db_table_comment = 'Stores discussion bookmarks'
+        unique_together = (('discussion', 'user'),)
+        indexes = [models.Index(fields=['discussion', 'user'])]
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.discussion.title}"
 
 class Society(models.Model):
     STATUS_CHOICES = (
@@ -195,17 +305,3 @@ class SocietyMessage(models.Model):
     def __str__(self):
         return f"{self.user.username} in {self.society.name}: {self.content[:50]}..."
 
-class Downvote(models.Model):
-    downvote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='downvotes')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'downvotes'
-        db_table_comment = 'Stores discussion downvotes'
-        unique_together = (('discussion', 'user'),)
-        indexes = [models.Index(fields=['discussion', 'user'])]
-
-    def __str__(self):
-        return f"{self.user.username} downvoted {self.discussion.title}"

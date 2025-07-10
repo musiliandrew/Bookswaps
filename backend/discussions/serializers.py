@@ -11,12 +11,11 @@ from markdown import markdown
 class DiscussionResponseSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
-    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
+
 
     class Meta:
         model = Discussion
-        fields = ['discussion_id', 'type', 'title', 'user', 'book', 'upvotes', 'downvotes']
+        fields = ['discussion_id', 'type', 'title', 'user', 'book']
 
 class CreateDiscussionSerializer(serializers.ModelSerializer):
     book_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
@@ -70,20 +69,21 @@ class CreateDiscussionSerializer(serializers.ModelSerializer):
 class DiscussionFeedSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')  # Changed back to upvotes for consistency
-    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')  # Added downvotes
+    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
+    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     content = serializers.SerializerMethodField()
     is_upvoted = serializers.SerializerMethodField()
     is_downvoted = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book',
             'content', 'upvotes', 'downvotes', 'note_count', 'reprint_count',
-            'is_upvoted', 'is_downvoted'
+            'is_upvoted', 'is_downvoted', 'is_bookmarked'
         ]
 
     def get_content(self, obj):
@@ -101,38 +101,31 @@ class DiscussionFeedSerializer(serializers.ModelSerializer):
             return obj.downvotes.filter(user=request.user).exists()
         return False
 
+    def get_is_bookmarked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from .models import DiscussionBookmark
+            return DiscussionBookmark.objects.filter(discussion=obj, user=request.user).exists()
+        return False
+
 
 class DiscussionDetailSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     book = BookMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')  # Changed back to upvotes for consistency
-    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')  # Added downvotes
     note_count = serializers.IntegerField(read_only=True)
     reprint_count = serializers.IntegerField(read_only=True)
     tags = serializers.ListField(child=serializers.CharField(), read_only=True)
     media_urls = serializers.ListField(child=serializers.URLField(), read_only=True)
-    is_upvoted = serializers.SerializerMethodField()
-    is_downvoted = serializers.SerializerMethodField()
 
     class Meta:
         model = Discussion
         fields = [
             'discussion_id', 'type', 'title', 'user', 'book', 'content',
-            'tags', 'media_urls', 'spoiler_flag', 'upvotes', 'downvotes', 'note_count',
-            'reprint_count', 'is_upvoted', 'is_downvoted', 'created_at', 'last_edited_at'
+            'tags', 'media_urls', 'spoiler_flag', 'note_count',
+            'reprint_count', 'created_at', 'last_edited_at'
         ]
 
-    def get_is_upvoted(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.upvotes.filter(user=request.user).exists()
-        return False
 
-    def get_is_downvoted(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.downvotes.filter(user=request.user).exists()
-        return False
 
 class NoteSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
@@ -192,28 +185,7 @@ class LikeResponseSerializer(serializers.ModelSerializer):
         fields = ['note_id', 'user', 'content', 'likes', 'discussion_title']
 
 
-class UpvoteResponseSerializer(serializers.ModelSerializer):
-    user = UserMiniSerializer(read_only=True)
-    upvotes = serializers.IntegerField(read_only=True, source='upvotes_count')
-    downvotes = serializers.IntegerField(read_only=True, source='downvotes_count')
-    is_upvoted = serializers.SerializerMethodField()
-    is_downvoted = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Discussion
-        fields = ['discussion_id', 'user', 'title', 'upvotes', 'downvotes', 'is_upvoted', 'is_downvoted']
-
-    def get_is_upvoted(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.upvotes.filter(user=request.user).exists()
-        return False
-
-    def get_is_downvoted(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.downvotes.filter(user=request.user).exists()
-        return False
 
 
 class ReprintSerializer(serializers.ModelSerializer):
@@ -223,6 +195,20 @@ class ReprintSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reprint
         fields = ['reprint_id', 'discussion', 'user', 'comment', 'created_at']
+
+class EchoFeedItemSerializer(serializers.ModelSerializer):
+    """Serializer for echoed posts in the feed"""
+    user = UserMiniSerializer(read_only=True)
+    original_post = DiscussionFeedSerializer(source='discussion', read_only=True)
+    item_type = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        model = Reprint
+        fields = ['reprint_id', 'user', 'original_post', 'comment', 'created_at', 'item_type']
+
+    def get_item_type(self, obj):
+        return 'echo'
 
 
 class ReprintCreateSerializer(serializers.Serializer):

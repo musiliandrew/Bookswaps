@@ -295,6 +295,29 @@ export function useUsers() {
     }
   }, []);
 
+  const getUserByUsername = useCallback(async (username) => {
+    const cacheKey = `user_by_username_${username}`;
+
+    try {
+      const result = await cachedApiCall(
+        () => handleApiCall(
+          () => api.get(API_ENDPOINTS.GET_USER_PROFILE(username)),
+          setIsLoading,
+          setError,
+          null,
+          'Fetch user by username'
+        ),
+        cacheKey,
+        60000 // Cache for 1 minute
+      );
+
+      return result;
+    } catch (err) {
+      console.error('User by username fetch error:', err);
+      return null;
+    }
+  }, []);
+
   // Create stable debounced functions using useRef to avoid dependency issues
   const debouncedGetFollowersRef = useRef(null);
   const debouncedGetFollowingRef = useRef(null);
@@ -372,6 +395,7 @@ export function useUsers() {
 
   return {
     getUserProfile,
+    getUserByUsername,
     followUser,
     unfollowUser,
     removeFollower,

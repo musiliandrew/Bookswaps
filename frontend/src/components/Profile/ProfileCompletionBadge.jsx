@@ -38,11 +38,11 @@ const ProfileCompletionBadge = ({
           completed: !!profile.about_you && profile.about_you.length > 20, 
           weight: 15 
         },
-        favorite_genres: { 
-          completed: !!profile.favorite_genres && 
-                    (Array.isArray(profile.favorite_genres) ? profile.favorite_genres.length > 0 : 
-                     profile.favorite_genres.length > 0), 
-          weight: 20 
+        genres: {
+          completed: !!profile.genres &&
+                    (Array.isArray(profile.genres) ? profile.genres.length > 0 :
+                     profile.genres.length > 0),
+          weight: 20
         }
       };
 

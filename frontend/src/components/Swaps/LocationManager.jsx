@@ -64,23 +64,23 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
       return;
     }
 
+    if (!newLocation.latitude || !newLocation.longitude) {
+      toast.error('Please provide latitude and longitude coordinates');
+      return;
+    }
+
     try {
       // Format data according to LocationSerializer
       const locationData = {
         name: newLocation.name,
         type: newLocation.type || 'other',
         city: newLocation.city,
-        coords: null, // Will be set by backend if lat/lng provided
-        rating: newLocation.rating || null
-      };
-
-      // Add coordinates if provided
-      if (newLocation.latitude && newLocation.longitude) {
-        locationData.coords = {
+        coords: {
           latitude: parseFloat(newLocation.latitude),
           longitude: parseFloat(newLocation.longitude)
-        };
-      }
+        },
+        rating: newLocation.rating || null
+      };
 
       const result = await addLocation(locationData);
       if (result) {
@@ -245,32 +245,49 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-primary mb-2">
-                      Latitude (optional)
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={newLocation.latitude}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, latitude: e.target.value }))}
-                      placeholder="0.000000"
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-primary mb-2">
-                      Longitude (optional)
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={newLocation.longitude}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, longitude: e.target.value }))}
-                      placeholder="0.000000"
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
-                    />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-primary">
+                        Coordinates (required)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (userLocation) {
+                            setNewLocation(prev => ({
+                              ...prev,
+                              latitude: userLocation.latitude.toString(),
+                              longitude: userLocation.longitude.toString()
+                            }));
+                          } else {
+                            getCurrentLocation();
+                          }
+                        }}
+                        className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-primary transition-colors"
+                      >
+                        Use Current Location
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step="any"
+                        value={newLocation.latitude}
+                        onChange={(e) => setNewLocation(prev => ({ ...prev, latitude: e.target.value }))}
+                        placeholder="Latitude"
+                        className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                        required
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        value={newLocation.longitude}
+                        onChange={(e) => setNewLocation(prev => ({ ...prev, longitude: e.target.value }))}
+                        placeholder="Longitude"
+                        className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div>

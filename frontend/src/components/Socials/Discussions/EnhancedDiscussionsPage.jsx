@@ -5,14 +5,16 @@ import { toast } from 'react-toastify';
 import EnhancedPostFeed from './EnhancedPostFeed';
 import QuickCreateButton from './QuickCreateButton';
 import PostCreationModal from './PostCreationModal';
+import EchoModal from './EchoModal';
 
 const EnhancedDiscussionsPage = () => {
   const {
     createDiscussion,
     listPosts,
-    upvoteDiscussionPost,
-    downvoteDiscussionPost,
+    agreeWithDiscussionPost,
+    disagreeWithDiscussionPost,
     reprintDiscussionPost,
+    bookmarkDiscussionPost,
     posts,
     isLoading,
     error,
@@ -20,6 +22,8 @@ const EnhancedDiscussionsPage = () => {
   } = useDiscussions();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEchoModalOpen, setIsEchoModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
   const [selectedPostType, setSelectedPostType] = useState('Article');
   const [filters, setFilters] = useState({
     type: '',
@@ -49,40 +53,52 @@ const EnhancedDiscussionsPage = () => {
     }
   };
 
-  const handleUpvote = async (postId) => {
-    try {
-      await upvoteDiscussionPost(postId);
-      // Optionally refresh posts or update local state
-    } catch (error) {
-      console.error('Error upvoting post:', error);
-      toast.error('Failed to upvote post');
-    }
-  };
 
-  const handleDownvote = async (postId) => {
-    try {
-      await downvoteDiscussionPost(postId);
-      // Optionally refresh posts or update local state
-    } catch (error) {
-      console.error('Error downvoting post:', error);
-      toast.error('Failed to downvote post');
-    }
-  };
 
-  const handleReprint = async (postId, data = { comment: '' }) => {
+  const handleEcho = async (postId, data = { comment: '' }) => {
     try {
       await reprintDiscussionPost(postId, data);
-      toast.success('Post reprinted successfully!');
+      toast.success('Post echoed successfully! 📢');
+      setIsEchoModalOpen(false);
+      setSelectedPost(null);
+      // Refresh posts to show the echo
+      await listPosts(filters, 1);
     } catch (error) {
-      console.error('Error reprinting post:', error);
-      toast.error('Failed to reprint post');
+      console.error('Error echoing post:', error);
+      toast.error('Failed to echo post');
+    }
+  };
+
+  const handleOpenEchoModal = (post) => {
+    setSelectedPost(post);
+    setIsEchoModalOpen(true);
+  };
+
+  const handleAgree = async (postId) => {
+    try {
+      await agreeWithDiscussionPost(postId);
+    } catch (error) {
+      console.error('Error agreeing with post:', error);
+      toast.error('Failed to agree with post');
+    }
+  };
+
+  const handleDisagree = async (postId) => {
+    try {
+      await disagreeWithDiscussionPost(postId);
+    } catch (error) {
+      console.error('Error disagreeing with post:', error);
+      toast.error('Failed to disagree with post');
     }
   };
 
   const handleBookmark = async (postId) => {
-    // Implement bookmark logic
-    console.log('Bookmarking post:', postId);
-    toast.info('Bookmark feature coming soon!');
+    try {
+      await bookmarkDiscussionPost(postId);
+    } catch (error) {
+      console.error('Error bookmarking post:', error);
+      toast.error('Failed to bookmark post');
+    }
   };
 
   const handleLoadMore = async () => {
@@ -146,9 +162,9 @@ const EnhancedDiscussionsPage = () => {
               posts={posts}
               isLoading={isLoading}
               onCreatePost={handleCreatePost}
-              onUpvote={handleUpvote}
-              onDownvote={handleDownvote}
-              onReprint={handleReprint}
+              onAgree={handleAgree}
+              onDisagree={handleDisagree}
+              onReprint={handleOpenEchoModal}
               onBookmark={handleBookmark}
               onLoadMore={handleLoadMore}
               hasMore={pagination?.posts?.next}
@@ -171,6 +187,18 @@ const EnhancedDiscussionsPage = () => {
         onCreatePost={handleCreatePost}
         isLoading={isLoading}
         initialPostType={selectedPostType}
+      />
+
+      {/* Echo Modal */}
+      <EchoModal
+        isOpen={isEchoModalOpen}
+        onClose={() => {
+          setIsEchoModalOpen(false);
+          setSelectedPost(null);
+        }}
+        onEcho={handleEcho}
+        post={selectedPost}
+        isLoading={isLoading}
       />
     </div>
   );

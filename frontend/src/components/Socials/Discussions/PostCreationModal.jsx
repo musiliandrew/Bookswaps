@@ -30,12 +30,8 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
       quote: ''
     },
     tags: [],
-    theme_tags: [],
-    character_tags: [],
-    style_tags: [],
     media_urls: '',
-    spoiler_flag: false,
-    spoiler_level: 'minor' // minor, major, ending
+    spoiler_flag: false
   });
 
   const [charCount, setCharCount] = useState(0);
@@ -114,12 +110,8 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
           quote: ''
         },
         tags: [],
-        theme_tags: [],
-        character_tags: [],
-        style_tags: [],
         media_urls: '',
-        spoiler_flag: false,
-        spoiler_level: 'minor'
+        spoiler_flag: false
       });
       setStep(1);
       setSelectedBook(null);
@@ -193,13 +185,8 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
       ...postData,
       // For Articles, book_id must be null. For Synopsis/Query, use selected book_id
       book_id: postData.type === 'Article' ? null : postData.book_id,
-      tags: [
-        ...postData.tags,
-        ...postData.theme_tags,
-        ...postData.character_tags,
-        ...postData.style_tags
-      ],
-      media_urls: postData.media_urls.split(',').map(url => url.trim()).filter(url => url),
+      tags: postData.tags.slice(0, 5), // Limit to 5 tags
+      media_urls: postData.media_urls ? postData.media_urls.split(',').map(url => url.trim()).filter(url => url) : [],
     };
 
     const success = await onCreatePost(formattedData);
@@ -248,33 +235,33 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bookish-glass rounded-2xl bookish-shadow w-full max-w-4xl sm:max-h-[90vh] max-h-[95vh] overflow-hidden border border-white/20 mobile-modal">
+            <div className="bg-[var(--secondary)] rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-3xl max-h-[92vh] sm:max-h-[90vh] overflow-hidden border border-[var(--primary)]/20 mx-2 sm:mx-4">
               {/* Header - Mobile Optimized */}
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/20">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl">
-                    <PencilSquareIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-[var(--primary)]/20 flex-shrink-0">
+                <div className="flex items-center space-x-2">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20 rounded-lg">
+                    <PencilSquareIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-2xl font-lora font-bold text-primary">Create New Post</h2>
-                    <p className="text-xs sm:text-sm text-primary/70 font-open-sans hidden sm:block">
-                      Step {step} of 3 - {step === 1 ? 'Content & Type' : step === 2 ? 'Book Context' : 'Tags & Settings'}
+                    <h2 className="text-base sm:text-lg font-lora font-bold text-[var(--primary)]">Create Post</h2>
+                    <p className="text-xs text-[var(--primary)]/70 font-open-sans">
+                      Step {step} of 3
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                  className="p-2 hover:bg-[var(--primary)]/10 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
-                  <XMarkIcon className="w-5 h-5 text-primary/70" />
+                  <XMarkIcon className="w-5 h-5 text-[var(--primary)]/70" />
                 </button>
               </div>
 
               {/* Progress Bar */}
-              <div className="h-2 bg-white/20">
+              <div className="h-1.5 sm:h-2 bg-[var(--primary)]/20">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-primary to-accent"
+                  className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]"
                   initial={{ width: '33%' }}
                   animate={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }}
                   transition={{ duration: 0.3 }}
@@ -282,42 +269,53 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
               </div>
 
               {/* Content - Mobile Optimized */}
-              <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-140px)] mobile-modal-content mobile-reduced-motion">
+              <div className="flex-1 overflow-y-auto">
+                <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
                 {step === 1 && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="space-y-4 sm:space-y-6"
+                    className="space-y-2.5 sm:space-y-3"
                   >
-                    {/* Post Type Selection */}
+                    {/* Post Type Selection - Compact Dropdown */}
                     <div>
-                      <label className="block text-sm font-medium text-primary mb-3 font-open-sans">
-                        Choose Post Type
+                      <label className="block text-xs sm:text-sm font-medium text-[var(--primary)] mb-1.5 font-open-sans">
+                        Post Type
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {postTypes.map((type) => {
-                          const IconComponent = type.icon;
-                          return (
-                            <motion.button
-                              key={type.value}
-                              type="button"
-                              onClick={() => setPostData({ ...postData, type: type.value })}
-                              className={`p-3 sm:p-4 rounded-xl border-2 transition-all font-open-sans ${
-                                postData.type === type.value
-                                  ? 'border-primary bg-primary/10 bookish-shadow'
-                                  : 'border-white/30 hover:border-primary/50 hover:bg-white/20'
-                              }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className={`w-10 h-10 mx-auto mb-3 p-2 rounded-lg bg-gradient-to-br ${type.gradient}`}>
-                                <IconComponent className="w-full h-full text-white" />
-                              </div>
-                              <div className="text-sm font-medium text-primary">{type.label}</div>
-                              <div className="text-xs text-primary/70 mt-1">{type.description}</div>
-                            </motion.button>
-                          );
-                        })}
+                      <div className="relative">
+                        <select
+                          value={postData.type}
+                          onChange={(e) => setPostData({ ...postData, type: e.target.value })}
+                          className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 appearance-none cursor-pointer"
+                        >
+                          {postTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label} - {type.description}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-4 h-4 text-[var(--primary)]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      {/* Selected Type Info */}
+                      <div className="mt-2 p-2 bg-[var(--primary)]/5 rounded-lg border border-[var(--primary)]/10">
+                        <div className="flex items-center space-x-2">
+                          {(() => {
+                            const selectedType = postTypes.find(t => t.value === postData.type);
+                            const IconComponent = selectedType?.icon;
+                            return (
+                              <>
+                                {IconComponent && <IconComponent className="w-4 h-4 text-[var(--primary)]" />}
+                                <span className="text-xs text-[var(--primary)]/70 font-open-sans">
+                                  {selectedType?.description}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
 
@@ -347,36 +345,36 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
 
                     {/* Title */}
                     <div>
-                      <label className="block text-sm font-medium text-primary mb-2 font-open-sans">
+                      <label className="block text-xs sm:text-sm font-medium text-[var(--primary)] mb-1.5 font-open-sans">
                         Title *
                       </label>
                       <input
                         type="text"
                         value={postData.title}
                         onChange={(e) => setPostData({ ...postData, title: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans text-sm sm:text-base mobile-form-input"
+                        className="w-full px-3 py-2.5 bookish-input rounded-xl font-open-sans text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="What's your post about?"
                         maxLength={200}
                       />
-                      <div className="text-xs text-primary/60 mt-1 font-open-sans">
+                      <div className="text-xs text-[var(--primary)]/60 mt-1 font-open-sans">
                         {postData.title.length}/200 characters
                       </div>
                     </div>
 
                     {/* Content */}
                     <div>
-                      <label className="block text-sm font-medium text-primary mb-2 font-open-sans">
+                      <label className="block text-xs sm:text-sm font-medium text-[var(--primary)] mb-1.5 font-open-sans">
                         Content *
                       </label>
                       <textarea
                         value={postData.content}
                         onChange={(e) => setPostData({ ...postData, content: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans resize-none text-sm sm:text-base mobile-form-textarea"
+                        className="w-full px-3 py-2.5 bookish-input rounded-xl font-open-sans resize-none text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="Share your thoughts, insights, or questions..."
-                        rows={6}
+                        rows={3}
                         maxLength={maxChars}
                       />
-                      <div className={`text-xs mt-1 font-open-sans ${charCount > maxChars * 0.9 ? 'text-error' : 'text-primary/60'}`}>
+                      <div className={`text-xs mt-1 font-open-sans ${charCount > maxChars * 0.9 ? 'text-error' : 'text-[var(--primary)]/60'}`}>
                         {charCount}/{maxChars} characters
                       </div>
                     </div>
@@ -573,131 +571,47 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
+                    className="space-y-3 sm:space-y-4"
                   >
-                    {/* Enhanced Tagging System */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-primary font-lora">
-                        🏷️ Tag Your Discussion
+                    {/* Simplified Tagging System */}
+                    <div className="space-y-3">
+                      <h4 className="text-base sm:text-lg font-medium text-[var(--primary)] font-lora">
+                        🏷️ Tags & Settings
                       </h4>
 
-                      {/* Theme Tags */}
+                      {/* Simplified Tags Input */}
                       <div>
-                        <label className="block text-sm font-medium text-primary mb-2 font-open-sans">
-                          🧵 Themes
+                        <label className="block text-xs sm:text-sm font-medium text-[var(--primary)] mb-1.5 font-open-sans">
+                          Tags (optional)
                         </label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {tagCategories.themes.map((tag) => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => addTag('theme', tag)}
-                              className={`px-3 py-1 text-xs rounded-full transition-all font-open-sans ${
-                                postData.theme_tags.includes(tag)
-                                  ? 'bg-primary text-white'
-                                  : 'bg-white/50 text-primary hover:bg-primary/20'
-                              }`}
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                        {postData.theme_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {postData.theme_tags.map((tag) => (
+                        <input
+                          type="text"
+                          value={postData.tags.join(', ')}
+                          onChange={(e) => {
+                            const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                            setPostData({ ...postData, tags });
+                          }}
+                          placeholder="e.g., romance, mystery, character-development"
+                          className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        />
+                        <p className="text-xs text-[var(--primary)]/60 mt-1 font-open-sans">
+                          Separate tags with commas. Max 5 tags.
+                        </p>
+                        {postData.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {postData.tags.slice(0, 5).map((tag, index) => (
                               <span
-                                key={tag}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-primary/20 text-primary rounded-full"
+                                key={index}
+                                className="inline-flex items-center px-2 py-1 text-xs bg-[var(--primary)]/10 text-[var(--primary)] rounded-full"
                               >
                                 {tag}
                                 <button
                                   type="button"
-                                  onClick={() => removeTag('theme', tag)}
-                                  className="ml-1 hover:text-error"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Character Tags */}
-                      <div>
-                        <label className="block text-sm font-medium text-primary mb-2 font-open-sans">
-                          🧍 Characters
-                        </label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {tagCategories.characters.map((tag) => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => addTag('character', tag)}
-                              className={`px-3 py-1 text-xs rounded-full transition-all font-open-sans ${
-                                postData.character_tags.includes(tag)
-                                  ? 'bg-accent text-white'
-                                  : 'bg-white/50 text-primary hover:bg-accent/20'
-                              }`}
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                        {postData.character_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {postData.character_tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-accent/20 text-primary rounded-full"
-                              >
-                                {tag}
-                                <button
-                                  type="button"
-                                  onClick={() => removeTag('character', tag)}
-                                  className="ml-1 hover:text-error"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Style Tags */}
-                      <div>
-                        <label className="block text-sm font-medium text-primary mb-2 font-open-sans">
-                          ✍️ Writing Style
-                        </label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {tagCategories.style.map((tag) => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => addTag('style', tag)}
-                              className={`px-3 py-1 text-xs rounded-full transition-all font-open-sans ${
-                                postData.style_tags.includes(tag)
-                                  ? 'bg-success text-white'
-                                  : 'bg-white/50 text-primary hover:bg-success/20'
-                              }`}
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                        {postData.style_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {postData.style_tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex items-center px-2 py-1 text-xs bg-success/20 text-primary rounded-full"
-                              >
-                                {tag}
-                                <button
-                                  type="button"
-                                  onClick={() => removeTag('style', tag)}
-                                  className="ml-1 hover:text-error"
+                                  onClick={() => {
+                                    const newTags = postData.tags.filter((_, i) => i !== index);
+                                    setPostData({ ...postData, tags: newTags });
+                                  }}
+                                  className="ml-1 hover:text-red-500"
                                 >
                                   ×
                                 </button>
@@ -708,130 +622,49 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       </div>
                     </div>
 
-                    {/* Enhanced Spoiler Management */}
-                    <div className="bg-error/5 border border-error/20 rounded-xl p-4">
-                      <h4 className="text-sm font-medium text-error mb-3 font-open-sans flex items-center">
-                        <ExclamationTriangleIcon className="w-4 h-4 mr-2" />
-                        Spoiler Settings
-                      </h4>
-
-                      <label className="flex items-center space-x-3 cursor-pointer mb-3">
+                    {/* Simplified Spoiler Settings */}
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                      <label className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={postData.spoiler_flag}
                           onChange={(e) => setPostData({ ...postData, spoiler_flag: e.target.checked })}
-                          className="w-4 h-4 text-error border-gray-300 rounded focus:ring-error/50"
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500/50"
                         />
-                        <span className="text-sm font-medium text-error">Contains Spoilers</span>
+                        <span className="text-sm font-medium text-red-700">⚠️ Contains Spoilers</span>
                       </label>
-
                       {postData.spoiler_flag && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          className="space-y-3"
-                        >
-                          <div>
-                            <label className="block text-xs font-medium text-error/70 mb-2 font-open-sans">
-                              Spoiler Level
-                            </label>
-                            <select
-                              value={postData.spoiler_level}
-                              onChange={(e) => setPostData({ ...postData, spoiler_level: e.target.value })}
-                              className="w-full px-3 py-2 bookish-input rounded-lg text-sm font-open-sans"
-                            >
-                              <option value="minor">Minor Spoilers (Character details, early plot)</option>
-                              <option value="major">Major Spoilers (Plot twists, character deaths)</option>
-                              <option value="ending">Ending Spoilers (Final outcomes, conclusions)</option>
-                            </select>
-                          </div>
-                        </motion.div>
+                        <p className="text-xs text-red-600 mt-1 ml-6">
+                          Your post will be marked with a spoiler warning
+                        </p>
                       )}
                     </div>
 
-                    {/* Preview */}
-                    <div className="bg-white/30 rounded-xl p-4 border border-white/20">
-                      <h4 className="text-sm font-medium text-primary mb-3 font-open-sans">📋 Preview</h4>
-                      <div className="bg-white/50 rounded-lg p-4 border border-white/30">
-                        <div className="flex items-center flex-wrap gap-2 mb-3">
-                          <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-                            postData.type === 'Article' ? 'bg-primary/20 text-primary' :
-                            postData.type === 'Synopsis' ? 'bg-accent/20 text-accent' :
-                            postData.type === 'Query' ? 'bg-primary/30 text-primary' :
-                            'bg-error/20 text-error'
-                          }`}>
-                            {postData.type}
-                          </span>
-                          {postData.spoiler_flag && (
-                            <span className="px-3 py-1 bg-error/20 text-error text-xs rounded-full font-medium">
-                              {postData.spoiler_level} Spoiler
-                            </span>
-                          )}
-                          {selectedBook && (
-                            <span className="px-3 py-1 bg-accent/20 text-accent text-xs rounded-full font-medium">
-                              📚 {selectedBook.title}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="font-bold text-primary mb-2 font-lora">
-                          {postData.title || 'Your title here...'}
-                        </h3>
-                        <p className="text-primary/80 text-sm font-open-sans">
-                          {postData.content ? postData.content.substring(0, 150) + '...' : 'Your content here...'}
-                        </p>
 
-                        {/* Show context if available */}
-                        {selectedBook && (postData.book_context.chapter || postData.book_context.page_range) && (
-                          <div className="mt-3 p-2 bg-accent/10 rounded-lg">
-                            <p className="text-xs text-accent font-medium">
-                              📍 {postData.book_context.chapter && `Chapter: ${postData.book_context.chapter}`}
-                              {postData.book_context.chapter && postData.book_context.page_range && ' • '}
-                              {postData.book_context.page_range && `Pages: ${postData.book_context.page_range}`}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Show tags */}
-                        {(postData.theme_tags.length > 0 || postData.character_tags.length > 0 || postData.style_tags.length > 0) && (
-                          <div className="mt-3 flex flex-wrap gap-1">
-                            {[...postData.theme_tags, ...postData.character_tags, ...postData.style_tags].slice(0, 5).map((tag, index) => (
-                              <span key={index} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                                #{tag}
-                              </span>
-                            ))}
-                            {(postData.theme_tags.length + postData.character_tags.length + postData.style_tags.length) > 5 && (
-                              <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                                +{(postData.theme_tags.length + postData.character_tags.length + postData.style_tags.length) - 5} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
                   </motion.div>
                 )}
 
                 {/* Footer - Mobile Optimized */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/20 space-y-3 sm:space-y-0">
-                  <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[var(--primary)]/20 space-y-2 sm:space-y-0 bg-[var(--secondary)] -mx-3 sm:-mx-4 px-3 sm:px-4">
+                  <div className="flex space-x-2">
                     {step > 1 && (
                       <motion.button
                         type="button"
                         onClick={prevStep}
-                        className="px-3 sm:px-4 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans text-sm sm:text-base"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        className="px-3 py-2 text-[var(--primary)]/70 hover:text-[var(--primary)] transition-colors font-open-sans text-sm min-h-[44px]"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         ← Back
                       </motion.button>
                     )}
                   </div>
 
-                  <div className="flex space-x-2 sm:space-x-3">
+                  <div className="flex space-x-2">
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 sm:px-6 py-2 text-primary/70 hover:text-primary transition-colors font-open-sans text-sm sm:text-base"
+                      className="px-3 py-2 text-[var(--primary)]/70 hover:text-[var(--primary)] transition-colors font-open-sans text-sm min-h-[44px]"
                     >
                       Cancel
                     </button>
@@ -840,9 +673,9 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <motion.button
                         type="button"
                         onClick={nextStep}
-                        className="px-4 sm:px-6 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans text-sm sm:text-base"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        className="px-4 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans text-sm min-h-[44px]"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         <span className="hidden sm:inline">
                           {step === 1 ? 'Add Book Context →' : 'Add Tags & Settings →'}
@@ -855,9 +688,9 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        className="px-6 sm:px-8 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50 text-sm sm:text-base"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        className="px-4 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50 text-sm min-h-[44px]"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         {isLoading ? (
                           <div className="flex items-center space-x-2">
@@ -871,7 +704,8 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                     )}
                   </div>
                 </div>
-              </form>
+                </form>
+              </div>
             </div>
           </motion.div>
         </>

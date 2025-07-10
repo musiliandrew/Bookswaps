@@ -20,6 +20,7 @@ import {
 import CreateSocietyModal from './CreateSocietyModal';
 import Pagination from '../../Common/Pagination';
 import TabsNavigation from '../../Library/common/TabsNavigation';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const SocietiesPage = () => {
   const navigate = useNavigate();
@@ -276,7 +277,8 @@ const SocietiesPage = () => {
 
 // Society Card Component
 const SocietyCard = ({ society, index, onJoin, onLeave, onClick, currentUserId }) => {
-  const isMember = society.members?.some(m => m.user_id === currentUserId);
+  // Check membership using the is_member property that gets updated by the hook
+  const isMember = society.is_member || society.members?.some(m => m.user_id === currentUserId);
 
   return (
     <motion.div
@@ -303,7 +305,15 @@ const SocietyCard = ({ society, index, onJoin, onLeave, onClick, currentUserId }
         
         <div className="flex-1">
           <h3 className="font-lora font-bold text-primary mb-1">{society.name}</h3>
-          <p className="text-sm text-primary/70 line-clamp-2">{society.description}</p>
+          <div className="text-sm text-primary/70 line-clamp-2">
+            <SmartTextRenderer
+              text={society.description || 'No description available.'}
+              className="text-sm text-primary/70"
+              enableBookLinks={true}
+              enableUserMentions={true}
+              renderAsHtml={true}
+            />
+          </div>
         </div>
 
         {/* Visibility Badge */}

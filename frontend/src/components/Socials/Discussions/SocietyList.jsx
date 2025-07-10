@@ -19,7 +19,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
     const response = await joinSociety(societyId);
     if (response) {
       toast.success('Joined society successfully!');
-      listSocieties(societyFilters, societiesPagination.societies.page); // Refresh current page
+      // The hook already updates the local state, no need to refresh from server
     }
   };
 
@@ -27,7 +27,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
     const response = await leaveSociety(societyId);
     if (response) {
       toast.success('Left society successfully!');
-      listSocieties(societyFilters, societiesPagination.societies.page); // Refresh current page
+      // The hook already updates the local state, no need to refresh from server
     }
   };
 
@@ -153,7 +153,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 {society.is_member ? (
                   <motion.button
-                    onClick={() => handleLeaveSociety(society.id)}
+                    onClick={() => handleLeaveSociety(society.id || society.society_id)}
                     className="flex-1 px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -162,7 +162,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
                   </motion.button>
                 ) : (
                   <motion.button
-                    onClick={() => handleJoinSociety(society.id)}
+                    onClick={() => handleJoinSociety(society.id || society.society_id)}
                     className="flex-1 px-3 py-2 bg-[var(--accent)] text-white text-sm rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={society.visibility === 'private'}
                     title={society.visibility === 'private' ? 'Private society - invitation required' : 'Join society'}
@@ -279,7 +279,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
               {selectedSociety.is_member ? (
                 <button
                   onClick={() => {
-                    handleLeaveSociety(selectedSociety.id);
+                    handleLeaveSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
                   className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
@@ -289,7 +289,7 @@ const SocietyList = ({ societies, isSocietiesLoading, joinSociety, leaveSociety,
               ) : selectedSociety.visibility === 'public' && (
                 <button
                   onClick={() => {
-                    handleJoinSociety(selectedSociety.id);
+                    handleJoinSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
                   className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"

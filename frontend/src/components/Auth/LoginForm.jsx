@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
 import ErrorMessage from '../Common/ErrorMessage';
-import AuthLink from '../Common/AuthLink';
 
 const LoginForm = ({ className = '', onSubmit, error: externalError, isLoading: externalLoading }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -105,10 +104,7 @@ const LoginForm = ({ className = '', onSubmit, error: externalError, isLoading: 
         text={externalLoading ? 'Signing in...' : 'Sign In'}
         disabled={isDisabled || externalLoading}
       />
-      <div className="text-center">
-        <AuthLink to="/register" text="Don't have an account? Sign up" />
-        <AuthLink to="/password-reset" text="Forgot password?" className="ml-2" />
-      </div>
+
     </motion.form>
   );
 };

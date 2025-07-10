@@ -22,11 +22,13 @@ const QuickCreateButton = ({ onOpenModal }) => {
         const rect = constraintsRef.current.getBoundingClientRect();
         const buttonSize = 56; // 14 * 4 = 56px (w-14 h-14)
         const margin = 16; // Margin from edges
+        const isSmallScreen = window.innerWidth <= 640; // sm breakpoint
+        const bottomNavHeight = isSmallScreen ? 120 : 100; // More space on mobile
 
         constraintsRef.current.style.left = `${margin}px`;
         constraintsRef.current.style.right = `${margin}px`;
         constraintsRef.current.style.top = `${margin}px`;
-        constraintsRef.current.style.bottom = `${margin + 80}px`; // Extra space for bottom nav
+        constraintsRef.current.style.bottom = `${margin + bottomNavHeight}px`; // Extra space for bottom nav
       }
     };
 
@@ -84,11 +86,12 @@ const QuickCreateButton = ({ onOpenModal }) => {
           setIsExpanded(false);
         }}
         onDragEnd={() => setIsDragging(false)}
-        className="fixed bottom-6 right-6 z-40 mobile-fab pointer-events-auto"
+        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[60] mobile-fab pointer-events-auto"
         style={{ x: position.x, y: position.y }}
         animate={{
           scale: isDragging ? 1.1 : 1,
-          opacity: isDragging ? 0.8 : 1
+          opacity: isDragging ? 0.9 : 1,
+          boxShadow: isDragging ? '0 20px 40px rgba(0,0,0,0.3)' : '0 8px 20px rgba(0,0,0,0.15)'
         }}
       >
         {/* Quick Actions Menu */}
@@ -133,7 +136,7 @@ const QuickCreateButton = ({ onOpenModal }) => {
           onClick={() => !isDragging && setIsExpanded(!isExpanded)}
           className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
             isExpanded ? 'bg-gray-600 hover:bg-gray-700' : 'hover:shadow-xl'
-          } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          } ${isDragging ? 'cursor-grabbing shadow-2xl' : 'cursor-grab'}`}
           style={{ backgroundColor: !isExpanded ? '#456A76' : undefined }}
           whileHover={{ scale: isDragging ? 1 : 1.1 }}
           whileTap={{ scale: isDragging ? 1 : 0.9 }}

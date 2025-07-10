@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import QRCodeModal from './QRCodeModal';
 import LocationManager from './LocationManager';
 import SwapExtensionModal from './SwapExtensionModal';
+import EnhancedSwapCard from './EnhancedSwapCard';
 import AcceptSwapModal from './AcceptSwapModal';
 
 const SwapList = ({
@@ -285,19 +286,19 @@ const SwapList = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4"
           onClick={() => setSelectedSwap(null)}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-[var(--card-bg)] p-6 rounded-lg max-w-md w-full"
+            className="bg-[var(--secondary)] p-4 sm:p-6 rounded-2xl max-w-md w-full mx-2 sm:mx-4 border border-[var(--primary)]/20 max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-[var(--primary)] mb-3 sm:mb-4">
               Confirm Swap with QR Code
             </h3>
-            <p className="text-[var(--text-secondary)] mb-4">
+            <p className="text-xs sm:text-sm text-[var(--primary)]/70 mb-3 sm:mb-4">
               Enter the QR code provided by the other party to confirm the swap completion.
             </p>
             <input
@@ -305,18 +306,18 @@ const SwapList = ({
               value={qrCode}
               onChange={(e) => setQrCode(e.target.value)}
               placeholder="Enter QR code"
-              className="w-full px-3 py-2 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent mb-4"
+              className="w-full px-3 sm:px-4 py-3 border border-[var(--primary)]/20 rounded-xl focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--primary)] bg-white/80 text-[var(--primary)] mb-3 sm:mb-4 text-sm sm:text-base"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setSelectedSwap(null)}
-                className="flex-1 px-4 py-2 bg-[var(--secondary)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--secondary)]/80"
+                className="flex-1 px-4 py-3 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl hover:bg-[var(--primary)]/20 transition-colors min-h-[44px] flex items-center justify-center"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirmSwap(selectedSwap)}
-                className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+                className="flex-1 px-4 py-3 bookish-button-enhanced text-white rounded-xl min-h-[44px] flex items-center justify-center"
               >
                 Confirm
               </button>

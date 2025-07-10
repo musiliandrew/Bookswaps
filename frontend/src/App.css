@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Caveat:wght@400;600;700&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --primary: #456A76;
@@ -70,6 +72,16 @@
   50% { transform: translateY(-10px) rotate(1deg); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .text-gradient {
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
   -webkit-background-clip: text;
@@ -105,11 +117,17 @@
 
 /* Loading states */
 .loading-spinner {
-  @apply animate-spin rounded-full border-2 border-gray-300 border-t-blue-600;
+  animation: spin 1s linear infinite;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-color: #d1d5db;
+  border-top-color: #2563eb;
 }
 
 .loading-skeleton {
-  @apply animate-pulse bg-gray-200 rounded;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
 }
 
 /* Text truncation utilities */

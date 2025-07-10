@@ -1,5 +1,6 @@
 import React from 'react';
 import { toast } from 'react-toastify';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const Message = ({ msg, isSociety, isPinned, editingMessageId, setEditingMessageId, editContent, setEditContent, handleEditMessage, handleDeleteMessage, handleAddReaction, markRead, handlePinMessage }) => {
   const onEditMessage = async (id, isSociety) => {
@@ -93,7 +94,12 @@ const Message = ({ msg, isSociety, isPinned, editingMessageId, setEditingMessage
         </div>
       ) : (
         <>
-          <p>{msg.content}</p>
+          <SmartTextRenderer
+            text={msg.content}
+            className="text-sm mb-2"
+            enableBookLinks={true}
+            enableUserMentions={true}
+          />
           <p className="text-sm text-gray-600">
             By {msg.sender_name || msg.user} | Status: {msg.status || 'Sent'}
           </p>

@@ -8,14 +8,16 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 import EnhancedPostCard from './EnhancedPostCard';
+import EchoFeedItem from './EchoFeedItem';
+import NoteAsPost from './NoteAsPost';
 import MobileFilterDropdown from './MobileFilterDropdown';
 
-const EnhancedPostFeed = ({ 
-  posts, 
-  isLoading, 
-  onCreatePost, 
-  onUpvote, 
-  onDownvote, 
+const EnhancedPostFeed = ({
+  posts,
+  isLoading,
+  onCreatePost,
+  onAgree,
+  onDisagree,
   onReprint,
   onBookmark,
   onLoadMore,
@@ -44,15 +46,66 @@ const EnhancedPostFeed = ({
 
 
   const filteredPosts = posts?.filter(post => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.user?.username.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesFilter = activeFilter === 'all' || post.type === activeFilter;
-    
+
     return matchesSearch && matchesFilter;
   }) || [];
+
+  // Function to render different post types - Twitter style
+  const renderPostItem = (post, index) => {
+    // Check if this is an echoed post (has echo attribution)
+    if (post.item_type === 'echo') {
+      return (
+        <EchoFeedItem
+          key={`echo-${post.reprint_id}`}
+          echo={post}
+          originalPost={post.original_post}
+          onAgree={onAgree}
+          onDisagree={onDisagree}
+          onReprint={onReprint}
+          onBookmark={onBookmark}
+          currentUser={null} // TODO: Get current user from context
+        />
+      );
+    }
+
+    // Check if this is a note/comment appearing as independent post
+    if (post.item_type === 'note') {
+      return (
+        <NoteAsPost
+          key={`note-${post.note_id}`}
+          note={post}
+          originalPost={post.original_post}
+          onAgree={onAgree}
+          onDisagree={onDisagree}
+          onEcho={onReprint}
+          onShare={onBookmark} // Reuse bookmark handler for share
+          onReply={() => {}} // TODO: Handle note replies
+          currentUser={null} // TODO: Get current user from context
+        />
+      );
+    }
+
+    // Regular post
+    return (
+      <EnhancedPostCard
+        key={post.discussion_id}
+        post={post}
+        onAgree={onAgree}
+        onDisagree={onDisagree}
+        onReprint={onReprint}
+        onBookmark={onBookmark}
+        isAgreed={post.is_upvoted}
+        isDisagreed={post.is_downvoted}
+        isBookmarked={post.is_bookmarked || false}
+      />
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -202,25 +255,16 @@ const EnhancedPostFeed = ({
           <>
             <AnimatePresence>
               {filteredPosts.map((post, index) => (
-                <motion.div
-                  key={post.discussion_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <EnhancedPostCard
-                    post={post}
-                    onUpvote={onUpvote}
-                    onDownvote={onDownvote}
-                    onReprint={onReprint}
-                    onBookmark={onBookmark}
-                    isUpvoted={post.is_upvoted}
-                    isDownvoted={post.is_downvoted}
-                    isBookmarked={false} // TODO: Add bookmark state from backend
-                  />
-                </motion.div>
-              ))}
+                  <motion.div
+                    key={post.item_type === 'echo' ? `echo-${post.reprint_id}` : post.discussion_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    {renderPostItem(post, index)}
+                  </motion.div>
+                ))}
             </AnimatePresence>
 
             {/* Load More Button */}

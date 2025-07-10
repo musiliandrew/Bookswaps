@@ -1,9 +1,9 @@
 from django.urls import path, re_path
 from .views import (
     CreateDiscussionView, PostListView, PostDetailView, DeletePostView,
-    AddNoteView, NotesListView, LikeCommentView, UpvotePostView, DownvotePostView, ReprintPostView,
-    ListTopPostsView, CreateSocietyView, SocietyListView, SocietyDetailView, JoinSocietyView, LeaveSocietyView,
-    CreateSocietyEventView, SocietyEventListView
+    AddNoteView, NotesListView, LikeCommentView, ReprintPostView,
+    AgreePostView, DisagreePostView, BookmarkPostView, ListTopPostsView, CreateSocietyView, SocietyListView, SocietyDetailView, JoinSocietyView, LeaveSocietyView,
+    CreateSocietyEventView, SocietyEventListView, AgreeNoteView, DisagreeNoteView, BookmarkNoteView
 )
 from . import consumers
 
@@ -18,9 +18,15 @@ urlpatterns = [
     path('posts/<uuid:discussion_id>/notes/', AddNoteView.as_view(), name='add_note'),
     path('posts/<uuid:discussion_id>/notes/list/', NotesListView.as_view(), name='list_notes'),
     path('notes/<uuid:note_id>/like/', LikeCommentView.as_view(), name='like_note'),
-    path('posts/<uuid:discussion_id>/upvote/', UpvotePostView.as_view(), name='upvote_post'),
-    path('posts/<uuid:discussion_id>/downvote/', DownvotePostView.as_view(), name='downvote_post'),
+    path('notes/<uuid:note_id>/agree/', AgreeNoteView.as_view(), name='agree_note'),
+    path('notes/<uuid:note_id>/disagree/', DisagreeNoteView.as_view(), name='disagree_note'),
+    path('notes/<uuid:note_id>/reprint/', ReprintPostView.as_view(), name='reprint_note'),
+    path('notes/<uuid:note_id>/bookmark/', BookmarkNoteView.as_view(), name='bookmark_note'),
+
     path('posts/<uuid:discussion_id>/reprint/', ReprintPostView.as_view(), name='reprint_post'),
+    path('posts/<uuid:discussion_id>/agree/', AgreePostView.as_view(), name='agree_post'),
+    path('posts/<uuid:discussion_id>/disagree/', DisagreePostView.as_view(), name='disagree_post'),
+    path('posts/<uuid:discussion_id>/bookmark/', BookmarkPostView.as_view(), name='bookmark_post'),
     path('top-posts/', ListTopPostsView.as_view(), name='top_posts'),
 
     # Society management (discussion-focused)

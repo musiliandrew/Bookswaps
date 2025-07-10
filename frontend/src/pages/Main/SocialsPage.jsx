@@ -45,11 +45,14 @@ const SocialsPage = () => {
       id: 'community',
       label: 'Community',
       fullLabel: 'Community Discussions',
+      description: 'Share thoughts & ideas',
       icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />
     },
     {
       id: 'societies',
       label: 'Societies',
+      fullLabel: 'Reading Societies',
+      description: 'Join reading communities',
       icon: <UsersIcon className="w-4 h-4" />
     },
   ];
@@ -142,16 +145,16 @@ const SocialsPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <h1 className="text-5xl md:text-6xl font-lora font-bold text-gradient mb-4 relative">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-lora font-bold text-gradient mb-3 sm:mb-4 relative">
                     💬 Discussions
                     <motion.div
-                      className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full opacity-20"
+                      className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-accent rounded-full opacity-20"
                       animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
                       transition={{ duration: 3, repeat: Infinity }}
                     />
                   </h1>
                   <motion.p
-                    className="font-open-sans text-primary/80 text-lg max-w-2xl mx-auto leading-relaxed"
+                    className="font-open-sans text-primary/80 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-4 sm:px-0"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.6 }}

@@ -45,7 +45,7 @@ const SocietiesView = () => {
     const response = await joinSociety(societyId);
     if (response) {
       toast.success('Joined society successfully!');
-      listSocieties({}, pagination.societies.page); // Refresh current page
+      // The hook already updates the local state, no need to refresh from server
     }
   };
 
@@ -53,7 +53,7 @@ const SocietiesView = () => {
     const response = await leaveSociety(societyId);
     if (response) {
       toast.success('Left society successfully!');
-      listSocieties({}, pagination.societies.page); // Refresh current page
+      // The hook already updates the local state, no need to refresh from server
     }
   };
 
@@ -65,12 +65,17 @@ const SocietiesView = () => {
     return (
       <div className="text-center py-8">
         <p className="text-red-500 mb-4">{error}</p>
-        <button
+        <motion.button
           onClick={() => listSocieties({}, 1)}
-          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+          className="flex items-center gap-2 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-medium transition-all"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
           Retry
-        </button>
+        </motion.button>
       </div>
     );
   }
@@ -87,11 +92,25 @@ const SocietiesView = () => {
         </div>
         <motion.button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bookish-button-enhanced text-white rounded-xl font-open-sans font-semibold transition-all"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {showCreateForm ? 'Cancel' : 'Create Society'}
+          {showCreateForm ? (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cancel
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Create Society
+            </>
+          )}
         </motion.button>
       </div>
 
@@ -126,12 +145,17 @@ const SocietiesView = () => {
             <p className="text-[var(--text-secondary)] mb-4">
               Be the first to create a book society and start building a community!
             </p>
-            <button
+            <motion.button
               onClick={() => setShowCreateForm(true)}
-              className="px-6 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+              className="flex items-center gap-2 px-6 py-3 bookish-button-enhanced text-white rounded-xl font-open-sans font-semibold transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
               Create First Society
-            </button>
+            </motion.button>
           </div>
         ) : (
           <>
@@ -174,32 +198,46 @@ const SocietiesView = () => {
                   </div>
                   <div className="flex gap-2 ml-4">
                     {society.is_member ? (
-                      <motion.button
-                        onClick={() => handleLeaveSociety(society.id)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Leave
-                      </motion.button>
+                      <>
+                        <motion.button
+                          onClick={() => handleSocietySelect(society)}
+                          className="flex-1 flex items-center justify-center gap-1 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-semibold transition-all"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Open
+                        </motion.button>
+                        <motion.button
+                          onClick={() => handleLeaveSociety(society.id || society.society_id)}
+                          className="px-4 py-2 rounded-lg font-open-sans font-medium transition-all hover:opacity-80"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: 'var(--text-primary)'
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Leave
+                        </motion.button>
+                      </>
                     ) : (
                       <motion.button
-                        onClick={() => handleJoinSociety(society.id)}
-                        className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90 transition-colors"
+                        onClick={() => handleJoinSociety(society.id || society.society_id)}
+                        className="w-full flex items-center justify-center gap-1 bookish-button-enhanced text-white px-4 py-2 rounded-lg font-open-sans font-semibold transition-all"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Join
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Join Society
                       </motion.button>
                     )}
-                    <motion.button
-                      onClick={() => handleSocietySelect(society)}
-                      className="px-4 py-2 bg-[var(--secondary)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--secondary)]/80 transition-colors"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      View Details
-                    </motion.button>
                   </div>
                 </div>
               </motion.div>
@@ -260,23 +298,39 @@ const SocietiesView = () => {
                 : 'Unknown'
               }</p>
             </div>
-            <div className="flex gap-2 mt-6">
-              <button
+            <div className="flex gap-3 mt-6">
+              <motion.button
                 onClick={() => setSelectedSociety(null)}
-                className="flex-1 px-4 py-2 bg-[var(--secondary)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--secondary)]/80"
+                className="flex-1 px-4 py-2 bookish-glass border border-white/20 text-[var(--primary)] rounded-lg hover:bg-white/20 transition-all font-open-sans font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Close
-              </button>
-              {!selectedSociety.is_member && (
-                <button
+              </motion.button>
+              {selectedSociety.is_member ? (
+                <motion.button
                   onClick={() => {
-                    handleJoinSociety(selectedSociety.id);
+                    handleLeaveSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
-                  className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)]/90"
+                  className="flex-1 px-4 py-2 bookish-glass border border-white/20 text-[var(--text-primary)] hover:bg-white/10 rounded-lg transition-all font-open-sans font-medium"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Leave Society
+                </motion.button>
+              ) : selectedSociety.visibility === 'public' && (
+                <motion.button
+                  onClick={() => {
+                    handleJoinSociety(selectedSociety.id || selectedSociety.society_id);
+                    setSelectedSociety(null);
+                  }}
+                  className="flex-1 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-semibold transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   Join Society
-                </button>
+                </motion.button>
               )}
             </div>
           </motion.div>

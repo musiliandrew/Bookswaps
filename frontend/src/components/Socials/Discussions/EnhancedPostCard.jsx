@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -12,25 +12,50 @@ import {
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useDiscussions } from '../../../hooks/useDiscussions';
 import EnhancedReactionBar from './EnhancedReactionBar';
+import EnhancedCommentSection from './EnhancedCommentSection';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
+import PostContentPreview from './PostContentPreview';
 
 const EnhancedPostCard = ({
   post,
-  onUpvote,
-  onDownvote,
+  onAgree,
+  onDisagree,
   onReprint,
   onBookmark,
-  onReact,
-  isUpvoted = false,
-  isDownvoted = false,
+  isAgreed = false,
+  isDisagreed = false,
   isBookmarked = false,
-  showFullContent = false
+  showFullContent = false,
+  isEmbedded = false
 }) => {
   const { user: currentUser } = useAuth();
   const [showSpoiler, setShowSpoiler] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+
+  const {
+    addDiscussionNote,
+    listNotes,
+    notes,
+    isLoading: notesLoading,
+    agreeWithDiscussionNote,
+    disagreeWithDiscussionNote,
+    reprintDiscussionNote,
+    bookmarkDiscussionNote
+  } = useDiscussions();
   const [showBookContext, setShowBookContext] = useState(false);
+
+  // Load notes when comments section is opened
+  useEffect(() => {
+    if (showComments && !notesLoaded) {
+      listNotes(post.discussion_id);
+      setNotesLoaded(true);
+    }
+  }, [showComments, notesLoaded, post.discussion_id, listNotes]);
 
   // Check if current user is the author
   const isOwnPost = currentUser && post.user && currentUser.user_id === post.user.user_id;
@@ -70,16 +95,16 @@ const EnhancedPostCard = ({
   const handleReaction = async (action, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     switch (action) {
-      case 'upvote':
-        await onUpvote(post.discussion_id);
+      case 'agree':
+        await onAgree(post.discussion_id);
         break;
-      case 'downvote':
-        await onDownvote(post.discussion_id);
+      case 'disagree':
+        await onDisagree(post.discussion_id);
         break;
       case 'reprint':
-        await onReprint(post.discussion_id, { comment: '' });
+        await onReprint(post);
         break;
       case 'bookmark':
         await onBookmark(post.discussion_id);
@@ -87,14 +112,29 @@ const EnhancedPostCard = ({
     }
   };
 
+  const handlePostClick = (e) => {
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.reaction-bar')) {
+      return;
+    }
+    // Navigate to post detail
+    window.location.href = `/socials/discussions/post/${post.discussion_id}`;
+  };
+
   return (
     <motion.div
-      className="bookish-glass rounded-2xl sm:rounded-2xl rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow group relative mobile-post-card"
+      className={`${
+        isEmbedded
+          ? 'bg-white/30 rounded-xl border border-white/10 hover:border-white/20'
+          : 'bookish-glass rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 bookish-shadow'
+      } transition-all duration-300 overflow-hidden group relative mobile-post-card ${!isEmbedded ? 'cursor-pointer' : ''}
+      mx-2 sm:mx-0 max-w-sm sm:max-w-none`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2, scale: 1.01 }}
+      whileHover={!isEmbedded ? { y: -2, scale: 1.01 } : {}}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
+      onClick={!isEmbedded ? handlePostClick : undefined}
     >
       {/* Enhanced Hover Tooltip for Book References */}
       {post.book && (
@@ -170,7 +210,7 @@ const EnhancedPostCard = ({
         </div>
       )}
       {/* Header - Mobile Optimized */}
-      <div className="p-3 sm:p-6 pb-2 sm:pb-4">
+      <div className="p-2 sm:p-6 pb-2 sm:pb-4">
         <div className="flex items-start justify-between mb-2 sm:mb-4">
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* User Avatar - Smaller on mobile */}
@@ -258,37 +298,31 @@ const EnhancedPostCard = ({
           </h2>
         </Link>
 
-        {/* Content - More compact */}
-        <div className="text-primary/80 leading-relaxed font-open-sans text-sm sm:text-base">
+        {/* Content - Enhanced with Preview */}
+        <div className="text-sm sm:text-base">
           {post.spoiler_flag && !showSpoiler ? (
             <div className="bg-error/5 border border-error/20 rounded-lg p-6 text-center">
               <EyeSlashIcon className="w-12 h-12 text-error/60 mx-auto mb-3" />
               <p className="text-error font-medium mb-2">⚠️ {post.spoiler_level || 'Minor'} Spoiler Warning</p>
               <p className="text-primary/70 mb-4 text-sm">This post contains plot spoilers. Proceed with caution!</p>
               <button
-                onClick={() => setShowSpoiler(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowSpoiler(true);
+                }}
                 className="px-6 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans"
               >
                 Show Content Anyway
               </button>
             </div>
           ) : (
-            <>
-              <div
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{
-                  __html: showFullContent ? post.content : truncateContent(post.content)
-                }}
-              />
-              {!showFullContent && post.content?.length > 200 && (
-                <Link
-                  to={`/socials/discussions/post/${post.discussion_id}`}
-                  className="text-accent hover:text-accent/80 ml-2 font-medium inline-block mt-2"
-                >
-                  Read more
-                </Link>
-              )}
-            </>
+            <SmartTextRenderer
+              text={showFullContent ? post.content : (post.content?.length > 200 ? post.content.substring(0, 200) + '...' : post.content)}
+              className="text-primary/80 leading-relaxed font-open-sans"
+              enableBookLinks={true}
+              enableAutoDetection={true}
+            />
           )}
         </div>
 
@@ -329,18 +363,57 @@ const EnhancedPostCard = ({
       </div>
 
       {/* Enhanced Reaction Bar */}
-      <EnhancedReactionBar
-        post={post}
-        onUpvote={onUpvote}
-        onDownvote={onDownvote}
-        onReprint={onReprint}
-        onBookmark={onBookmark}
-        onReact={onReact}
-        isUpvoted={isUpvoted}
-        isDownvoted={isDownvoted}
-        isBookmarked={isBookmarked}
-        showComments={true}
-      />
+      <div className="reaction-bar">
+        <EnhancedReactionBar
+          post={post}
+          onAgree={onAgree}
+          onDisagree={onDisagree}
+          onReprint={onReprint}
+          onBookmark={onBookmark}
+          onToggleComments={() => setShowComments(!showComments)}
+          isAgreed={isAgreed}
+          isDisagreed={isDisagreed}
+          isBookmarked={isBookmarked}
+          showComments={true}
+        />
+
+        {/* Enhanced Comments Section */}
+        {showComments && (
+          <div className="border-t border-white/10 pt-4">
+            <EnhancedCommentSection
+              notes={notes || []}
+              onAddComment={async (content) => {
+                try {
+                  await addDiscussionNote(post.discussion_id, { content });
+                  // Refresh notes after adding
+                  await listNotes(post.discussion_id);
+                  return true;
+                } catch (error) {
+                  console.error('Failed to add note:', error);
+                  return false;
+                }
+              }}
+              onLikeComment={() => {}} // Not used anymore
+              onReplyToComment={async (parentNoteId, content) => {
+                try {
+                  await addDiscussionNote(post.discussion_id, {
+                    content,
+                    parent_note: parentNoteId
+                  });
+                  await listNotes(post.discussion_id);
+                } catch (error) {
+                  throw error;
+                }
+              }}
+              onAgreeComment={agreeWithDiscussionNote}
+              onDisagreeComment={disagreeWithDiscussionNote}
+              onEchoComment={reprintDiscussionNote}
+              onBookmarkComment={bookmarkDiscussionNote}
+              isSubmittingComment={notesLoading}
+            />
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 };

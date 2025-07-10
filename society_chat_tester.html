@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Society Chat Tester</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .error { color: #ff6b6b; font-weight: bold; }
+        .success { color: #51cf66; font-weight: bold; }
+        .info { color: #74c0fc; }
+        button { 
+            padding: 12px 24px; 
+            margin: 8px; 
+            cursor: pointer; 
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        input, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .log { 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            font-family: 'Courier New', monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        h3 { color: #74c0fc; margin-bottom: 15px; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-pending { background: #ffd43b; }
+        .status-success { background: #51cf66; }
+        .status-error { background: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Society Chat Tester</h1>
+        <p style="text-align: center; opacity: 0.8;">Automated testing for "Test Book Society 181743"</p>
+        
+        <div class="section">
+            <h3>🔐 Authentication</h3>
+            <input type="text" id="apiUrl" placeholder="API URL" value="http://localhost:8000/api">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="authenticate()">Login & Test</button>
+            <div id="authStatus"></div>
+        </div>
+
+        <div class="section">
+            <h3>📝 Test Message</h3>
+            <textarea id="testMessage" rows="3" placeholder="Enter your test message...">🤖 Automated test message! Testing society chat functionality from the test script. Hello everyone! 📚</textarea>
+            <button onclick="sendTestMessage()" id="sendBtn" disabled>Send Test Message</button>
+            <div id="messageStatus"></div>
+        </div>
+
+        <div class="section">
+            <h3>📊 Test Progress</h3>
+            <div id="progressSteps">
+                <div><span class="status-indicator status-pending"></span>Authenticate</div>
+                <div><span class="status-indicator status-pending"></span>Find Society</div>
+                <div><span class="status-indicator status-pending"></span>Join Society</div>
+                <div><span class="status-indicator status-pending"></span>Send Message</div>
+                <div><span class="status-indicator status-pending"></span>Verify Message</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📋 Test Log</h3>
+            <button onclick="clearLog()">Clear Log</button>
+            <div id="testLog" class="log">Ready to start testing...\n</div>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = '';
+        let societyId = '';
+        const API_BASE_URL = () => document.getElementById('apiUrl').value;
+        const SOCIETY_NAME = 'Test Book Society 181743';
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').textContent = 'Log cleared...\n';
+        }
+
+        function updateStepStatus(stepIndex, status) {
+            const steps = document.querySelectorAll('#progressSteps .status-indicator');
+            if (steps[stepIndex]) {
+                steps[stepIndex].className = `status-indicator status-${status}`;
+            }
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const url = `${API_BASE_URL()}${endpoint}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`HTTP ${response.status}: ${errorData.error || errorData.detail || response.statusText}`);
+            }
+
+            return response.json();
+        }
+
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                log('Please enter username and password', 'error');
+                return;
+            }
+
+            try {
+                updateStepStatus(0, 'pending');
+                log('Attempting authentication...');
+                
+                const response = await fetch(`${API_BASE_URL()}/users/login/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.access_token) {
+                    accessToken = data.access_token;
+                    updateStepStatus(0, 'success');
+                    log('Authentication successful!', 'success');
+                    document.getElementById('authStatus').innerHTML = '<span class="success">✅ Authenticated</span>';
+                    document.getElementById('sendBtn').disabled = false;
+                    
+                    // Auto-proceed with full test
+                    await runFullTest();
+                } else {
+                    updateStepStatus(0, 'error');
+                    log(`Authentication failed: ${data.detail || 'Unknown error'}`, 'error');
+                    document.getElementById('authStatus').innerHTML = '<span class="error">❌ Authentication failed</span>';
+                }
+            } catch (error) {
+                updateStepStatus(0, 'error');
+                log(`Authentication error: ${error.message}`, 'error');
+                document.getElementById('authStatus').innerHTML = '<span class="error">❌ Connection error</span>';
+            }
+        }
+
+        async function runFullTest() {
+            try {
+                // Step 2: Find Society
+                updateStepStatus(1, 'pending');
+                log(`Searching for society: ${SOCIETY_NAME}`);
+                
+                const societiesData = await apiCall('/chat/societies/');
+                const societies = societiesData.results || societiesData;
+                
+                const targetSociety = societies.find(society => society.name === SOCIETY_NAME);
+
+                if (!targetSociety) {
+                    updateStepStatus(1, 'error');
+                    log(`Society "${SOCIETY_NAME}" not found`, 'error');
+                    log('Available societies:');
+                    societies.forEach(society => {
+                        log(`  - ${society.name}`);
+                    });
+                    return;
+                }
+
+                societyId = targetSociety.society_id || targetSociety.id;
+                updateStepStatus(1, 'success');
+                log(`Found society! ID: ${societyId}`, 'success');
+                log(`Members: ${targetSociety.member_count}, Is Member: ${targetSociety.is_member}`);
+
+                // Step 3: Join Society
+                updateStepStatus(2, 'pending');
+                if (!targetSociety.is_member) {
+                    log('Attempting to join society...');
+                    try {
+                        await apiCall(`/chat/societies/${societyId}/join/`, { method: 'POST' });
+                        log('Successfully joined society!', 'success');
+                    } catch (error) {
+                        if (error.message.includes('already a member')) {
+                            log('Already a member of this society', 'success');
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else {
+                    log('Already a member of this society', 'success');
+                }
+                updateStepStatus(2, 'success');
+
+            } catch (error) {
+                log(`Test failed: ${error.message}`, 'error');
+                updateStepStatus(2, 'error');
+            }
+        }
+
+        async function sendTestMessage() {
+            if (!accessToken || !societyId) {
+                log('Please authenticate first', 'error');
+                return;
+            }
+
+            try {
+                updateStepStatus(3, 'pending');
+                const messageContent = document.getElementById('testMessage').value;
+                
+                log('Sending test message...');
+                const messageData = {
+                    content: messageContent,
+                    message_type: 'TEXT'
+                };
+
+                const messageResponse = await apiCall(`/chat/societies/${societyId}/messages/send/`, {
+                    method: 'POST',
+                    body: JSON.stringify(messageData)
+                });
+
+                updateStepStatus(3, 'success');
+                log('Message sent successfully!', 'success');
+                log(`Message ID: ${messageResponse.message_id}`);
+                
+                // Step 5: Verify message
+                updateStepStatus(4, 'pending');
+                log('Fetching recent messages to verify...');
+                
+                const messagesData = await apiCall(`/chat/societies/${societyId}/messages/`);
+                const messages = messagesData.results || messagesData;
+                
+                updateStepStatus(4, 'success');
+                log(`Verified! Found ${messages.length} total messages in society`, 'success');
+                
+                // Show recent messages
+                const recentMessages = messages.slice(-3);
+                log('Recent messages:');
+                recentMessages.forEach((msg, index) => {
+                    const timestamp = new Date(msg.created_at).toLocaleTimeString();
+                    log(`  ${index + 1}. [${timestamp}] ${msg.user.username}: ${msg.content.substring(0, 80)}${msg.content.length > 80 ? '...' : ''}`);
+                });
+
+                document.getElementById('messageStatus').innerHTML = '<span class="success">✅ Test message sent and verified!</span>';
+                log('🎉 Full test completed successfully!', 'success');
+
+            } catch (error) {
+                updateStepStatus(3, 'error');
+                log(`Failed to send message: ${error.message}`, 'error');
+                document.getElementById('messageStatus').innerHTML = '<span class="error">❌ Failed to send message</span>';
+            }
+        }
+    </script>
+</body>
+</html>

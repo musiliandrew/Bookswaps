@@ -11,12 +11,13 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.db import transaction
 import uuid
-from .models import Discussion, Note, Reprint, Society, SocietyMember, SocietyEvent, Like, Upvote, Downvote
+from .models import Discussion, Note, Reprint, DiscussionBookmark, Society, SocietyMember, SocietyEvent, Like, Upvote, Downvote
 from .serializers import (
     CreateDiscussionSerializer, DiscussionFeedSerializer, DiscussionDetailSerializer,
-    NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer, ReprintSerializer,
+    NoteSerializer, LikeResponseSerializer, ReprintSerializer,
     ReprintCreateSerializer, TopPostSerializer, SocietySerializer, CreateSocietySerializer,
-    SocietyMemberSerializer, SocietyEventSerializer, CreateSocietyEventSerializer
+    SocietyMemberSerializer, SocietyEventSerializer, CreateSocietyEventSerializer,
+    EchoFeedItemSerializer
 )
 from backend.users.models import Follows
 from backend.library.models import Bookmark
@@ -76,13 +77,16 @@ class CreateDiscussionView(generics.CreateAPIView):
 
 class PostListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    serializer_class = DiscussionFeedSerializer
     pagination_class = StandardPagination
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+    def get_serializer_class(self):
+        # Return different serializers based on item type
+        return DiscussionFeedSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -97,10 +101,10 @@ class PostListView(generics.ListAPIView):
         
         try:
             queryset = queryset.annotate(
-                upvotes_count=Count('upvotes'),  # Fixed to match serializer source
-                downvotes_count=Count('downvotes'),  # Added downvotes count
-                note_count=Count('notes'),
-                reprint_count=Count('reprints')
+                upvotes_count=Count('upvotes', distinct=True),
+                downvotes_count=Count('downvotes', distinct=True),
+                note_count=Count('notes', filter=Q(notes__parent_note__isnull=True), distinct=True),
+                reprint_count=Count('reprints', distinct=True)
             )
         except Exception as e:
             print(f"Annotation error: {str(e)}")
@@ -152,10 +156,10 @@ class PostDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Discussion.objects.select_related('user', 'book').filter(status='active').annotate(
-            upvotes_count=Count('upvotes'),  # Fixed to match serializer source
-            downvotes_count=Count('downvotes'),  # Added downvotes count
-            note_count=Count('notes'),
-            reprint_count=Count('reprints')
+            upvotes_count=Count('upvotes', distinct=True),
+            downvotes_count=Count('downvotes', distinct=True),
+            note_count=Count('notes', filter=Q(notes__parent_note__isnull=True), distinct=True),
+            reprint_count=Count('reprints', distinct=True)
         )
 
     def retrieve(self, request, *args, **kwargs):
@@ -274,7 +278,7 @@ class LikeCommentView(generics.UpdateAPIView):
     lookup_field = 'note_id'
 
     def get_queryset(self):
-        return Note.objects.filter(status='active').annotate(likes_count=Count('likes'))
+        return Note.objects.filter(status='active').annotate(likes_count=Count('likes', distinct=True))
 
     def update(self, request, *args, **kwargs):
         note = self.get_object()
@@ -316,7 +320,7 @@ class LikeCommentView(generics.UpdateAPIView):
             except Exception as e:
                 print(f"Notification creation failed: {str(e)}")
 
-        note = Note.objects.filter(note_id=note.note_id).annotate(likes_count=Count('likes')).first()
+        note = Note.objects.filter(note_id=note.note_id).annotate(likes_count=Count('likes', distinct=True)).first()
         serializer = self.get_serializer(note)
 
         channel_layer = get_channel_layer()
@@ -329,125 +333,10 @@ class LikeCommentView(generics.UpdateAPIView):
         )
         return Response(serializer.data)
 
-class UpvotePostView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self, discussion_id):
-        try:
-            return Discussion.objects.filter(status='active').annotate(upvotes_count=Count('upvotes')).get(discussion_id=discussion_id)
-        except Discussion.DoesNotExist:
-            raise NotFound("Discussion not found")
-
-    def post(self, request, discussion_id):
-        discussion = self.get_object(discussion_id)
-        user = request.user
-
-        with transaction.atomic():
-            # Remove any existing downvote first (mutual exclusion)
-            Downvote.objects.filter(discussion=discussion, user=user).delete()
-
-            # Toggle upvote
-            upvote, created = Upvote.objects.get_or_create(
-                discussion=discussion,
-                user=user,
-                defaults={'created_at': timezone.now()}
-            )
-            if not created:
-                upvote.delete()
-                action = 'unupvoted'
-            else:
-                action = 'upvoted'
-
-        if action == 'upvoted' and discussion.user != user:
-            try:
-                notification = Notification.objects.create(
-                    user=discussion.user,
-                    type='discussion_upvoted',
-                    message=f"{user.username} upvoted your discussion: {discussion.title}"[:500],
-                    content_type='discussion',
-                    content_id=discussion.discussion_id
-                )
-                # Send notification via WebSocket to the user's group
-                send_notification_to_user(
-                    discussion.user.user_id,
-                    {
-                        "notification_id": str(notification.notification_id),
-                        "message": f"{user.username} upvoted your discussion: {discussion.title}"[:500],
-                        "type": "discussion_upvoted",
-                        "content_type": "discussion",
-                        "content_id": str(discussion.discussion_id),
-                        "follow_id": None
-                    }
-                )
-            except Exception as e:
-                print(f"Notification creation failed: {str(e)}")
-
-        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(
-            upvotes_count=Count('upvotes'),
-            downvotes_count=Count('downvotes')
-        ).first()
-        serializer = UpvoteResponseSerializer(discussion, context={'request': request})
-
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"discussion_{discussion.discussion_id}",
-            {
-                "type": "post_upvoted",
-                "discussion": serializer.data
-            }
-        )
-        return Response(serializer.data)
 
 
-class DownvotePostView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self, discussion_id):
-        try:
-            return Discussion.objects.filter(status='active').annotate(
-                upvotes_count=Count('upvotes'),
-                downvotes_count=Count('downvotes')
-            ).get(discussion_id=discussion_id)
-        except Discussion.DoesNotExist:
-            raise NotFound("Discussion not found")
 
-    def post(self, request, discussion_id):
-        discussion = self.get_object(discussion_id)
-        user = request.user
-
-        with transaction.atomic():
-            # Remove any existing upvote first (mutual exclusion)
-            Upvote.objects.filter(discussion=discussion, user=user).delete()
-
-            # Toggle downvote
-            downvote, created = Downvote.objects.get_or_create(
-                discussion=discussion,
-                user=user,
-                defaults={'created_at': timezone.now()}
-            )
-            if not created:
-                downvote.delete()
-                action = 'undownvoted'
-            else:
-                action = 'downvoted'
-
-        # Note: We don't send notifications for downvotes to avoid negativity
-
-        discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(
-            upvotes_count=Count('upvotes'),
-            downvotes_count=Count('downvotes')
-        ).first()
-        serializer = UpvoteResponseSerializer(discussion, context={'request': request})
-
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"discussion_{discussion.discussion_id}",
-            {
-                "type": "post_downvoted",
-                "discussion": serializer.data
-            }
-        )
-        return Response(serializer.data)
 
 
 class ReprintPostView(generics.CreateAPIView):
@@ -455,26 +344,54 @@ class ReprintPostView(generics.CreateAPIView):
     serializer_class = ReprintCreateSerializer
 
     def create(self, request, *args, **kwargs):
-        discussion_id = self.kwargs['discussion_id']
-        try:
-            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
-        except Discussion.DoesNotExist:
-            raise NotFound("Discussion not found.")
+        # Check if we're reprinting a post or a note
+        discussion_id = self.kwargs.get('discussion_id')
+        note_id = self.kwargs.get('note_id')
+
+        if discussion_id:
+            # Reprinting a discussion post
+            try:
+                discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+            except Discussion.DoesNotExist:
+                raise NotFound("Discussion not found.")
+        elif note_id:
+            # Reprinting a note (comment)
+            try:
+                note = Note.objects.get(note_id=note_id, status='active')
+                discussion = note.discussion  # Get the parent discussion
+            except Note.DoesNotExist:
+                raise NotFound("Note not found.")
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
-            reprint, created = Reprint.objects.get_or_create(
-                discussion=discussion,
-                user=request.user,
-                defaults={
-                    'reprint_id': uuid.uuid4(),
-                    'comment': serializer.validated_data.get('comment', ''),
-                    'created_at': timezone.now()
-                }
-            )
-            if not created:
-                raise serializers.ValidationError("You have already reprinted this discussion.")
+            if discussion_id:
+                # Reprinting a discussion post
+                reprint, created = Reprint.objects.get_or_create(
+                    discussion=discussion,
+                    user=request.user,
+                    defaults={
+                        'reprint_id': uuid.uuid4(),
+                        'comment': serializer.validated_data.get('comment', ''),
+                        'created_at': timezone.now()
+                    }
+                )
+                if not created:
+                    raise serializers.ValidationError("You have already reprinted this discussion.")
+            elif note_id:
+                # Reprinting a note
+                from .models import NoteReprint
+                reprint, created = NoteReprint.objects.get_or_create(
+                    note=note,
+                    user=request.user,
+                    defaults={
+                        'reprint_id': uuid.uuid4(),
+                        'comment': serializer.validated_data.get('comment', ''),
+                        'created_at': timezone.now()
+                    }
+                )
+                if not created:
+                    raise serializers.ValidationError("You have already reprinted this note.")
 
             if discussion.user != request.user:
                 try:
@@ -509,6 +426,121 @@ class ReprintPostView(generics.CreateAPIView):
             }
         )
         return Response(ReprintSerializer(reprint).data, status=status.HTTP_201_CREATED)
+
+
+class AgreePostView(generics.CreateAPIView):
+    """View for users to agree with a discussion post"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        discussion_id = self.kwargs['discussion_id']
+        try:
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found.")
+
+        user = request.user
+
+        # Remove any existing disagreement
+        Downvote.objects.filter(user=user, discussion=discussion).delete()
+
+        # Toggle agreement
+        upvote, created = Upvote.objects.get_or_create(user=user, discussion=discussion)
+        if not created:
+            upvote.delete()
+            agreed = False
+        else:
+            agreed = True
+
+        # Get updated counts
+        discussion_with_counts = Discussion.objects.filter(discussion_id=discussion_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+
+        return Response({
+            'agreed': agreed,
+            'upvotes_count': discussion_with_counts.upvotes_count,
+            'downvotes_count': discussion_with_counts.downvotes_count,
+            'is_upvoted': agreed,
+            'is_downvoted': False
+        })
+
+
+class DisagreePostView(generics.CreateAPIView):
+    """View for users to disagree with a discussion post"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        discussion_id = self.kwargs['discussion_id']
+        try:
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found.")
+
+        user = request.user
+
+        # Remove any existing agreement
+        Upvote.objects.filter(user=user, discussion=discussion).delete()
+
+        # Toggle disagreement
+        downvote, created = Downvote.objects.get_or_create(user=user, discussion=discussion)
+        if not created:
+            downvote.delete()
+            disagreed = False
+        else:
+            disagreed = True
+
+        # Get updated counts
+        discussion_with_counts = Discussion.objects.filter(discussion_id=discussion_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+
+        return Response({
+            'disagreed': disagreed,
+            'upvotes_count': discussion_with_counts.upvotes_count,
+            'downvotes_count': discussion_with_counts.downvotes_count,
+            'is_upvoted': False,
+            'is_downvoted': disagreed
+        })
+
+
+class BookmarkPostView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        discussion_id = self.kwargs['discussion_id']
+        try:
+            discussion = Discussion.objects.get(discussion_id=discussion_id, status='active')
+        except Discussion.DoesNotExist:
+            raise NotFound("Discussion not found.")
+
+        user = request.user
+
+        with transaction.atomic():
+            bookmark, created = DiscussionBookmark.objects.get_or_create(
+                discussion=discussion,
+                user=user,
+                defaults={'created_at': timezone.now()}
+            )
+
+            if not created:
+                # If bookmark exists, remove it (toggle)
+                bookmark.delete()
+                action = 'removed'
+                is_bookmarked = False
+            else:
+                action = 'added'
+                is_bookmarked = True
+
+        return Response({
+            'message': f'Bookmark {action} successfully!',
+            'is_bookmarked': is_bookmarked,
+            'discussion_id': str(discussion_id)
+        }, status=status.HTTP_200_OK)
+
+
 class ListTopPostsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = TopPostSerializer
@@ -706,7 +738,7 @@ class SocietyListView(generics.ListAPIView):
             )
 
         # Annotate with member count
-        queryset = queryset.annotate(member_count=Count('members'))
+        queryset = queryset.annotate(member_count=Count('members', distinct=True))
         return queryset.order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
@@ -792,3 +824,115 @@ class SocietyEventListView(generics.ListAPIView):
         except Society.DoesNotExist:
             raise NotFound("Society not found.")
         return SocietyEvent.objects.filter(society=society).select_related('book').order_by('event_date')
+
+
+# Note Action Views
+class AgreeNoteView(generics.CreateAPIView):
+    """View for users to agree with a note"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        from .models import NoteUpvote, NoteDownvote
+
+        note_id = self.kwargs['note_id']
+        try:
+            note = Note.objects.get(note_id=note_id, status='active')
+        except Note.DoesNotExist:
+            raise NotFound("Note not found.")
+
+        user = request.user
+
+        # Remove any existing disagreement
+        NoteDownvote.objects.filter(user=user, note=note).delete()
+
+        # Toggle agreement
+        upvote, created = NoteUpvote.objects.get_or_create(user=user, note=note)
+        if not created:
+            upvote.delete()
+            agreed = False
+        else:
+            agreed = True
+
+        # Get updated counts
+        note_with_counts = Note.objects.filter(note_id=note_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+
+        return Response({
+            'agreed': agreed,
+            'upvotes_count': note_with_counts.upvotes_count,
+            'downvotes_count': note_with_counts.downvotes_count,
+            'is_upvoted': agreed,
+            'is_downvoted': False
+        })
+
+
+class DisagreeNoteView(generics.CreateAPIView):
+    """View for users to disagree with a note"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        from .models import NoteUpvote, NoteDownvote
+
+        note_id = self.kwargs['note_id']
+        try:
+            note = Note.objects.get(note_id=note_id, status='active')
+        except Note.DoesNotExist:
+            raise NotFound("Note not found.")
+
+        user = request.user
+
+        # Remove any existing agreement
+        NoteUpvote.objects.filter(user=user, note=note).delete()
+
+        # Toggle disagreement
+        downvote, created = NoteDownvote.objects.get_or_create(user=user, note=note)
+        if not created:
+            downvote.delete()
+            disagreed = False
+        else:
+            disagreed = True
+
+        # Get updated counts
+        note_with_counts = Note.objects.filter(note_id=note_id).annotate(
+            upvotes_count=Count('upvotes'),
+            downvotes_count=Count('downvotes')
+        ).first()
+
+        return Response({
+            'disagreed': disagreed,
+            'upvotes_count': note_with_counts.upvotes_count,
+            'downvotes_count': note_with_counts.downvotes_count,
+            'is_upvoted': False,
+            'is_downvoted': disagreed
+        })
+
+
+class BookmarkNoteView(generics.CreateAPIView):
+    """View for users to bookmark a note"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        from .models import NoteBookmark
+
+        note_id = self.kwargs['note_id']
+        try:
+            note = Note.objects.get(note_id=note_id, status='active')
+        except Note.DoesNotExist:
+            raise NotFound("Note not found.")
+
+        user = request.user
+
+        # Toggle bookmark
+        bookmark, created = NoteBookmark.objects.get_or_create(user=user, note=note)
+        if not created:
+            bookmark.delete()
+            bookmarked = False
+        else:
+            bookmarked = True
+
+        return Response({
+            'bookmarked': bookmarked,
+            'is_bookmarked': bookmarked
+        })

@@ -5,8 +5,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
-import ProfileCompletionBanner from '../../components/Profile/ProfileCompletionBanner';
-import ProfileCompletionModal from '../../components/Profile/ProfileCompletionModal';
+
+
 import { calculateProfileCompletion } from '../../utils/profileCompletion';
 import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
@@ -23,7 +23,7 @@ const ProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
 
   // Calculate profile completion details
   const completionDetails = useMemo(() => {
@@ -104,14 +104,8 @@ const ProfilePage = () => {
 
   // Profile completion handlers
   const handleShowCompletionGuide = useCallback(() => {
-    setShowCompletionModal(true);
-  }, []);
-
-  const handleFieldClick = useCallback((field) => {
-    // Navigate to settings tab and focus on the specific field
+    // Navigate to settings tab instead of showing modal
     changeTab('settings');
-    // You could add logic here to scroll to or highlight the specific field
-    console.log('Focus on field:', field);
   }, [changeTab]);
 
   // Enhanced Loading state
@@ -190,33 +184,29 @@ const ProfilePage = () => {
           <div className="absolute bottom-1/4 right-1/2 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
         </div>
 
-        {/* Mobile-Optimized Bottom Navigation */}
-        <nav className={`fixed bottom-0 left-0 right-0 ${isSmallScreen ? 'pb-safe-area-inset-bottom' : 'bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg rounded-2xl'} bookish-glass p-2 sm:p-3 flex justify-around items-center z-50 bookish-shadow border-t border-white/20 ${isSmallScreen ? '' : 'border border-white/20'}`}>
+        {/* Floating Bottom Navigation */}
+        <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => changeTab(tab.id)}
-              className={`relative flex flex-col items-center ${isSmallScreen ? 'p-2' : 'p-3'} rounded-xl transition-all duration-300`}
+              className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300`}
               style={{
                 color: activeTab === tab.id ? 'white' : 'var(--primary)',
                 background: activeTab === tab.id
                   ? 'linear-gradient(135deg, var(--primary), var(--accent))'
                   : 'transparent',
-                boxShadow: activeTab === tab.id ? '0 8px 20px rgba(0,0,0,0.12)' : 'none',
+                boxShadow: activeTab === tab.id ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
                 opacity: activeTab === tab.id ? 1 : 0.7
               }}
-              whileHover={{ scale: isSmallScreen ? 1.02 : 1.05, y: isSmallScreen ? -1 : -2 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              aria-label={tab.label}
-              role="tab"
-              aria-selected={activeTab === tab.id}
             >
-              <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''} ${isSmallScreen ? 'w-5 h-5' : ''}`}>
+              <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`}>
                 {tab.icon}
               </div>
-              {/* Show labels on mobile when active, always on desktop */}
-              {(!isSmallScreen || activeTab === tab.id) && (
-                <span className={`${isSmallScreen ? 'text-xs' : 'text-xs'} font-medium mt-1 transition-all duration-300 ${
+              {!isSmallScreen && (
+                <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
                   activeTab === tab.id ? 'text-white' : 'text-primary/70'
                 }`}>
                   {tab.label}
@@ -224,31 +214,22 @@ const ProfilePage = () => {
               )}
               {activeTab === tab.id && (
                 <motion.div
-                  className={`absolute -top-1 -right-1 ${isSmallScreen ? 'w-2 h-2' : 'w-3 h-3'} bg-accent rounded-full flex items-center justify-center`}
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 >
-                  {!isSmallScreen && <SparklesIcon className="w-2 h-2 text-white m-0.5" />}
+                  <SparklesIcon className="w-2 h-2 text-white m-0.5" />
                 </motion.div>
               )}
             </motion.button>
           ))}
         </nav>
 
-        {/* Mobile-Optimized Main Content */}
-        <div className={`${isSmallScreen ? 'pt-16 pb-20' : 'pt-20 pb-32'}`}>
+        {/* Main Content */}
+        <div className="pt-20 pb-32">
           <div className={`max-w-4xl mx-auto ${isSmallScreen ? 'px-3' : 'px-4'}`}>
-            {/* Mobile-Optimized Profile Completion Banner */}
-            {profile && activeTab === 'my-profile' && (
-              <ProfileCompletionBanner
-                completionPercentage={completionDetails.percentage}
-                isCompleted={completionDetails.isCompleted}
-                completionDetails={completionDetails}
-                onShowGuide={handleShowCompletionGuide}
-                isMobile={isSmallScreen}
-              />
-            )}
+
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -286,13 +267,7 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Profile Completion Modal */}
-        <ProfileCompletionModal
-          isOpen={showCompletionModal}
-          onClose={() => setShowCompletionModal(false)}
-          completionDetails={completionDetails}
-          onFieldClick={handleFieldClick}
-        />
+
       </div>
     </ErrorBoundary>
   );

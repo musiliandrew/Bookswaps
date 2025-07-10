@@ -1,4 +1,5 @@
 import React from 'react';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const ThreadedNotes = ({ notes, handleAddNote, newNote, setNewNote, likeDiscussionNote }) => {
   const renderNotes = (notes, parentId = null, depth = 0) => {
@@ -6,7 +7,12 @@ const ThreadedNotes = ({ notes, handleAddNote, newNote, setNewNote, likeDiscussi
       .filter(note => note.parent_note === parentId)
       .map(note => (
         <div key={note.id} className={`ml-${depth * 4} p-2 border-l-2`}>
-          <p>{note.content}</p>
+          <SmartTextRenderer
+            text={note.content}
+            className="mb-2"
+            enableBookLinks={true}
+            enableUserMentions={true}
+          />
           <div className="flex gap-2 text-sm text-gray-600">
             <button onClick={() => likeDiscussionNote(note.id)}>
               Like ({note.likes || 0})

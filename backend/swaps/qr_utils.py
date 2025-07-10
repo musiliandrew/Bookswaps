@@ -23,26 +23,31 @@ class QRCodeManager:
         key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
         self.cipher = Fernet(base64.urlsafe_b64encode(key))
     
-    def generate_swap_qr_code(self, swap_id, user_id, location_coords=None):
+    def generate_swap_qr_code(self, swap_id, user_id, location_coords=None, book_info=None, meetup_location=None):
         """
-        Generate a secure QR code for swap verification
-        
+        Generate a secure QR code for swap verification with book and location details
+
         Args:
             swap_id: UUID of the swap
             user_id: UUID of the user generating the code
             location_coords: Optional location coordinates for verification
-            
+            book_info: Dict with book details (title, isbn, etc.)
+            meetup_location: Dict with meetup location details
+
         Returns:
             dict: Contains qr_code_url, qr_data, and verification_token
         """
-        # Create verification data
+        # Create verification data with enhanced information
         verification_data = {
             'swap_id': str(swap_id),
             'user_id': str(user_id),
             'timestamp': datetime.now().isoformat(),
             'expires_at': (datetime.now() + timedelta(hours=24)).isoformat(),
             'verification_token': secrets.token_urlsafe(32),
-            'location_coords': location_coords
+            'location_coords': location_coords,
+            'book_info': book_info or {},
+            'meetup_location': meetup_location or {},
+            'verification_radius_meters': 100  # Must be within 100m of meetup location
         }
         
         # Encrypt the data

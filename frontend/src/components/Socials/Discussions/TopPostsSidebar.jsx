@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FireIcon, ArrowUpIcon, ChatBubbleLeftIcon, TrophyIcon } from '@heroicons/react/24/outline';
+import { FireIcon, CheckIcon, ChatBubbleLeftIcon, TrophyIcon } from '@heroicons/react/24/outline';
 
 const TopPostsSidebar = ({ topPosts }) => {
   return (
@@ -65,7 +65,7 @@ const TopPostsSidebar = ({ topPosts }) => {
                       {/* Post Stats */}
                       <div className="flex items-center space-x-4 text-xs text-primary/60">
                         <div className="flex items-center space-x-1">
-                          <ArrowUpIcon className="w-3 h-3 text-green-600" />
+                          <CheckIcon className="w-3 h-3 text-green-600" />
                           <span>{post.upvotes || 0}</span>
                         </div>
                         <div className="flex items-center space-x-1">

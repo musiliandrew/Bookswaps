@@ -109,10 +109,10 @@ export const calculateProfileCompletion = (profile) => {
     },
 
     // Preferences (20 points total)
-    favorite_genres: {
-      completed: !!profile.favorite_genres && 
-                (Array.isArray(profile.favorite_genres) ? profile.favorite_genres.length > 0 : 
-                 profile.favorite_genres.length > 0),
+    genres: {
+      completed: !!profile.genres &&
+                (Array.isArray(profile.genres) ? profile.genres.length > 0 :
+                 profile.genres.length > 0),
       label: 'Favorite Genres',
       description: 'Get personalized book recommendations',
       category: 'preferences',

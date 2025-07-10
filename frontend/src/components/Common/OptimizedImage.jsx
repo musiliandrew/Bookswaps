@@ -177,82 +177,91 @@ const OptimizedImage = ({
       className={`relative overflow-hidden ${containerClassName}`}
     >
       <AnimatePresence mode="wait">
-        {/* Loading State */}
-        {isLoading && showLoadingSpinner && isInView && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5"
-          >
-            <motion.div
-              className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
-          </motion.div>
-        )}
-
-        {/* Error State */}
-        {hasError && showErrorState && (
-          <motion.div
-            key="error"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br ${getPlaceholderGradient()}`}
-          >
-            <ExclamationTriangleIcon className="w-6 h-6 text-red-400 mb-2" />
-            <span className="text-xs text-red-500 font-medium">Failed to load</span>
-            {retryOnError && retryCount < maxRetries && (
-              <button
-                onClick={() => {
-                  setHasError(false);
-                  setIsLoading(true);
-                  setRetryCount(0);
-                  setCurrentSrc(src);
-                }}
-                className="mt-2 text-xs text-primary hover:text-accent transition-colors"
+        {(() => {
+          // Single conditional render to avoid multiple children in AnimatePresence
+          if (isLoading && showLoadingSpinner && isInView) {
+            return (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5"
               >
-                Retry
-              </button>
-            )}
-          </motion.div>
-        )}
+                <motion.div
+                  className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              </motion.div>
+            );
+          }
 
-        {/* Actual Image */}
-        {isInView && currentSrc && !hasError && (
-          <motion.img
-            key={currentSrc}
-            src={currentSrc}
-            alt={alt}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${className}`}
-            style={{ opacity: isLoading ? 0 : 1 }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isLoading ? 0 : 1 }}
-            transition={{ duration: 0.3 }}
-            loading={lazy ? "lazy" : "eager"}
-            {...props}
-          />
-        )}
+          if (hasError && showErrorState) {
+            return (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br ${getPlaceholderGradient()}`}
+              >
+                <ExclamationTriangleIcon className="w-6 h-6 text-red-400 mb-2" />
+                <span className="text-xs text-red-500 font-medium">Failed to load</span>
+                {retryOnError && retryCount < maxRetries && (
+                  <button
+                    onClick={() => {
+                      setHasError(false);
+                      setIsLoading(true);
+                      setRetryCount(0);
+                      setCurrentSrc(src);
+                    }}
+                    className="mt-2 text-xs text-primary hover:text-accent transition-colors"
+                  >
+                    Retry
+                  </button>
+                )}
+              </motion.div>
+            );
+          }
 
-        {/* Placeholder when no src provided */}
-        {!currentSrc && (
-          <motion.div
-            key="placeholder"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${getPlaceholderGradient()}`}
-          >
-            {getPlaceholderIcon()}
-            <span className="text-xs text-primary/40 font-medium mt-2">
-              {getPlaceholderText()}
-            </span>
-          </motion.div>
-        )}
+          if (isInView && currentSrc && !hasError) {
+            return (
+              <motion.img
+                key={currentSrc}
+                src={currentSrc}
+                alt={alt}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${className}`}
+                style={{ opacity: isLoading ? 0 : 1 }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isLoading ? 0 : 1 }}
+                transition={{ duration: 0.3 }}
+                loading={lazy ? "lazy" : "eager"}
+                {...props}
+              />
+            );
+          }
+
+          if (!currentSrc) {
+            return (
+              <motion.div
+                key="placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${getPlaceholderGradient()}`}
+              >
+                {getPlaceholderIcon()}
+                <span className="text-xs text-primary/40 font-medium mt-2">
+                  {getPlaceholderText()}
+                </span>
+              </motion.div>
+            );
+          }
+
+          return null;
+        })()}
       </AnimatePresence>
     </div>
   );

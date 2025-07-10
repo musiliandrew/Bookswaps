@@ -1,8 +1,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
-from .models import Discussion, Note, Like, Upvote, Reprint
-from .serializers import DiscussionDetailSerializer, NoteSerializer, LikeResponseSerializer, UpvoteResponseSerializer, ReprintSerializer
+from .models import Discussion, Note, Like, Reprint
+from .serializers import DiscussionDetailSerializer, NoteSerializer, LikeResponseSerializer, ReprintSerializer
 from django.db import transaction
 from django.db.models import Count
 import json
@@ -92,26 +92,7 @@ class DiscussionConsumer(AsyncWebsocketConsumer):
         else:
             await self.send(text_data=json.dumps({'error': 'Failed to like/unlike note.'}))
 
-    async def handle_upvote_post(self, data):
-        user = self.scope['user']
-        discussion = await self.get_discussion()
 
-        if not discussion:
-            await self.send(text_data=json.dumps({'error': 'Discussion not found.'}))
-            return
-
-        discussion = await self.toggle_upvote_post(user, discussion)
-        if discussion:
-            serialized_discussion = await database_sync_to_async(UpvoteResponseSerializer)(discussion).data
-            await self.channel_layer.group_send(
-                self.group_name,
-                {
-                    'type': 'post_upvoted',
-                    'discussion': serialized_discussion,
-                }
-            )
-        else:
-            await self.send(text_data=json.dumps({'error': 'Failed to upvote/unupvote post.'}))
 
     async def handle_reprint_post(self, data):
         comment = data.get('comment', '')
@@ -198,19 +179,12 @@ class DiscussionConsumer(AsyncWebsocketConsumer):
                 like, created = Like.objects.get_or_create(note=note, user=user)
                 if not created:
                     like.delete()
-                note = Note.objects.filter(note_id=note_id).annotate(likes_count=Count('likes')).first()
+                note = Note.objects.filter(note_id=note_id).annotate(likes_count=Count('likes', distinct=True)).first()
                 return note
         except Note.DoesNotExist:
             return None
 
-    @database_sync_to_async
-    def toggle_upvote_post(self, user, discussion):
-        with transaction.atomic():
-            upvote, created = Upvote.objects.get_or_create(discussion=discussion, user=user)
-            if not created:
-                upvote.delete()
-            discussion = Discussion.objects.filter(discussion_id=discussion.discussion_id).annotate(upvotes_count=Count('upvotes')).first()
-            return discussion
+
 
     @database_sync_to_async
     def create_reprint(self, user, discussion, comment):

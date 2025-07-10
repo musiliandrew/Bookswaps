@@ -69,18 +69,25 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!formData.initiator_book_id) {
       alert('Please select a book to offer');
       return;
     }
-    
+
     if (!formData.receiver_id) {
       alert('Please select a user to swap with');
       return;
     }
 
-    onSubmit(formData);
+    // Clean up the form data - convert empty strings to null for optional fields
+    const cleanedData = {
+      ...formData,
+      receiver_book_id: formData.receiver_book_id || null,
+      message: formData.message || null
+    };
+
+    onSubmit(cleanedData);
   };
 
   const availableBooks = userLibrary?.filter(book =>
@@ -124,7 +131,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
       <div>
         <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
           <UserIcon className="w-4 h-4 inline mr-1" />
-          User to Swap With
+          Find Book Owner to Swap With
         </label>
         <div className="relative">
           <div className="relative">
@@ -133,7 +140,7 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for users by username..."
+              placeholder="Search by username or book title..."
               className="w-full pl-10 pr-10 py-2 sm:py-3 border border-[var(--secondary)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm sm:text-base mobile-search-input"
             />
             {selectedUser && (
@@ -150,7 +157,11 @@ const SwapCreationForm = ({ onSubmit, onCancel, isLoading }) => {
               </button>
             )}
           </div>
-          
+
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            💡 Tip: You can swap with any user - no need to follow them first!
+          </p>
+
           {/* Search Results - Improved UI */}
           {searchResults.length > 0 && (
             <div className="absolute z-20 w-full mt-2 bg-[var(--card-bg)] border border-[var(--secondary)] rounded-lg shadow-xl max-h-60 overflow-y-auto">

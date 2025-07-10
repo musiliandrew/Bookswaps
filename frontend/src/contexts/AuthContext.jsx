@@ -398,7 +398,7 @@ export const AuthProvider = ({ children }) => {
   const requestPasswordReset = useCallback(
     async (email) => {
       return await handleApiCall(
-        () => api.post(API_ENDPOINTS.PASSWORD_RESET_REQUEST, { email }),
+        () => api.post(API_ENDPOINTS.PASSWORD_RESET, { email }),
         setIsLoading,
         setError,
         'Password reset email sent!',
@@ -421,6 +421,55 @@ export const AuthProvider = ({ children }) => {
     []
   );
 
+  const googleAuth = useCallback(
+    async (googleToken) => {
+      const result = await handleApiCall(
+        () => api.post(API_ENDPOINTS.GOOGLE_AUTH, { access_token: googleToken }),
+        setIsLoading,
+        setError,
+        null,
+        'Google authentication'
+      );
+
+      if (!result) {
+        return false;
+      }
+
+      // Handle both possible field name variations
+      const accessToken = result.access_token || result.token;
+      const refreshToken = result.refresh_token || result.refresh;
+
+      if (!accessToken) {
+        setError('Missing access token in Google auth response');
+        toast.error('Invalid Google auth response - missing access token');
+        clearAuthState();
+        return false;
+      }
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      api.defaults.headers.Authorization = `Bearer ${accessToken}`;
+
+      // Clear any existing errors before fetching profile
+      setError(null);
+
+      // Call getProfileInternal directly to bypass debouncing
+      const profileData = await getProfileInternal(true);
+      if (profileData) {
+        setIsAuthenticated(true);
+        toast.success('Google authentication successful!');
+        return true;
+      }
+
+      // Since the profile fetch failed but tokens are valid,
+      // let's still consider login successful
+      setIsAuthenticated(true);
+      toast.success('Google authentication successful!');
+      return true;
+    },
+    [getProfileInternal, clearAuthState]
+  );
+
   const updateProfile = useCallback(
     async (profileData) => {
       if (!isAuthenticated) return false;
@@ -432,7 +481,7 @@ export const AuthProvider = ({ children }) => {
         const value = profileData[key];
 
         if (key === 'genres' && Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
+          formData.append('genres', JSON.stringify(value)); // Backend expects 'genres'
         } else if (value instanceof File) {
           formData.append(key, value);
         } else if (value !== undefined && value !== null) {
@@ -541,6 +590,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     requestPasswordReset,
     confirmPasswordReset,
+    googleAuth,
     getProfile,
     updateProfile,
     updateAccountSettings,

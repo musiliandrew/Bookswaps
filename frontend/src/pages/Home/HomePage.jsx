@@ -163,7 +163,7 @@ function HomePage() {
         </h2>
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {mockFeatures.map((feature, index) => (
-            <FeatureCard key={index} icon={feature.icon} title={feature.title} desc={feature.desc} />
+            <FeatureCard key={`feature-${index}-${feature.title}`} icon={feature.icon} title={feature.title} desc={feature.desc} />
           ))}
         </div>
       </section>

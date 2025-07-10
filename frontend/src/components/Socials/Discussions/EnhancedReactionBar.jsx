@@ -1,51 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowUpIcon, 
-  ArrowDownIcon,
+import {
+  CheckIcon,
+  XMarkIcon,
   ShareIcon,
   BookmarkIcon,
   ChatBubbleLeftIcon,
-  EllipsisHorizontalIcon
+  EllipsisHorizontalIcon,
+  SpeakerWaveIcon
 } from '@heroicons/react/24/outline';
-import { 
-  ArrowUpIcon as ArrowUpSolid, 
-  ArrowDownIcon as ArrowDownSolid,
-  BookmarkIcon as BookmarkSolid
+import {
+  CheckIcon as CheckSolid,
+  XMarkIcon as XMarkSolid,
+  BookmarkIcon as BookmarkSolid,
+  SpeakerWaveIcon as SpeakerWaveSolid
 } from '@heroicons/react/24/solid';
 
-const EnhancedReactionBar = ({ 
-  post, 
-  onUpvote, 
-  onDownvote, 
-  onReprint, 
+const EnhancedReactionBar = ({
+  post,
+  onAgree,
+  onDisagree,
+  onReprint,
   onBookmark,
-  onReact,
-  isUpvoted = false,
-  isDownvoted = false,
+  onToggleComments,
+  isAgreed = false,
+  isDisagreed = false,
   isBookmarked = false,
   showComments = true
 }) => {
-  const [showReactions, setShowReactions] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const shareMenuRef = useRef(null);
+  const moreMenuRef = useRef(null);
 
-  // Enhanced reaction types for readers
-  const reactionTypes = [
-    { emoji: '💡', label: 'Insightful', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    { emoji: '😭', label: 'Emotional', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { emoji: '🔥', label: 'Controversial', color: 'text-red-600', bg: 'bg-red-50' },
-    { emoji: '🧠', label: 'Mind-blowing', color: 'text-purple-600', bg: 'bg-purple-50' },
-    { emoji: '🧩', label: 'Confusing', color: 'text-gray-600', bg: 'bg-gray-50' },
-    { emoji: '❤️', label: 'Loved it', color: 'text-pink-600', bg: 'bg-pink-50' },
-    { emoji: '📚', label: 'Educational', color: 'text-green-600', bg: 'bg-green-50' }
-  ];
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target)) {
+        setShowShareMenu(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
 
-  const handleReaction = (reactionType) => {
-    if (onReact) {
-      onReact(post.discussion_id, reactionType);
-    }
-    setShowReactions(false);
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleShare = (platform) => {
     const url = `${window.location.origin}/socials/discussions/post/${post.discussion_id}`;
@@ -67,173 +70,340 @@ const EnhancedReactionBar = ({
     setShowShareMenu(false);
   };
 
+  const handleMoreAction = (action) => {
+    setShowMoreMenu(false);
+    // Handle more actions here
+    console.log(`More action: ${action}`);
+  };
+
   return (
-    <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-4 bg-white/30 backdrop-blur-sm border-t border-white/20">
-      <div className="flex items-center space-x-3 sm:space-x-6">
-        {/* Traditional Voting (for sorting) - Mobile optimized */}
+    <div className="px-2 sm:px-4 py-2 sm:py-3 bg-white/30 backdrop-blur-sm border-t border-white/20">
+
+      {/* Mobile Layout: Two Columns */}
+      <div className="flex items-center justify-between sm:hidden">
+        {/* LEFT COLUMN: Primary Actions */}
         <div className="flex items-center space-x-1">
+          {/* Agree */}
           <motion.button
-            onClick={() => onUpvote && onUpvote(post.discussion_id)}
-            className={`flex items-center space-x-1 px-1.5 sm:px-2 py-1 rounded-lg transition-all font-open-sans ${
-              isUpvoted
-                ? 'bg-success/20 text-success'
-                : 'hover:bg-white/50 text-primary/70'
+            onClick={() => onAgree && onAgree(post.discussion_id)}
+            className={`flex items-center space-x-1 transition-all font-open-sans min-h-[40px] ${
+              isAgreed
+                ? 'text-green-600'
+                : 'text-gray-500 hover:text-green-600'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title="Agree / Correct"
           >
-            {isUpvoted ? (
-              <ArrowUpSolid className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+            {isAgreed ? (
+              <CheckSolid className="w-3 h-3" />
             ) : (
-              <ArrowUpIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+              <CheckIcon className="w-3 h-3" />
             )}
-            <span className="text-xs sm:text-sm font-medium">{post.upvotes || 0}</span>
+            <span className="text-xs font-medium">{post.upvotes || 0}</span>
           </motion.button>
 
+          {/* Disagree */}
           <motion.button
-            onClick={() => onDownvote && onDownvote(post.discussion_id)}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-lg transition-all font-open-sans ${
-              isDownvoted
-                ? 'bg-error/20 text-error'
-                : 'hover:bg-white/50 text-primary/70'
+            onClick={() => onDisagree && onDisagree(post.discussion_id)}
+            className={`flex items-center space-x-1 transition-all font-open-sans min-h-[40px] ${
+              isDisagreed
+                ? 'text-red-600'
+                : 'text-gray-500 hover:text-red-600'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title="Disagree / Wrong"
           >
-            {isDownvoted ? (
-              <ArrowDownSolid className="w-4 h-4" />
+            {isDisagreed ? (
+              <XMarkSolid className="w-3 h-3" />
             ) : (
-              <ArrowDownIcon className="w-4 h-4" />
+              <XMarkIcon className="w-3 h-3" />
+            )}
+            <span className="text-xs font-medium">{post.downvotes || 0}</span>
+          </motion.button>
+
+          {/* Echo */}
+          <motion.button
+            onClick={() => onReprint && onReprint(post)}
+            className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-all font-open-sans min-h-[40px]"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Echo (Repost)"
+          >
+            <SpeakerWaveIcon className="w-3 h-3" />
+            <span className="text-xs font-medium">{post.reprint_count || 0}</span>
+          </motion.button>
+
+          {/* Comments */}
+          {showComments && (
+            <motion.button
+              onClick={() => onToggleComments && onToggleComments()}
+              className="flex items-center space-x-1 text-gray-500 hover:text-purple-600 transition-all font-open-sans min-h-[40px]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Notes"
+            >
+              <ChatBubbleLeftIcon className="w-3 h-3" />
+              <span className="text-xs font-medium">{post.note_count || 0}</span>
+            </motion.button>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: Secondary Actions */}
+        <div className="flex items-center space-x-1">
+          {/* Bookmark */}
+          <motion.button
+            onClick={() => onBookmark && onBookmark(post.discussion_id)}
+            className={`transition-all min-h-[40px] flex items-center justify-center ${
+              isBookmarked
+                ? 'text-yellow-600'
+                : 'text-gray-400 hover:text-yellow-600'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Bookmark"
+          >
+            {isBookmarked ? (
+              <BookmarkSolid className="w-3 h-3" />
+            ) : (
+              <BookmarkIcon className="w-3 h-3" />
+            )}
+          </motion.button>
+
+          {/* Share */}
+          <div className="relative" ref={shareMenuRef}>
+            <motion.button
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="text-gray-400 hover:text-gray-600 transition-all min-h-[40px] flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Share"
+            >
+              <ShareIcon className="w-3 h-3" />
+            </motion.button>
+
+            <AnimatePresence>
+              {showShareMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
+                >
+                  <button
+                    onClick={() => handleShare('copy')}
+                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    📋 Copy Link
+                  </button>
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    🐦 Twitter
+                  </button>
+                  <button
+                    onClick={() => handleShare('facebook')}
+                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    📘 Facebook
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout: Original Three Groups */}
+      <div className="hidden sm:flex items-center justify-between">
+        {/* LEFT GROUP: Primary Actions */}
+        <div className="flex items-center space-x-4">
+          {/* Agree */}
+          <motion.button
+            onClick={() => onAgree && onAgree(post.discussion_id)}
+            className={`flex items-center space-x-1 transition-all font-open-sans min-h-[44px] ${
+              isAgreed
+                ? 'text-green-600'
+                : 'text-gray-500 hover:text-green-600'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Agree / Correct"
+          >
+            {isAgreed ? (
+              <CheckSolid className="w-4 h-4" />
+            ) : (
+              <CheckIcon className="w-4 h-4" />
+            )}
+            <span className="text-sm font-medium">{post.upvotes || 0}</span>
+          </motion.button>
+
+          {/* Disagree */}
+          <motion.button
+            onClick={() => onDisagree && onDisagree(post.discussion_id)}
+            className={`flex items-center space-x-1 transition-all font-open-sans min-h-[44px] ${
+              isDisagreed
+                ? 'text-red-600'
+                : 'text-gray-500 hover:text-red-600'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Disagree / Wrong"
+          >
+            {isDisagreed ? (
+              <XMarkSolid className="w-4 h-4" />
+            ) : (
+              <XMarkIcon className="w-4 h-4" />
             )}
             <span className="text-sm font-medium">{post.downvotes || 0}</span>
           </motion.button>
-        </div>
 
-        {/* Enhanced Reactions */}
-        <div className="relative">
+          {/* Echo */}
           <motion.button
-            onClick={() => setShowReactions(!showReactions)}
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
+            onClick={() => onReprint && onReprint(post)}
+            className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-all font-open-sans min-h-[44px]"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title="Echo (Repost)"
           >
-            <span className="text-lg">😊</span>
-            <span className="text-sm font-medium">React</span>
+            <SpeakerWaveIcon className="w-4 h-4" />
+            <span className="text-sm font-medium">{post.reprint_count || 0}</span>
           </motion.button>
 
-          <AnimatePresence>
-            {showReactions && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                className="absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg p-3 z-10"
-              >
-                <div className="grid grid-cols-4 gap-2">
-                  {reactionTypes.map((reaction) => (
-                    <motion.button
-                      key={reaction.label}
-                      onClick={() => handleReaction(reaction)}
-                      className={`flex flex-col items-center p-2 rounded-lg transition-all ${reaction.bg} hover:scale-110`}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      title={reaction.label}
-                    >
-                      <span className="text-lg mb-1">{reaction.emoji}</span>
-                      <span className={`text-xs font-medium ${reaction.color}`}>
-                        {reaction.label}
-                      </span>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Comments */}
-        {showComments && (
-          <motion.button
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ChatBubbleLeftIcon className="w-4 h-4" />
-            <span className="text-sm font-medium">{post.notes_count || 0}</span>
-          </motion.button>
-        )}
-      </div>
-
-      <div className="flex items-center space-x-4">
-        {/* Share */}
-        <div className="relative">
-          <motion.button
-            onClick={() => setShowShareMenu(!showShareMenu)}
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ShareIcon className="w-4 h-4" />
-            <span className="text-sm font-medium">Share</span>
-          </motion.button>
-
-          <AnimatePresence>
-            {showShareMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg p-2 z-10 min-w-[120px]"
-              >
-                <button
-                  onClick={() => handleShare('copy')}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 rounded-lg transition-colors"
-                >
-                  📋 Copy Link
-                </button>
-                <button
-                  onClick={() => handleShare('twitter')}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 rounded-lg transition-colors"
-                >
-                  🐦 Twitter
-                </button>
-                <button
-                  onClick={() => handleShare('facebook')}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 rounded-lg transition-colors"
-                >
-                  📘 Facebook
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Bookmark */}
-        <motion.button
-          onClick={() => onBookmark && onBookmark(post.discussion_id)}
-          className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all font-open-sans ${
-            isBookmarked
-              ? 'bg-accent/20 text-accent'
-              : 'hover:bg-white/50 text-primary/70'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {isBookmarked ? (
-            <BookmarkSolid className="w-4 h-4" />
-          ) : (
-            <BookmarkIcon className="w-4 h-4" />
+          {/* Comments */}
+          {showComments && (
+            <motion.button
+              onClick={() => onToggleComments && onToggleComments()}
+              className="flex items-center space-x-1 text-gray-500 hover:text-purple-600 transition-all font-open-sans min-h-[44px]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Notes"
+            >
+              <ChatBubbleLeftIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">{post.note_count || 0}</span>
+            </motion.button>
           )}
-        </motion.button>
+        </div>
 
-        {/* More Options */}
-        <motion.button
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/50 text-primary/70 transition-all font-open-sans"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <EllipsisHorizontalIcon className="w-4 h-4" />
-        </motion.button>
+        {/* CENTER GROUP: Comments */}
+        <div className="flex items-center">
+          {!showComments && (
+            <motion.button
+              onClick={() => onToggleComments && onToggleComments()}
+              className="flex items-center space-x-1 text-gray-500 hover:text-purple-600 transition-all font-open-sans min-h-[44px]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Notes"
+            >
+              <ChatBubbleLeftIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">{post.note_count || 0}</span>
+            </motion.button>
+          )}
+        </div>
+
+        {/* RIGHT GROUP: Secondary Actions */}
+        <div className="flex items-center space-x-4">
+          {/* Bookmark */}
+          <motion.button
+            onClick={() => onBookmark && onBookmark(post.discussion_id)}
+            className={`transition-all min-h-[44px] flex items-center justify-center ${
+              isBookmarked
+                ? 'text-yellow-600'
+                : 'text-gray-400 hover:text-yellow-600'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Bookmark"
+          >
+            {isBookmarked ? (
+              <BookmarkSolid className="w-4 h-4" />
+            ) : (
+              <BookmarkIcon className="w-4 h-4" />
+            )}
+          </motion.button>
+
+          {/* Share */}
+          <div className="relative" ref={shareMenuRef}>
+            <motion.button
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="text-gray-400 hover:text-gray-600 transition-all min-h-[44px] flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Share"
+            >
+              <ShareIcon className="w-4 h-4" />
+            </motion.button>
+
+            <AnimatePresence>
+              {showShareMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[140px]"
+                >
+                  <button
+                    onClick={() => handleShare('copy')}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    📋 Copy Link
+                  </button>
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    🐦 Twitter
+                  </button>
+                  <button
+                    onClick={() => handleShare('facebook')}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    📘 Facebook
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* More Options */}
+          <div className="relative" ref={moreMenuRef}>
+            <motion.button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="text-gray-400 hover:text-gray-600 transition-all min-h-[44px] flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="More options"
+            >
+              <EllipsisHorizontalIcon className="w-4 h-4" />
+            </motion.button>
+
+            <AnimatePresence>
+              {showMoreMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
+                >
+                  <button
+                    onClick={() => handleMoreAction('report')}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 rounded-lg transition-colors text-red-600"
+                  >
+                    🚨 Report
+                  </button>
+                  <button
+                    onClick={() => handleMoreAction('hide')}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    👁️ Hide
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,20 +1,114 @@
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../contexts/AuthContext';
+import { useEffect, useRef } from 'react';
 
-const GoogleAuthButton = ({ onError, text = "Continue with Google", className = "" }) => {
-  const handleGoogleAuth = async () => {
+const GoogleAuthButton = ({ onSuccess, onError, text = "Continue with Google", className = "" }) => {
+  const { googleAuth } = useAuth();
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize Google Identity Services when component mounts
+    if (window.google && window.google.accounts) {
+      initializeGoogleAuth();
+    } else {
+      // Wait for Google script to load
+      const checkGoogle = setInterval(() => {
+        if (window.google && window.google.accounts) {
+          clearInterval(checkGoogle);
+          initializeGoogleAuth();
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => clearInterval(checkGoogle), 10000);
+    }
+  }, []);
+
+  const initializeGoogleAuth = () => {
     try {
-      // For now, show a placeholder message
-      toast.info('Google OAuth integration coming soon!');
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      console.log('Google Client ID:', clientId); // Debug log
 
-      // TODO: Implement actual Google OAuth flow
-      // This will involve:
-      // 1. Loading Google OAuth SDK
-      // 2. Initiating OAuth flow
-      // 3. Handling the callback
-      // 4. Sending the token to our backend
+      if (!clientId) {
+        console.error('Google Client ID is missing from environment variables');
+        return;
+      }
 
-      console.log('Google OAuth clicked - integration pending');
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      console.log('Google OAuth initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Google Auth:', error);
+    }
+  };
+
+  const handleCredentialResponse = async (response) => {
+    try {
+      if (!response.credential) {
+        throw new Error('No credential received from Google');
+      }
+
+      // Call the googleAuth function from AuthContext
+      const success = await googleAuth(response.credential);
+
+      if (success && onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      if (onError) {
+        onError(error);
+      } else {
+        toast.error('Google authentication failed');
+      }
+    }
+  };
+
+  const handleGoogleAuth = () => {
+    try {
+      if (!window.google || !window.google.accounts) {
+        toast.error('Google services not loaded. Please refresh and try again.');
+        return;
+      }
+
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        toast.error('Google OAuth is not configured properly.');
+        return;
+      }
+
+      // Re-initialize to ensure client_id is set
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      // Trigger Google One Tap
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // If One Tap is not available, render the button
+          if (buttonRef.current) {
+            // Clear any existing content
+            buttonRef.current.innerHTML = '';
+
+            window.google.accounts.id.renderButton(buttonRef.current, {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'continue_with',
+              shape: 'rectangular',
+            });
+          }
+        }
+      });
     } catch (error) {
       console.error('Google OAuth error:', error);
       if (onError) {
@@ -26,18 +120,19 @@ const GoogleAuthButton = ({ onError, text = "Continue with Google", className = 
   };
 
   return (
-    <motion.button
-      onClick={handleGoogleAuth}
-      className={`
-        w-full flex items-center justify-center gap-3 px-6 py-3
-        border border-gray-300 rounded-lg bg-white text-gray-700
-        hover:bg-gray-50 hover:border-gray-400 transition-all duration-200
-        font-medium shadow-sm hover:shadow-md
-        ${className}
-      `}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div ref={buttonRef}>
+      <motion.button
+        onClick={handleGoogleAuth}
+        className={`
+          w-full flex items-center justify-center gap-3 px-6 py-3
+          border border-gray-300 rounded-lg bg-white text-gray-700
+          hover:bg-gray-50 hover:border-gray-400 transition-all duration-200
+          font-medium shadow-sm hover:shadow-md
+          ${className}
+        `}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
       {/* Google Icon SVG */}
       <svg
         width="20"
@@ -62,8 +157,9 @@ const GoogleAuthButton = ({ onError, text = "Continue with Google", className = 
           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         />
       </svg>
-      <span>{text}</span>
-    </motion.button>
+        <span>{text}</span>
+      </motion.button>
+    </div>
   );
 };
 

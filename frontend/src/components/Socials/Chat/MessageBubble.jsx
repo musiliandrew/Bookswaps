@@ -1,46 +1,149 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  PlayIcon, 
-  PauseIcon, 
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
+import MessageStatus from './MessageStatus';
+import { api } from '../../../utils/api';
+import {
+  PlayIcon,
+  PauseIcon,
   DocumentIcon,
   PhotoIcon,
   VideoCameraIcon,
   MicrophoneIcon,
   CheckIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ArrowUturnLeftIcon
 } from '@heroicons/react/24/outline';
 
-const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
+const MessageBubble = ({
+  message,
+  isOwn,
+  isGroup = false,
+  partner,
+  onReply = null,
+  replyToMessage = null,
+  onMarkAsRead = null
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [showReplyIcon, setShowReplyIcon] = useState(false);
+  const [hasBeenRead, setHasBeenRead] = useState(message.status === 'READ');
+  const constraintsRef = useRef(null);
+  const messageRef = useRef(null);
 
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'SENT':
-        return <CheckIcon className="w-3 h-3 text-gray-400" />;
-      case 'DELIVERED':
-        return <CheckCircleIcon className="w-3 h-3 text-gray-400" />;
-      case 'READ':
-        return <CheckCircleIcon className="w-3 h-3 text-[var(--accent)]" />;
-      default:
-        return null;
-    }
-  };
+
 
   const getMessageBgColor = () => {
     if (isOwn) {
-      return 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary)]/90 text-white';
+      return 'bg-gradient-to-r from-[var(--primary)] to-[var(--dark-primary)] text-white shadow-lg';
     }
     return 'bg-white text-[var(--text)] shadow-sm border border-gray-100';
   };
 
   const getMessageAlignment = () => {
     return isOwn ? 'justify-end' : 'justify-start';
+  };
+
+  // Helper function to get sender name
+  const getSenderName = () => {
+    if (isOwn) {
+      return 'You';
+    }
+
+    // Try different possible user fields
+    const user = message.user || message.sender || message.author;
+    if (user) {
+      return user.username || user.first_name || user.name || 'Unknown User';
+    }
+
+    // Fallback to direct fields on message
+    return message.username || message.sender_name || message.user_name || 'Unknown User';
+  };
+
+  // Mark message as read when it comes into view
+  useEffect(() => {
+    if (!messageRef.current || isOwn || hasBeenRead || message.status === 'READ') {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            // Message is visible, mark as read
+            markAsRead();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of message is visible
+        rootMargin: '0px'
+      }
+    );
+
+    observer.observe(messageRef.current);
+
+    return () => {
+      if (messageRef.current) {
+        observer.unobserve(messageRef.current);
+      }
+    };
+  }, [isOwn, hasBeenRead, message.status]);
+
+  // Function to mark message as read
+  const markAsRead = async () => {
+    if (isOwn || hasBeenRead || message.status === 'READ') {
+      return;
+    }
+
+    try {
+      // Call the API to mark message as read
+      await api.post(`/api/chat/messages/${message.chat_id || message.id}/read/`);
+      setHasBeenRead(true);
+
+      // Update the message status locally for immediate UI feedback
+      message.status = 'read';
+
+      // Call parent callback if provided
+      if (onMarkAsRead) {
+        onMarkAsRead(message);
+      }
+
+      console.log('✅ Message marked as read:', message.content?.substring(0, 30) + '...');
+    } catch (error) {
+      console.error('Failed to mark message as read:', error);
+    }
+  };
+
+  // Handle swipe to reply
+  const handleDrag = (event, info) => {
+    const threshold = 50;
+    const dragDistance = Math.abs(info.offset.x);
+
+    if (dragDistance > threshold && !showReplyIcon) {
+      setShowReplyIcon(true);
+    } else if (dragDistance <= threshold && showReplyIcon) {
+      setShowReplyIcon(false);
+    }
+
+    setDragX(info.offset.x);
+  };
+
+  const handleDragEnd = (event, info) => {
+    const threshold = 80;
+    const dragDistance = Math.abs(info.offset.x);
+
+    if (dragDistance > threshold && onReply) {
+      onReply(message);
+    }
+
+    setDragX(0);
+    setShowReplyIcon(false);
   };
 
   const renderMediaContent = () => {
@@ -51,18 +154,23 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
             <img
               src={message.media_url}
               alt="Shared image"
-              className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => setShowFullImage(true)}
             />
             {message.content && (
-              <p className="mt-2 text-sm">{message.content}</p>
+              <SmartTextRenderer
+                text={message.content}
+                className="mt-2 text-sm"
+                enableBookLinks={true}
+                enableUserMentions={true}
+              />
             )}
           </div>
         );
 
       case 'VIDEO':
         return (
-          <div className="relative max-w-xs">
+          <div className="relative max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
             <video
               src={message.media_url}
               controls
@@ -70,7 +178,12 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
               poster={message.media_thumbnail}
             />
             {message.content && (
-              <p className="mt-2 text-sm">{message.content}</p>
+              <SmartTextRenderer
+                text={message.content}
+                className="mt-2 text-sm"
+                enableBookLinks={true}
+                enableUserMentions={true}
+              />
             )}
           </div>
         );
@@ -78,7 +191,7 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
       case 'AUDIO':
       case 'VOICE_NOTE':
         return (
-          <div className="flex items-center space-x-3 bg-white/10 rounded-full p-3 max-w-xs">
+          <div className="flex items-center space-x-3 bg-white/10 rounded-full p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
@@ -105,7 +218,7 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
 
       case 'FILE':
         return (
-          <div className="flex items-center space-x-3 bg-white/10 rounded-lg p-3 max-w-xs">
+          <div className="flex items-center space-x-3 bg-white/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <DocumentIcon className="w-8 h-8 opacity-60" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{message.media_filename}</p>
@@ -118,7 +231,7 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
 
       case 'BOOK_REFERENCE':
         return (
-          <div className="bg-white/10 rounded-lg p-3 max-w-xs">
+          <div className="bg-white/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-16 bg-[var(--accent)] rounded flex items-center justify-center">
                 <span className="text-xs font-bold text-[var(--secondary)]">📚</span>
@@ -129,36 +242,103 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
               </div>
             </div>
             {message.content && (
-              <p className="mt-2 text-sm">{message.content}</p>
+              <SmartTextRenderer
+                text={message.content}
+                className="mt-2 text-sm"
+                enableBookLinks={true}
+                enableUserMentions={true}
+              />
             )}
           </div>
         );
 
       default:
-        return <p className="text-sm">{message.content}</p>;
+        return (
+          <SmartTextRenderer
+            text={message.content}
+            className="text-sm"
+            enableBookLinks={true}
+            enableUserMentions={true}
+          />
+        );
     }
   };
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className={`flex ${getMessageAlignment()} mb-3 group`}
+      <div
+        className={`flex ${getMessageAlignment()} mb-3 group relative`}
+        ref={constraintsRef}
       >
-        <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
-          {/* Group chat sender name */}
-          {isGroup && !isOwn && (
-            <p className="text-xs text-gray-500 mb-1 px-3 font-medium">
-              {message.user?.username || message.sender?.username}
-            </p>
+        <div ref={messageRef} className="w-full">
+        {/* Reply Icon (appears on swipe) */}
+        <motion.div
+          className={`absolute ${isOwn ? 'left-0' : 'right-0'} top-1/2 transform -translate-y-1/2 z-10`}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{
+            opacity: showReplyIcon ? 1 : 0,
+            scale: showReplyIcon ? 1 : 0
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="bg-[var(--primary)] text-white p-2 rounded-full shadow-lg">
+            <ArrowUturnLeftIcon className="w-4 h-4" />
+          </div>
+        </motion.div>
+
+        {/* Message Container */}
+        <div className={`flex flex-col max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] xl:max-w-[65%] ${isOwn ? 'items-end' : 'items-start'}`}>
+          {/* Sender Name (for all messages) */}
+          <div className="mb-1 px-2">
+            <span className="text-xs font-medium text-[var(--primary)]">
+              {getSenderName()}
+            </span>
+          </div>
+
+        <motion.div
+          drag="x"
+          dragConstraints={constraintsRef}
+          dragElastic={0.2}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          animate={{ x: dragX }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className={`max-w-full ${isOwn ? 'order-2' : 'order-1'} cursor-grab active:cursor-grabbing`}
+        >
+
+
+          {/* Reply indicator */}
+          {replyToMessage && (
+            <div className={`mb-2 px-3 py-2 rounded-lg border-l-4 ${
+              isOwn
+                ? 'bg-white/10 border-white/30'
+                : 'bg-gray-50 border-[var(--primary)]'
+            }`}>
+              <div className="flex items-center space-x-2 mb-1">
+                <ArrowUturnLeftIcon className={`w-3 h-3 ${
+                  isOwn ? 'text-white/70' : 'text-[var(--primary)]'
+                }`} />
+                <span className={`text-xs font-medium ${
+                  isOwn ? 'text-white/70' : 'text-[var(--primary)]'
+                }`}>
+                  Replying to {replyToMessage.user?.username || replyToMessage.sender?.username || 'Unknown'}
+                </span>
+              </div>
+              <p className={`text-xs ${
+                isOwn ? 'text-white/60' : 'text-gray-600'
+              } line-clamp-2`}>
+                {replyToMessage.content}
+              </p>
+            </div>
           )}
 
           {/* Message bubble */}
           <div
-            className={`rounded-2xl px-4 py-2 relative ${
-              isOwn ? 'rounded-br-md' : 'rounded-bl-md'
+            className={`rounded-2xl px-4 py-3 relative transition-all duration-200 ${
+              isOwn ? 'rounded-br-md shadow-lg' : 'rounded-bl-md'
             } ${getMessageBgColor()}`}
             style={{
               wordBreak: 'break-word',
@@ -210,16 +390,19 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
             )}
 
             {/* Time and status */}
-            <div className={`flex items-center justify-end mt-1 space-x-1 ${
-              isOwn ? 'text-white/60' : 'text-gray-400'
+            <div className={`flex items-center justify-between mt-2 space-x-2 ${
+              isOwn ? 'text-white/70' : 'text-gray-400'
             }`}>
-              <span className="text-xs">
-                {formatTime(message.sent_at || message.created_at)}
-              </span>
+              <div className="flex items-center space-x-1">
+                <span className="text-xs">
+                  {formatTime(message.sent_at || message.created_at)}
+                </span>
+              </div>
               {isOwn && (
-                <div className="flex items-center">
-                  {getStatusIcon(message.status)}
-                </div>
+                <MessageStatus
+                  status={hasBeenRead ? 'read' : message.status}
+                  className="ml-2"
+                />
               )}
             </div>
           </div>
@@ -242,8 +425,10 @@ const MessageBubble = ({ message, isOwn, isGroup = false, partner }) => {
               )}
             </div>
           )}
+        </motion.div>
         </div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Full Image Modal */}
       {showFullImage && message.message_type === 'IMAGE' && (

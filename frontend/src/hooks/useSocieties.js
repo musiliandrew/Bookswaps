@@ -60,7 +60,11 @@ export function useSocieties() {
     );
     if (result) {
       setSocieties((prev) =>
-        prev.map((s) => (s.id === societyId ? { ...s, is_member: true } : s))
+        prev.map((s) =>
+          (s.id === societyId || s.society_id === societyId)
+            ? { ...s, is_member: true, member_count: (s.member_count || 0) + 1 }
+            : s
+        )
       );
     }
     return result;
@@ -76,7 +80,11 @@ export function useSocieties() {
     );
     if (result) {
       setSocieties((prev) =>
-        prev.map((s) => (s.id === societyId ? { ...s, is_member: false } : s))
+        prev.map((s) =>
+          (s.id === societyId || s.society_id === societyId)
+            ? { ...s, is_member: false, member_count: Math.max((s.member_count || 1) - 1, 0) }
+            : s
+        )
       );
     }
     return result;
@@ -159,9 +167,14 @@ export function useSocieties() {
     }
   }, []);
 
-  const sendSocietyMessage = useCallback(async (societyId, content) => {
+  const sendSocietyMessage = useCallback(async (societyId, messageData) => {
+    // Handle both string content and object messageData for backward compatibility
+    const payload = typeof messageData === 'string'
+      ? { content: messageData, message_type: 'TEXT' }
+      : messageData;
+
     const result = await handleApiCall(
-      () => api.post(API_ENDPOINTS.SEND_SOCIETY_MESSAGE(societyId), { content }),
+      () => api.post(API_ENDPOINTS.SEND_SOCIETY_MESSAGE(societyId), payload),
       setIsLoading,
       setError,
       'Message sent!',

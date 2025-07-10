@@ -469,9 +469,12 @@ class SendSocietyMessageView(APIView):
                           status=status.HTTP_403_FORBIDDEN)
 
         # Create message
-        serializer = SocietyMessageSerializer(data=request.data)
+        serializer = SocietyMessageSerializer(
+            data=request.data,
+            context={'society_id': society_id, 'user': request.user}
+        )
         if serializer.is_valid():
-            message = serializer.save(society=society, user=request.user)
+            message = serializer.save()
             return Response(SocietyMessageSerializer(message).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -591,3 +594,65 @@ class PinMessageView(APIView):
             "message": f"Message {action} successfully.",
             "is_pinned": message.is_pinned
         })
+
+
+class SocietyDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        # Check if user has access to this society
+        if society.visibility == 'private':
+            if not SocietyMember.objects.filter(
+                society=society, user=request.user, status='ACTIVE'
+            ).exists():
+                return Response({"error": "Access denied - This is a private society."},
+                              status=status.HTTP_403_FORBIDDEN)
+
+        serializer = SocietySerializer(society, context={'request': request})
+        return Response(serializer.data)
+
+
+class SocietyMembersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, society_id):
+        try:
+            society = Society.objects.get(society_id=society_id)
+        except Society.DoesNotExist:
+            raise NotFound("Society not found.")
+
+        # Check if user has access to this society
+        if society.visibility == 'private':
+            if not SocietyMember.objects.filter(
+                society=society, user=request.user, status='ACTIVE'
+            ).exists():
+                return Response({"error": "Access denied - This is a private society."},
+                              status=status.HTTP_403_FORBIDDEN)
+
+        # Get society members with pagination
+        members = SocietyMember.objects.filter(
+            society=society, status='ACTIVE'
+        ).select_related('user').order_by('-joined_at')
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        paginated_members = paginator.paginate_queryset(members, request)
+
+        # Serialize member data
+        members_data = []
+        for member in paginated_members:
+            members_data.append({
+                'user_id': member.user.user_id,
+                'username': member.user.username,
+                'profile_picture': member.user.profile_picture if member.user.profile_picture else None,
+                'joined_at': member.joined_at,
+                'role': member.role,
+                'is_creator': member.user == society.creator
+            })
+
+        return paginator.get_paginated_response(members_data)

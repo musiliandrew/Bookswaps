@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useUserStats } from '../../../hooks/useUserStats';
 import ShareableProfileCard from '../ShareableProfileCard';
 import {
@@ -12,13 +13,17 @@ import {
   MapPinIcon,
   CalendarIcon,
   SparklesIcon,
-  TrophyIcon
+  TrophyIcon,
+  EyeIcon,
+  ArrowPathIcon,
+  BookmarkIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon,
   BookmarkIcon as BookmarkSolidIcon
 } from '@heroicons/react/24/solid';
+import { getProfilePictureUrl } from '../../../utils/imageUtils';
 
 // Enhanced helper function to parse genres - handles multiple levels of encoding
 const parseGenres = (genres) => {
@@ -135,6 +140,7 @@ const UserProfileCard = ({
   const [localFollowStatus, setLocalFollowStatus] = useState(followStatus);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
+  const navigate = useNavigate();
 
   // Only fetch user statistics if not provided as props (to avoid redundant API calls)
   const { stats: fetchedStats, isLoading: statsLoading } = useUserStats(
@@ -269,11 +275,19 @@ const UserProfileCard = ({
 
             {/* Profile Picture Container */}
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-3 border-white/30 shadow-2xl">
-              <img
-                src={localUser.profile_picture || '/default-avatar.png'}
-                alt={localUser.username}
-                className="w-full h-full object-cover"
-              />
+              {getProfilePictureUrl(localUser, 'L') ? (
+                <img
+                  src={getProfilePictureUrl(localUser, 'L')}
+                  alt={localUser.username}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">
+                    {localUser.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
 
               {/* Online Status */}
               {profileStats.isOnline && (
@@ -367,61 +381,128 @@ const UserProfileCard = ({
               ))}
             </motion.div>
 
-            {/* Stats Grid */}
+            {/* Enhanced Stats Grid */}
             <motion.div
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"
+              className="mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <div className="stats-card p-3 rounded-xl text-center">
-                <BookOpenIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
-                <div className="text-lg font-bold text-[var(--text)]">
-                  {statsLoading ? '...' : profileStats.booksRead}
+              {/* Primary Stats Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/5">
+                  <BookOpenIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.booksOwned}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Owned</div>
                 </div>
-                <div className="text-xs text-[var(--text)]/70">Books</div>
+
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--accent)]/10 to-[var(--primary)]/5">
+                  <EyeIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.booksRead}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Read</div>
+                </div>
+
+                <motion.div
+                  className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200 bg-gradient-to-br from-[var(--secondary)]/20 to-[var(--primary)]/5"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onShowFollowers && onShowFollowers()}
+                  title="View followers"
+                >
+                  <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">{localUser.followers_count || 0}</div>
+                  <div className="text-xs text-[var(--text)]/70">Followers</div>
+                </motion.div>
+
+                <motion.div
+                  className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200 bg-gradient-to-br from-[var(--accent)]/5 to-[var(--secondary)]/10"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onShowFollowing && onShowFollowing()}
+                  title="View following"
+                >
+                  <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">{localUser.following_count || 0}</div>
+                  <div className="text-xs text-[var(--text)]/70">Following</div>
+                </motion.div>
               </div>
 
-              <motion.div
-                className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onShowFollowers && onShowFollowers()}
-                title="View followers"
-              >
-                <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
-                <div className="text-lg font-bold text-[var(--text)]">{localUser.followers_count || 0}</div>
-                <div className="text-xs text-[var(--text)]/70">Followers</div>
-              </motion.div>
-
-              <motion.div
-                className="stats-card p-3 rounded-xl text-center cursor-pointer hover:bg-[var(--primary)]/10 transition-colors duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onShowFollowing && onShowFollowing()}
-                title="View following"
-              >
-                <UsersIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
-                <div className="text-lg font-bold text-[var(--text)]">{localUser.following_count || 0}</div>
-                <div className="text-xs text-[var(--text)]/70">Following</div>
-              </motion.div>
-
-              <div className="stats-card p-3 rounded-xl text-center">
-                <StarSolidIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
-                <div className="text-lg font-bold text-[var(--text)]">
-                  {statsLoading ? '...' : profileStats.reviewsWritten}
+              {/* Secondary Stats Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--accent)]/10 to-[var(--primary)]/5">
+                  <ArrowPathIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.booksShared}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Shared</div>
                 </div>
-                <div className="text-xs text-[var(--text)]/70">Reviews</div>
-              </div>
 
-              <div className="stats-card p-3 rounded-xl text-center">
-                <HeartSolidIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
-                <div className="text-lg font-bold text-[var(--text)]">
-                  {statsLoading ? '...' : profileStats.likesReceived}
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/5">
+                  <StarSolidIcon className="w-5 h-5 mx-auto mb-1 text-[var(--accent)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.reviewsWritten}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Reviews</div>
                 </div>
-                <div className="text-xs text-[var(--text)]/70">Likes</div>
+
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--secondary)]/15 to-[var(--primary)]/5">
+                  <HeartSolidIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.likesReceived}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Likes</div>
+                </div>
+
+                <div className="stats-card p-3 rounded-xl text-center bg-gradient-to-br from-[var(--accent)]/5 to-[var(--secondary)]/10">
+                  <BookmarkIcon className="w-5 h-5 mx-auto mb-1 text-[var(--primary)]" />
+                  <div className="text-lg font-bold text-[var(--text)]">
+                    {statsLoading ? '...' : profileStats.bookmarksCount}
+                  </div>
+                  <div className="text-xs text-[var(--text)]/70">Bookmarks</div>
+                </div>
               </div>
             </motion.div>
+
+            {/* Additional Stats Summary */}
+            {!statsLoading && (
+              <motion.div
+                className="bg-gradient-to-r from-[var(--secondary)]/20 to-[var(--accent)]/10 rounded-xl p-4 mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-[var(--primary)] font-lora">Reading Journey</h4>
+                  <div className="flex items-center gap-1 text-xs text-[var(--text)]/60">
+                    <CalendarIcon className="w-3 h-3" />
+                    <span>{profileStats.daysAsMember} days as member</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text)]/70">Books Received:</span>
+                    <span className="font-semibold text-[var(--primary)]">{profileStats.booksReceived}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text)]/70">Active Swaps:</span>
+                    <span className="font-semibold text-[var(--accent)]">{profileStats.activeSwaps}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text)]/70">Favorites:</span>
+                    <span className="font-semibold text-[var(--primary)]">{profileStats.favoritesCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text)]/70">Reading Streak:</span>
+                    <span className="font-semibold text-[var(--accent)]">{profileStats.readingStreak} days</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Achievements */}
             {profileStats.achievements && profileStats.achievements.length > 0 && (
@@ -495,6 +576,12 @@ const UserProfileCard = ({
                 )}
 
                 <motion.button
+                  onClick={() => navigate('/chat', {
+                    state: {
+                      startConversation: localUser,
+                      prefilledMessage: "Hey there! 👋"
+                    }
+                  })}
                   className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -543,14 +630,23 @@ const UserProfileCard = ({
         )}
       </div>
 
-      {/* Shareable Profile Card Modal */}
+      {/* Share Profile Expandable Section - appears below the entire profile card */}
       <AnimatePresence>
         {showShareCard && (
-          <ShareableProfileCard
-            user={localUser}
-            stats={profileStats}
-            onClose={() => setShowShareCard(false)}
-          />
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -20 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="mt-6 overflow-hidden"
+          >
+            <ShareableProfileCard
+              user={localUser}
+              stats={profileStats}
+              onClose={() => setShowShareCard(false)}
+              isInline={true}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

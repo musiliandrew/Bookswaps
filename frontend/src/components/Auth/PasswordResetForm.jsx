@@ -25,7 +25,7 @@ const PasswordResetForm = ({ className = '' }) => {
       }
       await confirmPasswordReset({ token, new_password: formData.new_password });
     } else {
-      await requestPasswordReset({ email: formData.email });
+      await requestPasswordReset(formData.email);
     }
   };
 

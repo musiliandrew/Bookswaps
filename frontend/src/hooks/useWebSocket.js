@@ -157,7 +157,7 @@ export function useWebSocket(userId = null, type = 'notification') {
         }
       }
 
-      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://bookswaps.quantiq.co.ke';
+      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://bookswaps.co.ke';
       const wsUrl = `${wsBaseUrl}${WS_ENDPOINTS.NOTIFICATIONS(token)}`;
       
       console.log(`Attempting WebSocket connection for ${type} at ${wsUrl}`);

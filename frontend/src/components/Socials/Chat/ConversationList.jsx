@@ -40,7 +40,23 @@ const ConversationList = ({ conversations, selectedConversation, onSelectConvers
 
   const truncateMessage = (content, maxLength = 40) => {
     if (!content) return '';
-    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+
+    // Strip HTML tags and decode HTML entities
+    const stripHtml = (html) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    };
+
+    // Handle book references - convert [📚 | Title](book:id) to "📚 Title"
+    const processBookReferences = (text) => {
+      return text.replace(/\[📚\s*(?:\|\s*)?([^\]]+)\]\(book:[^)]+\)/g, '📚 $1');
+    };
+
+    let cleanContent = stripHtml(content);
+    cleanContent = processBookReferences(cleanContent);
+
+    return cleanContent.length > maxLength ? cleanContent.substring(0, maxLength) + '...' : cleanContent;
   };
 
   if (isLoading) {

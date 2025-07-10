@@ -114,6 +114,7 @@ const parseGenres = (genres) => {
 const ProfileForm = () => {
   const { profile, updateProfile, isLoading } = useAuth();
   const fileInputRef = useRef(null);
+  const isFormInitialized = useRef(false);
   const [formData, setFormData] = useState({
     username: '',
     city: '',
@@ -139,10 +140,11 @@ const ProfileForm = () => {
     'Horror', 'Poetry', 'Drama', 'Adventure', 'Comedy'
   ];
 
-  // Populate form with profile data when profile loads
+  // Populate form with profile data when profile loads (only on initial load)
   useEffect(() => {
-    if (profile) {
-      const cleanedGenres = parseGenres(profile.favorite_genres);
+    if (profile && !isFormInitialized.current) {
+      // Only populate on initial load, not on subsequent profile updates
+      const cleanedGenres = parseGenres(profile.genres); // Backend returns 'genres', not 'favorite_genres'
       const data = {
         username: profile.username || '',
         city: profile.city || '',
@@ -156,6 +158,7 @@ const ProfileForm = () => {
       setFormData(data);
       setOriginalData(data);
       setImagePreview(profile.profile_picture);
+      isFormInitialized.current = true;
     }
   }, [profile]);
 
@@ -285,7 +288,7 @@ const ProfileForm = () => {
         const originalGenres = Array.isArray(originalValue) ? originalValue : [];
 
         if (JSON.stringify(currentGenres.sort()) !== JSON.stringify(originalGenres.sort())) {
-          submitData['favorite_genres'] = currentGenres; // Backend expects 'favorite_genres'
+          submitData['genres'] = currentGenres; // Backend expects 'genres'
         }
       } else {
         // For other fields, compare values and only include if changed
@@ -310,25 +313,27 @@ const ProfileForm = () => {
     if (result) {
       toast.success('Profile updated successfully!');
 
-      // Update form data with the fresh data from backend
-      const cleanedGenres = parseGenres(result.favorite_genres);
+      // Preserve current form data and only update fields that were actually returned from backend
+      const cleanedGenres = parseGenres(result.genres); // Backend returns 'genres'
       const updatedData = {
-        username: result.username || '',
-        city: result.city || '',
-        country: result.country || '',
-        birth_date: result.birth_date || '',
-        gender: result.gender || '',
-        about_you: result.about_you || '',
-        genres: cleanedGenres,
+        ...formData, // Keep current form data as base
+        // Only update fields that are present in the backend response
+        ...(result.username !== undefined && { username: result.username || '' }),
+        ...(result.city !== undefined && { city: result.city || '' }),
+        ...(result.country !== undefined && { country: result.country || '' }),
+        ...(result.birth_date !== undefined && { birth_date: result.birth_date || '' }),
+        ...(result.gender !== undefined && { gender: result.gender || '' }),
+        ...(result.about_you !== undefined && { about_you: result.about_you || '' }),
+        ...(result.genres !== undefined && { genres: cleanedGenres }),
         profile_picture: null, // Reset file input (but keep preview)
       };
 
-      // Update both form data and original data with fresh backend data
+      // Update both form data and original data with the merged data
       setFormData(updatedData);
       setOriginalData(updatedData);
 
       // Always update image preview with the latest profile picture from backend
-      setImagePreview(result.profile_picture || null);
+      setImagePreview(result.profile_picture || imagePreview);
 
       // Clear file input
       if (fileInputRef.current) {
@@ -363,7 +368,7 @@ const ProfileForm = () => {
       const originalGenres = Array.isArray(originalData[fieldName]) ? originalData[fieldName] : [];
 
       if (JSON.stringify(currentGenres.sort()) !== JSON.stringify(originalGenres.sort())) {
-        submitData['favorite_genres'] = currentGenres; // Backend expects 'favorite_genres'
+        submitData['genres'] = currentGenres; // Backend expects 'genres'
       }
     } else {
       if (formData[fieldName] !== originalData[fieldName]) {

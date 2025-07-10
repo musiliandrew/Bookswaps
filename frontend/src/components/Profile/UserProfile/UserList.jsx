@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { getProfilePictureUrl } from '../../../utils/imageUtils';
 
 const UserList = ({
   users,
@@ -36,6 +37,7 @@ const UserList = ({
               // Mutual: show "Mutual" badge and "Remove"
               buttons.push({
                 text: 'Remove',
+                shortText: 'Remove',
                 action: () => onRemoveFollower && onRemoveFollower(user.user_id),
                 className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
               });
@@ -43,11 +45,13 @@ const UserList = ({
               // Not mutual: show "Follow Back" and "Remove"
               buttons.push({
                 text: 'Follow Back',
+                shortText: 'Follow',
                 action: () => onFollow(user.user_id, 'Connections'),
                 className: 'bg-[var(--primary)] hover:bg-[var(--accent)] text-white'
               });
               buttons.push({
                 text: 'Remove',
+                shortText: 'Remove',
                 action: () => onRemoveFollower && onRemoveFollower(user.user_id),
                 className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
               });
@@ -56,11 +60,13 @@ const UserList = ({
             // Both follow each other: show "Unfollow" and "Remove"
             buttons.push({
               text: 'Unfollow',
+              shortText: 'Unfollow',
               action: () => onUnfollow(user.user_id),
               className: 'bg-gray-500 hover:bg-gray-600 text-white'
             });
             buttons.push({
               text: 'Remove',
+              shortText: 'Remove',
               action: () => onRemoveFollower && onRemoveFollower(user.user_id),
               className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
             });
@@ -69,12 +75,14 @@ const UserList = ({
             if (followStatus.is_following) {
               buttons.push({
                 text: 'Unfollow',
+                shortText: 'Unfollow',
                 action: () => onUnfollow(user.user_id),
                 className: 'bg-gray-500 hover:bg-gray-600 text-white'
               });
             } else {
               buttons.push({
                 text: 'Follow',
+                shortText: 'Follow',
                 action: () => onFollow(user.user_id, 'Connections'),
                 className: 'bg-[var(--primary)] hover:bg-[var(--accent)] text-white'
               });
@@ -85,19 +93,29 @@ const UserList = ({
         return (
           <motion.div
             key={user.user_id}
-            className="flex items-center justify-between p-3 bg-[var(--background)]/50 rounded-lg bookish-glass"
+            className="flex items-center justify-between p-2 sm:p-3 bg-[var(--background)]/50 rounded-lg bookish-glass"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <div
-              className="flex items-center gap-3 flex-1 cursor-pointer"
+              className="flex items-center gap-2 sm:gap-3 flex-1 cursor-pointer"
               onClick={() => onViewProfile(user.user_id)}
             >
-              <img
-                src={user.profile_picture || '/default-avatar.png'}
-                alt={user.username}
-                className="w-10 h-10 rounded-full object-cover border border-[var(--secondary)]"
-              />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[var(--secondary)]">
+                {getProfilePictureUrl(user, 'S') ? (
+                  <img
+                    src={getProfilePictureUrl(user, 'S')}
+                    alt={user.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">
+                      {user.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                )}
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-['Open_Sans'] text-[#456A76] text-sm">{user.username}</p>
@@ -110,14 +128,15 @@ const UserList = ({
                 <p className="text-xs text-[var(--secondary)]">{user.city || 'Unknown'}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               {buttons.map((btn, idx) => (
                 <button
                   key={idx}
                   onClick={btn.action}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-['Open_Sans'] transition-colors ${btn.className}`}
+                  className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-['Open_Sans'] transition-colors ${btn.className}`}
                 >
-                  {btn.text}
+                  <span className="hidden sm:inline">{btn.text}</span>
+                  <span className="sm:hidden">{btn.shortText || btn.text}</span>
                 </button>
               ))}
             </div>

@@ -32,6 +32,7 @@ export function useSwaps() {
   };
 
   const initiateSwap = useCallback(async (data) => {
+    console.log('Initiating swap with data:', data);
     const result = await handleApiCall(
       () => api.post(API_ENDPOINTS.INITIATE_SWAP, data),
       setIsLoading,
@@ -49,18 +50,29 @@ export function useSwaps() {
     const params = new URLSearchParams({ page });
     if (filters.status) params.append('status', filters.status);
 
-    const result = await handleApiCall(
-      () => api.get(`${API_ENDPOINTS.LIST_SWAPS}?${params.toString()}`),
-      setIsLoading,
-      setError,
-      null,
-      'Fetch swaps'
-    );
-    if (result) {
-      setSwaps(result.results || []);
-      updatePagination(result, 'swaps', page);
+    try {
+      const result = await handleApiCall(
+        () => api.get(`${API_ENDPOINTS.LIST_SWAPS}?${params.toString()}`),
+        setIsLoading,
+        setError,
+        null,
+        'Fetch swaps'
+      );
+      if (result) {
+        setSwaps(result.results || []);
+        updatePagination(result, 'swaps', page);
+      }
+      return result;
+    } catch (error) {
+      // Handle case where swaps API is not implemented yet
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        console.warn('Swaps API not available yet');
+        setSwaps([]);
+        setError(null); // Don't show error for unimplemented API
+        return { results: [] };
+      }
+      throw error; // Re-throw other errors
     }
-    return result;
   }, []);
 
   const acceptSwap = useCallback(async (swapId, acceptData = {}) => {
@@ -133,6 +145,7 @@ export function useSwaps() {
   }, []);
 
   const addLocation = useCallback(async (data) => {
+    console.log('Adding location with data:', data);
     const result = await handleApiCall(
       () => api.post(API_ENDPOINTS.ADD_LOCATION, data),
       setIsLoading,

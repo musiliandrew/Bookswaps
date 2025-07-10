@@ -5,6 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework.views import APIView
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserProfileSerializer,
     UpdateProfileSerializer, DeleteAccountSerializer, FollowSerializer,
@@ -110,12 +113,96 @@ class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # This will be implemented to handle Google OAuth
-        # For now, return a placeholder response
-        return Response(
-            {'detail': 'Google OAuth integration coming soon'},
-            status=status.HTTP_501_NOT_IMPLEMENTED
-        )
+        serializer = GoogleAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Get validated Google user data
+            google_data = serializer.validated_data
+            email = google_data['email']
+            google_id = google_data['google_id']
+
+            # Check if user exists with this email
+            user = CustomUser.objects.filter(email=email).first()
+
+            if user:
+                # User exists, log them in
+                if not user.is_active:
+                    return Response(
+                        {'detail': 'Account is deactivated'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Update Google ID if not set
+                if not user.google_id:
+                    user.google_id = google_id
+                    user.save()
+
+            else:
+                # Create new user
+                username = self._generate_username(google_data.get('name', email.split('@')[0]))
+
+                user = CustomUser.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=google_data.get('first_name', ''),
+                    last_name=google_data.get('last_name', ''),
+                    google_id=google_id,
+                    is_active=True,
+                    registration_step=1  # Basic registration complete
+                )
+
+                # Set a random password (user won't use it since they use Google OAuth)
+                user.set_unusable_password()
+                user.save()
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+
+            return Response({
+                'access_token': str(access_token),
+                'refresh_token': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'registration_step': user.registration_step,
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Google OAuth error: {str(e)}")
+            return Response(
+                {'detail': 'Google authentication failed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def _generate_username(self, base_name):
+        """Generate a unique username based on the provided name"""
+        import re
+        from django.utils.text import slugify
+
+        # Clean the base name
+        base_username = slugify(base_name.lower().replace(' ', ''))
+        if not base_username:
+            base_username = 'user'
+
+        # Ensure it's not too long
+        base_username = base_username[:20]
+
+        # Check if username exists
+        username = base_username
+        counter = 1
+
+        while CustomUser.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        return username
 
 class CustomTokenRefreshView(APIView):
     permission_classes = [AllowAny]

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     SendMessageView, EditMessageView, DeleteMessageView, MessageListView, MarkReadView,
     AddReactionView, ListReactionsView, CreateSocietyView, JoinSocietyView, LeaveSocietyView,
-    SocietyListView, SendSocietyMessageView, EditSocietyMessageView, DeleteSocietyMessageView,
+    SocietyListView, SocietyDetailView, SocietyMembersView, SendSocietyMessageView, EditSocietyMessageView, DeleteSocietyMessageView,
     SocietyMessageListView, PinMessageView, SendMediaMessageView, TypingStatusView
 )
 from backend.discussions.views import (
@@ -22,6 +22,8 @@ urlpatterns = [
     path('messages/', MessageListView.as_view(), name='message_list'),
     path('typing/', TypingStatusView.as_view(), name='typing_status'),
     path('societies/create/', CreateSocietyView.as_view(), name='create_society'),
+    path('societies/<uuid:society_id>/', SocietyDetailView.as_view(), name='society_detail'),
+    path('societies/<uuid:society_id>/members/', SocietyMembersView.as_view(), name='society_members'),
     path('societies/<uuid:society_id>/join/', JoinSocietyView.as_view(), name='join_society'),
     path('societies/<uuid:society_id>/leave/', LeaveSocietyView.as_view(), name='leave_society'),
     path('societies/', SocietyListView.as_view(), name='list_societies'),

@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import CreateEventModal from './CreateEventModal';
 import EventDetailModal from './EventDetailModal';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const SocietyDetailPage = () => {
   const { societyId } = useParams();
@@ -28,7 +29,7 @@ const SocietyDetailPage = () => {
     joinSociety,
     leaveSociety,
     getSocietyMembers,
-    getSocietyEvents,
+    listSocietyEvents,
     society,
     societyMembers,
     societyEvents,
@@ -51,7 +52,9 @@ const SocietyDetailPage = () => {
 
   useEffect(() => {
     if (society && societyMembers && profile) {
-      const membership = societyMembers.find(m => m.user.user_id === profile.user_id);
+      const membership = societyMembers.find(m =>
+        m && m.user && m.user.user_id === profile.user_id
+      );
       setIsMember(!!membership);
       setIsAdmin(membership?.role === 'ADMIN' || membership?.role === 'MODERATOR');
     }
@@ -62,7 +65,7 @@ const SocietyDetailPage = () => {
       await Promise.all([
         getSociety(societyId),
         getSocietyMembers(societyId),
-        getSocietyEvents(societyId)
+        listSocietyEvents(societyId)
       ]);
     } catch (error) {
       console.error('Error loading society data:', error);
@@ -337,9 +340,15 @@ const SocietyDetailPage = () => {
 const SocietyOverview = ({ society }) => (
   <div className="bookish-glass rounded-2xl border border-white/20 p-8">
     <h3 className="text-xl font-lora font-bold text-primary mb-4">About This Society</h3>
-    <p className="text-primary/70 leading-relaxed">
-      {society.description || 'No description available.'}
-    </p>
+    <div className="text-primary/70 leading-relaxed">
+      <SmartTextRenderer
+        text={society.description || 'No description available.'}
+        className="text-primary/70 leading-relaxed"
+        enableBookLinks={true}
+        enableUserMentions={true}
+        renderAsHtml={true}
+      />
+    </div>
   </div>
 );
 
@@ -347,17 +356,17 @@ const SocietyMembers = ({ members, isAdmin }) => (
   <div className="bookish-glass rounded-2xl border border-white/20 p-8">
     <h3 className="text-xl font-lora font-bold text-primary mb-6">Members ({members?.length || 0})</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {members?.map((member) => (
+      {members?.filter(member => member && member.user).map((member) => (
         <div key={member.user.user_id} className="p-4 bg-white/5 rounded-xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-accent/20 to-primary/20 rounded-full flex items-center justify-center">
               <span className="text-primary font-semibold">
-                {member.user.username.charAt(0).toUpperCase()}
+                {member.user.username?.charAt(0).toUpperCase() || '?'}
               </span>
             </div>
             <div>
-              <p className="font-semibold text-primary">{member.user.username}</p>
-              <p className="text-xs text-primary/60">{member.role}</p>
+              <p className="font-semibold text-primary">{member.user.username || 'Unknown User'}</p>
+              <p className="text-xs text-primary/60">{member.role || 'Member'}</p>
             </div>
           </div>
         </div>

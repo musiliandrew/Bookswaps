@@ -427,12 +427,12 @@ const MyBooksPage = () => {
                 transition={{ delay: 0.2, duration: 0.6 }}
               >
                 <motion.h2
-                  className="text-3xl font-lora font-bold text-primary mb-8 flex items-center"
+                  className="text-xl sm:text-2xl md:text-3xl font-lora font-bold text-primary mb-6 sm:mb-8 flex items-center"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  <ClockIcon className="w-8 h-8 mr-3" />
+                  <ClockIcon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mr-2 sm:mr-3" />
                   Reading History
                 </motion.h2>
 
@@ -442,16 +442,16 @@ const MyBooksPage = () => {
                       return (
                         <motion.div
                           key={item?.history_id || Math.random()}
-                          className="p-4 bg-white/10 rounded-xl border border-white/20"
+                          className="p-3 sm:p-4 bg-white/10 rounded-xl border border-white/20"
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1, duration: 0.4 }}
                         >
-                          <p className="text-sm text-primary/60 mb-2">📚 Book information unavailable</p>
-                          <p className="text-sm text-primary/80">
+                          <p className="text-xs sm:text-sm text-primary/60 mb-2">📚 Book information unavailable</p>
+                          <p className="text-xs sm:text-sm text-primary/80">
                             {item?.status || 'Unknown status'} on {item?.start_date ? new Date(item.start_date).toLocaleDateString() : 'Unknown date'}
                           </p>
-                          {item?.notes && <p className="text-sm italic text-primary/70 mt-2">{item.notes}</p>}
+                          {item?.notes && <p className="text-xs sm:text-sm italic text-primary/70 mt-2">{item.notes}</p>}
                         </motion.div>
                       );
                     }
@@ -470,20 +470,20 @@ const MyBooksPage = () => {
                     return (
                       <motion.div
                         key={item.history_id}
-                        className="p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300"
+                        className="p-4 sm:p-5 md:p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1, duration: 0.4 }}
                         whileHover={{ scale: 1.02, y: -2 }}
                       >
-                        <div className="flex items-start space-x-4">
-                          <div className="text-2xl">{getStatusIcon(item.status)}</div>
+                        <div className="flex items-start space-x-3 sm:space-x-4">
+                          <div className="text-lg sm:text-xl md:text-2xl">{getStatusIcon(item.status)}</div>
                           <div className="flex-1">
-                            <h3 className="font-lora font-bold text-lg text-primary mb-1">
+                            <h3 className="font-lora font-bold text-sm sm:text-base md:text-lg text-primary mb-1">
                               {item.book.title || 'Unknown Title'}
                             </h3>
-                            <p className="text-primary/70 mb-2">by {item.book.author || 'Unknown Author'}</p>
-                            <div className="flex items-center space-x-4 text-sm text-primary/60">
+                            <p className="text-xs sm:text-sm md:text-base text-primary/70 mb-2">by {item.book.author || 'Unknown Author'}</p>
+                            <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-primary/60">
                               <span className="bg-accent/20 text-accent px-2 py-1 rounded-full font-medium">
                                 {item.status || 'Unknown status'}
                               </span>
@@ -506,14 +506,14 @@ const MyBooksPage = () => {
                 {/* Enhanced Empty State for History */}
                 {(!history || history.length === 0) && (
                   <motion.div
-                    className="text-center py-16"
+                    className="text-center py-12 sm:py-16"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6 }}
                   >
-                    <div className="text-8xl mb-6">📖</div>
-                    <h3 className="text-2xl font-lora font-bold text-primary mb-4">No History Yet</h3>
-                    <p className="text-primary/70 max-w-md mx-auto">
+                    <div className="text-5xl sm:text-6xl md:text-8xl mb-4 sm:mb-6">📖</div>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-lora font-bold text-primary mb-3 sm:mb-4">No History Yet</h3>
+                    <p className="text-sm sm:text-base text-primary/70 max-w-md mx-auto px-4 sm:px-0">
                       Your reading journey will appear here as you add, swap, and interact with books!
                     </p>
                   </motion.div>

@@ -9,7 +9,7 @@ echo "🚀 Starting BookSwaps deployment..."
 
 # Configuration
 PROJECT_DIR="/opt/bookswaps"
-DOMAIN="bookswaps.quantiq.co.ke"
+DOMAIN="bookswaps.co.ke"
 EMAIL="andrewthepyrookie@gmail.com"
 
 # Colors for output
@@ -104,16 +104,16 @@ DB_PORT=5432
 # Django Configuration
 SECRET_KEY=django-insecure-bookswaps-production-key-2025-very-secure-random-string-change-this
 DEBUG=False
-ALLOWED_HOSTS=bookswaps.quantiq.co.ke,www.bookswaps.quantiq.co.ke,quantiq.co.ke,178.32.191.152
+ALLOWED_HOSTS=bookswaps.co.ke,www.bookswaps.co.ke,178.32.191.152
 
 # Frontend URL
-FRONTEND_URL=https://bookswaps.quantiq.co.ke
+FRONTEND_URL=https://bookswaps.co.ke
 
 # MinIO Configuration
 MINIO_ACCESS_KEY=bookswaps_admin_2025
 MINIO_SECRET_KEY=BookSwapsMinIOSecureKey2025!
 MINIO_BUCKET_NAME=bookswaps-prod
-MINIO_ENDPOINT_URL=https://bookswaps.quantiq.co.ke:9000
+MINIO_ENDPOINT_URL=https://bookswaps.co.ke:9000
 MINIO_REGION=us-east-1
 
 # Redis Configuration
@@ -125,7 +125,7 @@ EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=andrewthepyrookie@gmail.com
 EMAIL_HOST_PASSWORD=your_gmail_app_password_here
-DEFAULT_FROM_EMAIL=noreply@bookswaps.quantiq.co.ke
+DEFAULT_FROM_EMAIL=noreply@bookswaps.co.ke
 
 # Security Settings
 SECURE_SSL_REDIRECT=True
@@ -138,8 +138,8 @@ SECURE_BROWSER_XSS_FILTER=True
 X_FRAME_OPTIONS=DENY
 
 # WebSocket URLs
-VITE_WS_URL=wss://bookswaps.quantiq.co.ke/ws/
-VITE_API_URL=https://bookswaps.quantiq.co.ke/api/
+VITE_WS_URL=wss://bookswaps.co.ke/ws/
+VITE_API_URL=https://bookswaps.co.ke/api/
 EOF
 
 print_warning "Please update the EMAIL_HOST_PASSWORD in .env.production with your Gmail app password"

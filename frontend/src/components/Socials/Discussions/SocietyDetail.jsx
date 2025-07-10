@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import SocietySubNavigation from './SocietySubNavigation';
 import SocietyMessages from './SocietyMessages';
 import SocietyEvents from './SocietyEvents';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const SocietyDetail = ({ societyId, societies, joinSociety, leaveSociety, activeTab, setActiveTab, societyMessages, newSocietyMessage, setNewSocietyMessage, handleSendSocietyMessage, societyEvents, newSocietyEvent, setNewSocietyEvent, handleCreateSocietyEvent }) => {
   const society = societies.find(s => s.id === societyId);
@@ -14,7 +15,14 @@ const SocietyDetail = ({ societyId, societies, joinSociety, leaveSociety, active
       className="bg-white p-4 rounded shadow"
     >
       <h2 className="text-2xl font-bold">{society?.name}</h2>
-      <p>{society?.description}</p>
+      <div>
+        <SmartTextRenderer
+          text={society?.description || 'No description available.'}
+          enableBookLinks={true}
+          enableUserMentions={true}
+          renderAsHtml={true}
+        />
+      </div>
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => joinSociety(societyId)}

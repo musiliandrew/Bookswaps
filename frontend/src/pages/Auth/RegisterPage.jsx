@@ -145,9 +145,8 @@ const RegisterPage = () => {
     }
   };
 
-  const handleGoogleAuth = (userData) => {
-    // Handle Google OAuth success
-    console.log('Google auth success:', userData);
+  const handleGoogleAuth = () => {
+    // Handle Google OAuth success - navigate to profile
     navigate('/profile/me', { replace: true });
   };
 
@@ -207,13 +206,13 @@ const RegisterPage = () => {
             <motion.img
               src="/book.svg"
               alt="BookSwaps Logo"
-              className="w-8 h-8 mr-2"
+              className="w-10 h-10 sm:w-8 sm:h-8 mr-2"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
             />
             <motion.h2
-              className="text-3xl font-bold font-['Lora']"
+              className="text-3xl sm:text-3xl font-bold font-['Lora'] app-name-register"
               style={{ color: '#456A76' }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -423,6 +422,28 @@ const RegisterPage = () => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Responsive styles */}
+      <style>
+        {`
+          @media (max-width: 640px) {
+            /* Keep app name prominent on mobile */
+            .app-name-register {
+              font-size: 2rem !important;
+            }
+            /* Make other text smaller but not the app name */
+            .text-3xl:not(.app-name-register) {
+              font-size: 1.5rem !important;
+            }
+            .text-2xl {
+              font-size: 1.25rem !important;
+            }
+            .text-lg {
+              font-size: 1rem !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

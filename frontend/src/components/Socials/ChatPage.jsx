@@ -40,7 +40,7 @@ const ChatPage = () => {
   const [showEnhancedMediaModal, setShowEnhancedMediaModal] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [loading, setLoading] = useState(true);
 
   // Chat hooks
@@ -78,7 +78,7 @@ const ChatPage = () => {
 
   // Effects for responsive design
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -116,6 +116,17 @@ const ChatPage = () => {
       console.log('Selected society:', society);
       setSelectedSociety(society);
       setSelectedConversation(null); // Clear DM selection
+
+      // Clear unread count for this society
+      if (society.unread_count > 0) {
+        setSocieties(prevSocieties =>
+          prevSocieties.map(soc =>
+            soc.society_id === society.society_id
+              ? { ...soc, unread_count: 0 }
+              : soc
+          )
+        );
+      }
 
       // Check if user has access to this society
       if (society.visibility === 'private' && !society.is_member) {
@@ -155,24 +166,55 @@ const ChatPage = () => {
   }, [getSocietyMessages]);
 
   // Handle sending society messages
-  const handleSendSocietyMessage = useCallback(async (content) => {
-    if (!selectedSociety || !content.trim()) return;
+  const handleSendSocietyMessage = useCallback(async (messageData) => {
+    // Handle both string and object inputs for backward compatibility
+    const content = typeof messageData === 'string' ? messageData : messageData.content;
+    const replyTo = typeof messageData === 'object' ? messageData.reply_to : null;
+
+    if (!selectedSociety || !content?.trim()) return;
 
     try {
-      const messageData = {
+      const finalMessageData = {
         content: content.trim(),
-        message_type: 'TEXT'
+        message_type: 'TEXT',
+        ...(replyTo && { reply_to: replyTo })
       };
 
       const societyId = selectedSociety.id || selectedSociety.society_id;
-      const result = await sendSocietyMessage(societyId, messageData);
+
+      // Debug logging
+      console.log('Sending society message:', {
+        societyId,
+        messageData: finalMessageData,
+        society: selectedSociety
+      });
+
+      const result = await sendSocietyMessage(societyId, finalMessageData);
       if (result) {
         setSocietyMessages(prev => [...prev, result]);
         toast.success('Message sent!');
       }
     } catch (error) {
       console.error('Failed to send society message:', error);
-      toast.error('Failed to send message');
+
+      // Better error handling
+      let errorMessage = 'Failed to send message';
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.content) {
+          errorMessage = `Content error: ${errorData.content[0]}`;
+        } else if (errorData.message_type) {
+          errorMessage = `Message type error: ${errorData.message_type[0]}`;
+        }
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You must be a member of this society to send messages';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Society not found';
+      }
+
+      toast.error(errorMessage);
     }
   }, [selectedSociety, sendSocietyMessage]);
 
@@ -362,6 +404,17 @@ const ChatPage = () => {
     setSelectedConversation(conversation);
     // Add current user ID to conversation for message bubble logic
     conversation.current_user_id = currentUser?.user_id;
+
+    // Clear unread count for this conversation
+    if (conversation.unread_count > 0) {
+      setConversations(prevConversations =>
+        prevConversations.map(conv =>
+          conv.partner.user_id === conversation.partner.user_id
+            ? { ...conv, unread_count: 0 }
+            : conv
+        )
+      );
+    }
   };
 
   // Handle sending messages
@@ -440,11 +493,45 @@ const ChatPage = () => {
   console.log('ChatPage rendering with conversations:', conversations);
 
   return (
-    <div className="min-h-[calc(100vh-12rem)] bookish-gradient flex rounded-xl overflow-hidden bookish-shadow">
-      {/* Conversations Sidebar - Hidden on mobile when conversation is selected */}
-      <div className={`${
-        isMobile && selectedConversation ? 'hidden' : 'flex'
-      } w-full lg:w-1/3 xl:w-1/4 border-r border-[var(--secondary)] bg-[#FEF3C7]/30 backdrop-blur-sm flex-col min-h-full`}>
+    <>
+      {/* Mobile Chat Modal Overlay */}
+      {isMobile && (selectedConversation || selectedSociety) && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2">
+          <div className="bg-[var(--secondary)] rounded-2xl border border-[var(--primary)]/20 w-full max-w-md mx-2 h-[90vh] max-h-[600px] flex flex-col overflow-hidden">
+            {selectedConversation ? (
+              <ConversationView
+                conversation={selectedConversation}
+                messages={conversationMessages}
+                onSendMessage={handleSendMessage}
+                onBack={handleBack}
+                isLoading={isChatLoading}
+                currentUser={currentUser}
+                isMobileModal={true}
+              />
+            ) : selectedSociety ? (
+              <SocietyChatView
+                society={selectedSociety}
+                messages={societyMessages}
+                onSendMessage={handleSendSocietyMessage}
+                onBack={() => {
+                  setSelectedSociety(null);
+                  setSocietyMessages([]);
+                }}
+                isLoading={loading}
+                currentUser={currentUser}
+                isMobileModal={true}
+              />
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Layout */}
+      <div className={`${isMobile && (selectedConversation || selectedSociety) ? 'hidden' : 'min-h-[calc(100vh-12rem)]'} bookish-gradient flex rounded-xl overflow-hidden bookish-shadow`}>
+        {/* Conversations Sidebar - Small column for conversations/groups list */}
+        <div className={`${
+          isMobile && (selectedConversation || selectedSociety) ? 'hidden' : 'flex'
+        } ${isMobile ? 'w-full' : 'w-56 xl:w-64'} border-r border-[var(--secondary)] bg-[#FEF3C7]/30 backdrop-blur-sm flex-col min-h-full flex-shrink-0 ${!isMobile ? 'max-w-xs' : ''}`}>
 
         {/* Header */}
         <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white p-4">
@@ -663,32 +750,33 @@ const ChatPage = () => {
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className={`${
-        isMobile && !selectedConversation && !selectedSociety ? 'hidden' : 'flex'
-      } flex-1 flex-col bg-[#FEF3C7]/50 backdrop-blur-sm`}>
-        {selectedConversation ? (
-          <ConversationView
-            conversation={selectedConversation}
-            messages={conversationMessages}
-            onSendMessage={handleSendMessage}
-            onBack={handleBack}
-            isLoading={isChatLoading}
-            currentUser={currentUser}
-          />
-        ) : selectedSociety ? (
-          <SocietyChatView
-            society={selectedSociety}
-            messages={societyMessages}
-            onSendMessage={handleSendSocietyMessage}
-            onBack={() => {
-              setSelectedSociety(null);
-              setSocietyMessages([]);
-            }}
-            isLoading={loading}
-            currentUser={currentUser}
-          />
-        ) : (
+        {/* Main Chat Area - Desktop Only */}
+        {!isMobile && (
+          <div className="flex-1 flex-col bg-[#FEF3C7]/50 backdrop-blur-sm min-w-0 w-full flex">
+            {selectedConversation ? (
+              <ConversationView
+                conversation={selectedConversation}
+                messages={conversationMessages}
+                onSendMessage={handleSendMessage}
+                onBack={handleBack}
+                isLoading={isChatLoading}
+                currentUser={currentUser}
+                isMobileModal={false}
+              />
+            ) : selectedSociety ? (
+              <SocietyChatView
+                society={selectedSociety}
+                messages={societyMessages}
+                onSendMessage={handleSendSocietyMessage}
+                onBack={() => {
+                  setSelectedSociety(null);
+                  setSocietyMessages([]);
+                }}
+                isLoading={loading}
+                currentUser={currentUser}
+                isMobileModal={false}
+              />
+            ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center p-8">
               <div className="flex items-center justify-center space-x-3 mb-4">
@@ -724,6 +812,8 @@ const ChatPage = () => {
               </div>
             </div>
           </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -745,7 +835,7 @@ const ChatPage = () => {
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

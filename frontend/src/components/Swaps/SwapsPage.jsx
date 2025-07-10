@@ -42,7 +42,18 @@ const SwapsPage = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    getSwaps(filters, 1);
+    // Only try to load swaps if the component is actually visible
+    // This prevents unnecessary API calls when the component is mounted but not active
+    const loadSwaps = async () => {
+      try {
+        await getSwaps(filters, 1);
+      } catch (error) {
+        console.warn('Swaps API not available:', error);
+        // Don't show error toast for API not available
+      }
+    };
+
+    loadSwaps();
   }, [getSwaps, filters]);
 
   useEffect(() => {
@@ -62,7 +73,10 @@ const SwapsPage = () => {
     if (result) {
       setShowCreateForm(false);
       toast.success('Swap request sent successfully!');
-      getSwaps(filters, 1); // Refresh the list
+      // Force refresh by clearing any cache and reloading
+      setTimeout(() => {
+        getSwaps(filters, 1); // Refresh the list
+      }, 500); // Small delay to ensure backend cache is updated
     }
   };
 
@@ -128,12 +142,20 @@ const SwapsPage = () => {
 
   const filteredSwaps = swaps.filter(swap => {
     if (filters.type === 'sent') {
-      return swap.initiator?.user_id === profile?.user?.id;
+      return swap.initiator?.user_id === profile?.user?.user_id;
     } else if (filters.type === 'received') {
-      return swap.receiver?.user_id === profile?.user?.id;
+      return swap.receiver?.user_id === profile?.user?.user_id;
     }
     return true; // 'all'
   });
+
+  // Debug logging
+  if (swaps.length > 0) {
+    console.log('Current user ID:', profile?.user?.user_id);
+    console.log('All swaps:', swaps);
+    console.log('Filtered swaps:', filteredSwaps);
+    console.log('Current filter type:', filters.type);
+  }
 
   if (error) {
     return (
@@ -143,15 +165,19 @@ const SwapsPage = () => {
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
-        <div className="text-6xl mb-4">😔</div>
-        <p className="text-xl font-semibold text-red-600 mb-4">{error}</p>
+        <div className="text-6xl mb-4">🔄</div>
+        <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Book Swaps Coming Soon!</h3>
+        <p className="text-[var(--text-secondary)] mb-4">
+          We're working on bringing you an amazing book swapping experience.
+          Stay tuned for updates!
+        </p>
         <motion.button
           onClick={() => getSwaps(filters, 1)}
           className="bookish-button-enhanced px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
         >
-          Try Again
+          Check Again
         </motion.button>
       </motion.div>
     );

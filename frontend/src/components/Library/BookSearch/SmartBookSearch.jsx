@@ -148,105 +148,125 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
         {/* Results */}
         <div className="flex-1 overflow-y-auto max-h-[65vh] sm:max-h-[60vh]">
           <AnimatePresence mode="wait">
-            {isLoading && (
-              <motion.div
-                className="p-4 sm:p-8 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="inline-flex items-center space-x-2 text-primary">
-                  <div className="animate-spin rounded-full h-5 sm:h-6 w-5 sm:w-6 border-b-2 border-accent"></div>
-                  <span className="text-sm sm:text-base">Searching Open Library...</span>
-                </div>
-              </motion.div>
-            )}
+            {(() => {
+              // Single conditional render to avoid multiple children in AnimatePresence
+              if (isLoading) {
+                return (
+                  <motion.div
+                    key="loading"
+                    className="p-4 sm:p-8 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <div className="inline-flex items-center space-x-2 text-primary">
+                      <div className="animate-spin rounded-full h-5 sm:h-6 w-5 sm:w-6 border-b-2 border-accent"></div>
+                      <span className="text-sm sm:text-base">Searching Open Library...</span>
+                    </div>
+                  </motion.div>
+                );
+              }
 
-            {error && (
-              <motion.div
-                className="p-4 sm:p-8 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <p className="text-red-400 text-sm sm:text-base">{error}</p>
-              </motion.div>
-            )}
+              if (error) {
+                return (
+                  <motion.div
+                    key="error"
+                    className="p-4 sm:p-8 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <p className="text-red-400 text-sm sm:text-base">{error}</p>
+                  </motion.div>
+                );
+              }
 
-            {showResults && !isLoading && openLibraryResults.length === 0 && query.length >= 2 && (
-              <motion.div
-                className="p-4 sm:p-8 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <BookOpenIcon className="w-12 sm:w-16 h-12 sm:h-16 text-primary/30 mx-auto mb-3 sm:mb-4" />
-                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">No books found</h3>
-                <p className="text-sm sm:text-base text-primary/70 mb-3 sm:mb-4 px-2">
-                  We couldn't find any books matching "{query}". Try a different search term or add the book manually.
-                </p>
-                <button
-                  onClick={onManualAdd}
-                  className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-accent text-white rounded-lg sm:rounded-xl hover:bg-accent/90 transition-colors text-sm sm:text-base"
-                >
-                  <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5" />
-                  <span className="hidden sm:inline">Add Book Manually</span>
-                  <span className="sm:hidden">Add Manually</span>
-                </button>
-              </motion.div>
-            )}
+              if (showResults && openLibraryResults.length === 0 && query.length >= 2) {
+                return (
+                  <motion.div
+                    key="no-results"
+                    className="p-4 sm:p-8 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <BookOpenIcon className="w-12 sm:w-16 h-12 sm:h-16 text-primary/30 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">No books found</h3>
+                    <p className="text-sm sm:text-base text-primary/70 mb-3 sm:mb-4 px-2">
+                      We couldn't find any books matching "{query}". Try a different search term or add the book manually.
+                    </p>
+                    <button
+                      onClick={onManualAdd}
+                      className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-accent text-white rounded-lg sm:rounded-xl hover:bg-accent/90 transition-colors text-sm sm:text-base"
+                    >
+                      <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                      <span className="hidden sm:inline">Add Book Manually</span>
+                      <span className="sm:hidden">Add Manually</span>
+                    </button>
+                  </motion.div>
+                );
+              }
 
-            {showResults && !isLoading && openLibraryResults.length > 0 && (
-              <motion.div
-                className="p-3 sm:p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <div className="grid gap-2 sm:gap-4">
-                  {openLibraryResults.map((book, index) => (
-                    <BookSearchResult
-                      key={`${book.open_library_key}-${index}`}
-                      book={book}
-                      onSelect={() => handleBookSelect(book)}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            )}
+              if (showResults && openLibraryResults.length > 0) {
+                return (
+                  <motion.div
+                    key="results"
+                    className="p-3 sm:p-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    <div className="grid gap-2 sm:gap-4">
+                      {openLibraryResults.map((book, index) => (
+                        <BookSearchResult
+                          key={`${book.open_library_key}-${index}`}
+                          book={book}
+                          onSelect={() => handleBookSelect(book)}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              }
 
-            {!showResults && !isLoading && (
-              <motion.div
-                className="p-4 sm:p-8 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <SparklesIcon className="w-12 sm:w-16 h-12 sm:h-16 text-accent/30 mx-auto mb-3 sm:mb-4" />
-                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">Start typing to search</h3>
-                <p className="text-sm sm:text-base text-primary/70 mb-4 sm:mb-6 px-2">
-                  Search millions of books from Open Library. Just type a title, author, or ISBN.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-primary/60">
-                  <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <BookOpenIcon className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span>Search by title</span>
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <UserIcon className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span>Search by author</span>
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <HashtagIcon className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span>Search by ISBN</span>
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <PlusIcon className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span>Add manually if not found</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+              if (!showResults) {
+                return (
+                  <motion.div
+                    key="default"
+                    className="p-4 sm:p-8 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SparklesIcon className="w-12 sm:w-16 h-12 sm:h-16 text-accent/30 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">Start typing to search</h3>
+                    <p className="text-sm sm:text-base text-primary/70 mb-4 sm:mb-6 px-2">
+                      Search millions of books from Open Library. Just type a title, author, or ISBN.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-primary/60">
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <BookOpenIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                        <span>Search by title</span>
+                      </div>
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <UserIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                        <span>Search by author</span>
+                      </div>
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <HashtagIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                        <span>Search by ISBN</span>
+                      </div>
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <PlusIcon className="w-3 sm:w-4 h-3 sm:h-4" />
+                        <span>Add manually if not found</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              }
+
+              return null;
+            })()}
           </AnimatePresence>
         </div>
 

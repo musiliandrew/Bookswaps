@@ -1,11 +1,17 @@
 import React from 'react';
+import SmartTextRenderer from '../../Common/SmartTextRenderer';
 
 const SocietyMessages = ({ societyMessages, newSocietyMessage, setNewSocietyMessage, handleSendSocietyMessage }) => {
   return (
     <div>
       {societyMessages.map(msg => (
         <div key={msg.id} className="p-2 border-b">
-          <p>{msg.content}</p>
+          <SmartTextRenderer
+            text={msg.content}
+            className="mb-2"
+            enableBookLinks={true}
+            enableUserMentions={true}
+          />
           <p className="text-sm text-gray-600">By {msg.user}</p>
         </div>
       ))}

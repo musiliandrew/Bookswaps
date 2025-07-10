@@ -4,7 +4,12 @@ import axios from 'axios';
 const isDev = import.meta.env.VITE_ENABLED === 'true';
 
 const createApi = (refreshTokenFn) => {
-  const baseURL = import.meta.env.VITE_API_URL || 'https://bookswaps.quantiq.co.ke/api/';
+  // Use relative URL in development to leverage Vite proxy, fallback to env var or production URL
+  const isDevelopment = import.meta.env.DEV;
+  const baseURL = isDevelopment
+    ? '/api/'
+    : (import.meta.env.VITE_API_URL || 'https://bookswaps.quantiq.co.ke/api/');
+
   const api = axios.create({
     baseURL,
     headers: {
@@ -31,7 +36,7 @@ const createApi = (refreshTokenFn) => {
   api.interceptors.request.use(
     (config) => {
       if (isDev) {
-        console.log('API request:', config.method.toUpperCase(), config.url, config.data);
+        console.log('API request:', config.method.toUpperCase(), config.baseURL + config.url, config.data);
       }
       const token = localStorage.getItem('access_token');
       if (token) {
@@ -50,7 +55,7 @@ const createApi = (refreshTokenFn) => {
       if (isDev) {
         console.log('API response:', {
           status: response.status,
-          url: response.config.url,
+          url: response.config.baseURL + response.config.url,
           data: response.data,
         });
       }
@@ -60,7 +65,7 @@ const createApi = (refreshTokenFn) => {
       if (isDev) {
         console.error('Response error:', {
           status: error.response?.status,
-          url: error.config?.url,
+          url: error.config ? (error.config.baseURL + error.config.url) : 'unknown',
           data: error.response?.data,
         });
       }
@@ -158,10 +163,16 @@ const createApi = (refreshTokenFn) => {
 const refreshTokenFunction = async () => {
   const refresh = localStorage.getItem('refresh_token');
   if (!refresh) return null;
-  
+
   try {
+    // Use same logic as createApi for URL determination
+    const isDevelopment = import.meta.env.DEV;
+    const baseURL = isDevelopment
+      ? '/api/'
+      : (import.meta.env.VITE_API_URL || 'https://bookswaps.quantiq.co.ke/api/');
+
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'}users/token/refresh/`,
+      `${baseURL}users/token/refresh/`,
       { refresh: refresh } // Backend expects 'refresh' field name
     );
     

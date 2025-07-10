@@ -39,7 +39,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           {/* Enhanced Backdrop */}
           <motion.div
             className="absolute inset-0 modal-backdrop"
@@ -52,10 +52,10 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
           {/* Enhanced Modal Content */}
           <motion.div
-            className={`relative modal-content rounded-3xl shadow-2xl w-full ${sizeClasses[size]} mx-4 font-open-sans border border-white/20`}
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            className={`relative modal-content rounded-2xl sm:rounded-3xl shadow-2xl w-full ${sizeClasses[size]} mx-2 sm:mx-4 font-open-sans border border-white/20 max-h-[95vh] overflow-hidden`}
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{
               type: "spring",
               stiffness: 300,
@@ -69,25 +69,25 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
             {/* Header */}
             <motion.div
-              className="flex justify-between items-center p-6 border-b border-white/10"
+              className="flex justify-between items-center p-4 sm:p-6 border-b border-white/10 flex-shrink-0"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.3 }}
             >
-              <h2 className="text-3xl font-lora font-bold text-primary">{title}</h2>
+              <h2 className="text-lg sm:text-2xl lg:text-3xl font-lora font-bold text-primary truncate pr-2">{title}</h2>
               <motion.button
                 onClick={onClose}
-                className="p-3 rounded-xl bg-white/10 hover:bg-white/20 text-primary/70 hover:text-primary transition-all duration-200"
+                className="p-2 sm:p-3 rounded-xl bg-white/10 hover:bg-white/20 text-primary/70 hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
             </motion.div>
 
             {/* Content */}
             <motion.div
-              className="p-6 max-h-[75vh] overflow-y-auto"
+              className="p-4 sm:p-6 flex-1 overflow-y-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.3 }}

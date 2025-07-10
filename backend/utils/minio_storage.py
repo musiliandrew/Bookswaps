@@ -148,8 +148,15 @@ class MinIOStorage:
                 ExtraArgs=extra_args
             )
 
-            # Return the public URL
-            url = f"{settings.AWS_S3_ENDPOINT_URL}/{self.bucket_name}/{key}"
+            # Return the public URL - use localhost for external access
+            endpoint_url = settings.AWS_S3_ENDPOINT_URL
+            # Replace internal Docker service name with localhost for external access
+            if 'minio:9000' in endpoint_url:
+                public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+            else:
+                public_endpoint = endpoint_url
+
+            url = f"{public_endpoint}/{self.bucket_name}/{key}"
             logger.info(f"Successfully uploaded file to MinIO: {url}")
             return url
 
@@ -270,7 +277,12 @@ def upload_profile_picture(image_file, username):
     except Exception as e:
         logger.error(f"Failed to upload profile picture: {str(e)}")
         # Return a placeholder URL if MinIO is not available
-        return f"{settings.AWS_S3_ENDPOINT_URL}/{settings.AWS_STORAGE_BUCKET_NAME}/profiles/placeholder.jpg"
+        endpoint_url = settings.AWS_S3_ENDPOINT_URL
+        if 'minio:9000' in endpoint_url:
+            public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+        else:
+            public_endpoint = endpoint_url
+        return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/profiles/placeholder.jpg"
 
 def upload_book_cover(image_file, book_id):
     """Upload a book cover image."""
@@ -281,7 +293,12 @@ def upload_book_cover(image_file, book_id):
     except Exception as e:
         logger.error(f"Failed to upload book cover: {str(e)}")
         # Return a placeholder URL if MinIO is not available
-        return f"{settings.AWS_S3_ENDPOINT_URL}/{settings.AWS_STORAGE_BUCKET_NAME}/books/placeholder.jpg"
+        endpoint_url = settings.AWS_S3_ENDPOINT_URL
+        if 'minio:9000' in endpoint_url:
+            public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+        else:
+            public_endpoint = endpoint_url
+        return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/books/placeholder.jpg"
 
 def upload_qr_code(qr_image, qr_id):
     """Upload a QR code image."""

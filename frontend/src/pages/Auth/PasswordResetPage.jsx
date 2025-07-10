@@ -20,7 +20,7 @@ const PasswordResetPage = () => {
           setFormError('Please enter a valid email address.');
           return;
         }
-        await requestPasswordReset({ email: data.email });
+        await requestPasswordReset(data.email);
       }
     } catch {
       setFormError('Failed to process request. Please try again or request a new link.');

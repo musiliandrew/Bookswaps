@@ -123,6 +123,54 @@ class AcceptSwapView(APIView):
         serializer = SwapAcceptSerializer(swap, data=request.data, partial=True)
         if serializer.is_valid():
             with transaction.atomic():
+                # Auto-find optimal meetup location when swap is accepted
+                from .location_utils import LocationDiscoveryService
+                location_service = LocationDiscoveryService()
+
+                # Get user locations (you might want to get these from user profiles)
+                initiator_location = getattr(swap.initiator, 'location', None)
+                receiver_location = getattr(request.user, 'location', None)
+
+                if initiator_location and receiver_location:
+                    try:
+                        # Calculate optimal midpoint with public places
+                        coord1 = {
+                            'latitude': initiator_location.get('latitude', 0),
+                            'longitude': initiator_location.get('longitude', 0)
+                        }
+                        coord2 = {
+                            'latitude': receiver_location.get('latitude', 0),
+                            'longitude': receiver_location.get('longitude', 0)
+                        }
+
+                        preferences = {
+                            'transport_mode': 'driving',
+                            'place_types': ['cafe', 'library', 'park', 'restaurant'],
+                            'max_distance': 10
+                        }
+
+                        result = location_service.calculate_optimal_midpoint(coord1, coord2, preferences)
+
+                        # Create location if we found good suggestions
+                        if result.get('suggested_locations'):
+                            best_location = result['suggested_locations'][0]
+                            location, created = Location.objects.get_or_create(
+                                name=best_location['name'],
+                                defaults={
+                                    'type': best_location.get('type', 'other'),
+                                    'coords': {
+                                        'latitude': best_location['latitude'],
+                                        'longitude': best_location['longitude']
+                                    },
+                                    'city': best_location.get('city', ''),
+                                    'rating': best_location.get('rating', 0),
+                                    'source': 'google_places'
+                                }
+                            )
+                            swap.meetup_location = location
+                    except Exception as e:
+                        print(f"Error finding optimal location: {e}")
+
                 serializer.save(status='Accepted')
 
                 notification = Notification.objects.create(

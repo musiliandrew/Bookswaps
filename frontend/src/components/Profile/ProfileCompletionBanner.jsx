@@ -11,6 +11,9 @@ const ProfileCompletionBanner = ({
   onShowGuide,
   isMobile = false
 }) => {
+  // DISABLED: Always return null to hide the banner completely
+  return null;
+
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
 

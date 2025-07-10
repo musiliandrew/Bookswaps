@@ -14,10 +14,12 @@ RUN npm ci
 COPY . .
 
 # Set production environment variables for build
-ARG VITE_API_URL=https://bookswaps.quantiq.co.ke/api/
-ARG VITE_WS_URL=wss://bookswaps.quantiq.co.ke
+ARG VITE_API_URL=https://bookswaps.co.ke/api/
+ARG VITE_WS_URL=wss://bookswaps.co.ke/ws/
+ARG VITE_GOOGLE_CLIENT_ID=452982033541-sjcgi1mi367tnks82iphh6bmemgij6bb.apps.googleusercontent.com
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 # Build the app
 RUN npm run build

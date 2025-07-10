@@ -16,9 +16,8 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleAuth = (userData) => {
-    // Handle Google OAuth success
-    console.log('Google auth success:', userData);
+  const handleGoogleAuth = () => {
+    // Handle Google OAuth success - navigate to profile
     navigate('/profile/me', { replace: true });
   };
 
@@ -59,13 +58,13 @@ const LoginPage = () => {
             <motion.img
               src="/book.svg"
               alt="BookSwaps Logo"
-              className="w-7 h-7 mr-2"
+              className="w-8 h-8 sm:w-7 sm:h-7 mr-2"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
             />
             <motion.h2
-              className="text-2xl font-bold font-['Lora']"
+              className="text-2xl sm:text-2xl font-bold font-['Lora'] app-name"
               style={{ color: '#456A76' }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -128,9 +127,12 @@ const LoginPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          <AuthLink to="/register" text="Don't have an account? Join BookSwap" />
-          <br />
-          <AuthLink to="/password-reset" text="Forgot your password?" />
+          <div>
+            <AuthLink to="/register" text="Don't have an account? Join BookSwap" />
+          </div>
+          <div>
+            <AuthLink to="/password-reset" text="Forgot your password?" />
+          </div>
         </motion.div>
       </motion.div>
       {/* Responsive styles */}
@@ -143,7 +145,12 @@ const LoginPage = () => {
             .bookish-glass {
               padding: 1rem !important;
             }
-            .text-2xl, .text-3xl {
+            /* Keep app name prominent on mobile */
+            .app-name {
+              font-size: 1.5rem !important;
+            }
+            /* Make other text smaller but not the app name */
+            .text-2xl:not(.app-name), .text-3xl:not(.app-name) {
               font-size: 1.25rem !important;
             }
             .text-xl {

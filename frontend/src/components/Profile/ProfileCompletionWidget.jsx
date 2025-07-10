@@ -10,12 +10,15 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 
-const ProfileCompletionWidget = ({ 
+const ProfileCompletionWidget = ({
   compact = false,
   showProgress = true,
   showMissingFields = true,
   className = ""
 }) => {
+  // DISABLED: Always return null to hide the widget completely
+  return null;
+
   const { profile } = useAuth();
   const [completionDetails, setCompletionDetails] = useState(null);
 
@@ -37,12 +40,12 @@ const ProfileCompletionWidget = ({
           weight: 15, 
           label: 'Bio/About You' 
         },
-        favorite_genres: { 
-          completed: !!profile.favorite_genres && 
-                    (Array.isArray(profile.favorite_genres) ? profile.favorite_genres.length > 0 : 
-                     profile.favorite_genres.length > 0), 
-          weight: 20, 
-          label: 'Favorite Genres' 
+        genres: {
+          completed: !!profile.genres &&
+                    (Array.isArray(profile.genres) ? profile.genres.length > 0 :
+                     profile.genres.length > 0),
+          weight: 20,
+          label: 'Favorite Genres'
         }
       };
 

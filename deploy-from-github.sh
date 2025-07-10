@@ -18,24 +18,24 @@ else
 fi
 
 # Stop containers
-docker-compose down
+docker-compose -f docker-compose.prod.yml down
 
 # Rebuild and start containers
-docker-compose up -d --build
+docker-compose -f docker-compose.prod.yml up -d --build
 
 # Wait for backend to be ready
 echo "⏳ Waiting for backend to be ready..."
 sleep 60
 
 # Run migrations
-docker-compose exec -T backend python manage.py migrate
+docker-compose -f docker-compose.prod.yml exec -T backend python manage.py migrate
 
 # Collect static files
-docker-compose exec -T backend python manage.py collectstatic --noinput
+docker-compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput
 
 # Check if everything is running
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Site: https://bookswaps.quantiq.co.ke"
-echo "🔧 Admin: https://bookswaps.quantiq.co.ke/admin"
+echo "🌐 Site: https://bookswaps.co.ke"
+echo "🔧 Admin: https://bookswaps.co.ke/admin"

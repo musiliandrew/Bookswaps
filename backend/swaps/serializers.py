@@ -56,12 +56,7 @@ class SwapCreateSerializer(serializers.ModelSerializer):
             receiver = CustomUser.objects.get(user_id=value)
             if receiver == self.context['request'].user:
                 raise serializers.ValidationError("Cannot swap with yourself.")
-            if not Follows.objects.filter(
-                follower=self.context['request'].user,
-                followed=receiver,
-                active=True
-            ).exists():
-                raise serializers.ValidationError("You must follow the receiver to initiate a swap.")
+            # Removed follow requirement - users can swap with anyone
             return value
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError("Invalid receiver ID.")
