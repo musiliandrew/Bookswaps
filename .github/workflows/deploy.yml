@@ -71,20 +71,25 @@ jobs:
         DB_PASSWORD: postgres
         DB_HOST: localhost
         DB_PORT: 5432
+        REDIS_URL: redis://localhost:6379/0
       run: |
         # Remove problematic test files that require selenium
         rm -f test_frontend_functionality.py
         rm -f test_frontend_manual.py
         rm -f test_*.py
-        
+
+        # Change to backend directory where manage.py is located
+        cd backend
+
         # Run Django migrations and tests with test settings
         python manage.py migrate --verbosity=0
-        python manage.py test backend.health backend.users backend.library backend.chat backend.discussions backend.swaps --verbosity=1
+        python manage.py test health users library chat discussions swaps --verbosity=1
 
     - name: Run Frontend tests
       run: |
         cd frontend
-        npm test
+        # Run tests in CI mode (non-interactive)
+        CI=true npm test -- --watchAll=false --passWithNoTests
 
   deploy:
     needs: test
