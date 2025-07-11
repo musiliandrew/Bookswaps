@@ -53,7 +53,7 @@ fi
 # Step 2: Stop nginx temporarily
 log_info "Step 2: Stopping nginx for certificate generation"
 
-docker compose stop nginx || log_warning "Nginx was not running"
+docker-compose stop nginx || log_warning "Nginx was not running"
 
 # Step 3: Generate SSL certificates
 log_info "Step 3: Generating SSL certificates"
@@ -264,16 +264,16 @@ fi
 # Step 6: Start nginx with SSL
 log_info "Step 6: Starting nginx with SSL"
 
-docker compose up -d nginx
+docker-compose up -d nginx
 
 # Wait for nginx to start
 sleep 5
 
-if docker compose ps nginx | grep -q "Up"; then
+if docker-compose ps nginx | grep -q "Up"; then
     log_success "Nginx started with SSL configuration"
 else
     log_error "Nginx failed to start"
-    docker compose logs nginx
+    docker-compose logs nginx
     exit 1
 fi
 
@@ -286,13 +286,13 @@ cat > /tmp/renew-ssl.sh << 'EOF'
 # SSL Certificate Renewal Script
 
 # Stop nginx
-docker compose -f /home/musili/BookSwaps/docker-compose.yml stop nginx
+docker-compose -f /home/musili/BookSwaps/docker-compose.yml stop nginx
 
 # Renew certificates
 certbot renew --quiet
 
 # Start nginx
-docker compose -f /home/musili/BookSwaps/docker-compose.yml start nginx
+docker-compose -f /home/musili/BookSwaps/docker-compose.yml start nginx
 EOF
 
 sudo mv /tmp/renew-ssl.sh /usr/local/bin/renew-ssl.sh

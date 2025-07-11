@@ -44,4 +44,6 @@ media/
 staticfiles/
 
 # QR codes (generated files)
-qr_codes/
+qr_codes/nginx/ssl/
+*.pem
+*.key

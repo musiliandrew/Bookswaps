@@ -41,7 +41,7 @@ log_info "Step 1: Creating pre-migration backup"
 
 mkdir -p $BACKUP_DIR
 
-if docker compose exec -T db pg_dump -U bookswaps_user bookswaps_prod > "$BACKUP_DIR/$BACKUP_FILE"; then
+if docker-compose exec -T db pg_dump -U bookswaps_user bookswaps_prod > "$BACKUP_DIR/$BACKUP_FILE"; then
     log_success "Backup created: $BACKUP_FILE"
 else
     log_warning "Backup failed - database might not exist yet"
@@ -51,18 +51,18 @@ fi
 log_info "Step 2: Checking current migration status"
 
 log_info "Current migrations applied:"
-docker compose exec backend python manage.py showmigrations --settings=settings_production
+docker-compose exec backend python manage.py showmigrations --settings=settings_production
 
 # Step 3: Show pending migrations
 log_info "Step 3: Checking for pending migrations"
 
-PENDING_MIGRATIONS=$(docker compose exec backend python manage.py showmigrations --plan --settings=settings_production | grep -c "\\[ \\]" || echo "0")
+PENDING_MIGRATIONS=$(docker-compose exec backend python manage.py showmigrations --plan --settings=settings_production | grep -c "\\[ \\]" || echo "0")
 
 if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
     log_warning "Found $PENDING_MIGRATIONS pending migrations"
     
     log_info "Pending migrations:"
-    docker compose exec backend python manage.py showmigrations --plan --settings=settings_production | grep "\\[ \\]"
+    docker-compose exec backend python manage.py showmigrations --plan --settings=settings_production | grep "\\[ \\]"
     
     echo ""
     log_warning "⚠️  IMPORTANT: Review the migrations above carefully!"
@@ -80,7 +80,7 @@ if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
     # Step 4: Apply migrations
     log_info "Step 4: Applying migrations"
     
-    if docker compose exec backend python manage.py migrate --settings=settings_production; then
+    if docker-compose exec backend python manage.py migrate --settings=settings_production; then
         log_success "Migrations applied successfully!"
     else
         log_error "Migration failed!"
@@ -88,7 +88,7 @@ if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
         
         if [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
             log_info "Restoring database from backup..."
-            docker compose exec -T db psql -U bookswaps_user -d bookswaps_prod < "$BACKUP_DIR/$BACKUP_FILE"
+            docker-compose exec -T db psql -U bookswaps_user -d bookswaps_prod < "$BACKUP_DIR/$BACKUP_FILE"
             log_success "Database restored from backup"
         else
             log_error "No backup file found for restoration"
@@ -101,10 +101,10 @@ if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
     log_info "Step 5: Verifying migration"
     
     log_info "Final migration status:"
-    docker compose exec backend python manage.py showmigrations --settings=settings_production
+    docker-compose exec backend python manage.py showmigrations --settings=settings_production
     
     # Test database connection
-    if docker compose exec backend python manage.py shell --settings=settings_production -c "
+    if docker-compose exec backend python manage.py shell --settings=settings_production -c "
 from django.db import connection
 cursor = connection.cursor()
 cursor.execute('SELECT 1')
@@ -123,7 +123,7 @@ fi
 # Step 6: Collect static files
 log_info "Step 6: Collecting static files"
 
-if docker compose exec backend python manage.py collectstatic --noinput --settings=settings_production; then
+if docker-compose exec backend python manage.py collectstatic --noinput --settings=settings_production; then
     log_success "Static files collected"
 else
     log_warning "Static file collection failed"
