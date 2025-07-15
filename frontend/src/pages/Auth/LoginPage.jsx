@@ -12,13 +12,13 @@ const LoginPage = () => {
   const handleLogin = async (loginCredentials) => {
     const success = await login(loginCredentials);
     if (success) {
-      navigate('/profile/me', { replace: true });
+      navigate('/library', { replace: true });
     }
   };
 
   const handleGoogleAuth = () => {
-    // Handle Google OAuth success - navigate to profile
-    navigate('/profile/me', { replace: true });
+    // Handle Google OAuth success - navigate to main app
+    navigate('/library', { replace: true });
   };
 
   return (

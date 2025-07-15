@@ -120,6 +120,10 @@ class GoogleAuthSerializer(serializers.Serializer):
     """Handle Google OAuth authentication"""
     access_token = serializers.CharField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.google_user_data = None
+
     def validate_access_token(self, access_token):
         """Verify Google ID token and extract user information"""
         from google.auth.transport import requests
@@ -147,8 +151,8 @@ class GoogleAuthSerializer(serializers.Serializer):
             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
                 raise serializers.ValidationError('Invalid token issuer')
 
-            # Extract user information
-            self.validated_data = {
+            # Store user information in instance variable
+            self.google_user_data = {
                 'google_id': idinfo['sub'],
                 'email': idinfo['email'],
                 'first_name': idinfo.get('given_name', ''),
@@ -166,6 +170,10 @@ class GoogleAuthSerializer(serializers.Serializer):
         except Exception as e:
             logger.error(f"Google OAuth error: {str(e)}")
             raise serializers.ValidationError('Google authentication failed')
+
+    def get_google_user_data(self):
+        """Get the extracted Google user data"""
+        return self.google_user_data
 
 class TokenRefreshSerializer(serializers.Serializer):
     refresh = serializers.CharField()

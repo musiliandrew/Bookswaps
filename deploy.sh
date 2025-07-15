@@ -174,7 +174,7 @@ echo "0 12 * * * /usr/bin/certbot renew --quiet && docker-compose -f $PROJECT_DI
 print_status "Stopping existing containers..."
 docker-compose -f docker-compose.prod.yml down || true
 
-# Build and start containers
+# Build and start containers (without nginx - system nginx handles SSL)
 print_status "Building and starting containers..."
 docker-compose -f docker-compose.prod.yml up -d --build
 

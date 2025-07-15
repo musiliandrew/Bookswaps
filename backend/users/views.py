@@ -113,13 +113,23 @@ class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        logger.info(f"Google OAuth request data: {request.data}")
+        logger.info(f"Google OAuth content type: {request.content_type}")
+
         serializer = GoogleAuthSerializer(data=request.data)
         if not serializer.is_valid():
+            logger.error(f"Google OAuth serializer errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Get validated Google user data
-            google_data = serializer.validated_data
+            google_data = serializer.get_google_user_data()
+            if not google_data:
+                return Response(
+                    {'detail': 'Failed to extract Google user data'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             email = google_data['email']
             google_id = google_data['google_id']
 
@@ -146,8 +156,6 @@ class GoogleAuthView(APIView):
                 user = CustomUser.objects.create_user(
                     username=username,
                     email=email,
-                    first_name=google_data.get('first_name', ''),
-                    last_name=google_data.get('last_name', ''),
                     google_id=google_id,
                     is_active=True,
                     registration_step=1  # Basic registration complete
@@ -165,11 +173,9 @@ class GoogleAuthView(APIView):
                 'access_token': str(access_token),
                 'refresh_token': str(refresh),
                 'user': {
-                    'id': user.id,
+                    'id': user.user_id,  # Use user_id instead of id
                     'username': user.username,
                     'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
                     'registration_step': user.registration_step,
                 }
             }, status=status.HTTP_200_OK)

@@ -423,6 +423,7 @@ export const AuthProvider = ({ children }) => {
 
   const googleAuth = useCallback(
     async (googleToken) => {
+      console.log('Sending Google token to backend:', googleToken); // Debug log
       const result = await handleApiCall(
         () => api.post(API_ENDPOINTS.GOOGLE_AUTH, { access_token: googleToken }),
         setIsLoading,

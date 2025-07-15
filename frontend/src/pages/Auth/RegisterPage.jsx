@@ -146,8 +146,9 @@ const RegisterPage = () => {
   };
 
   const handleGoogleAuth = () => {
-    // Handle Google OAuth success - navigate to profile
-    navigate('/profile/me', { replace: true });
+    // Handle Google OAuth success - navigate to main app
+    toast.success('Welcome to BookSwaps! 🎉');
+    navigate('/library', { replace: true });
   };
 
   const genderOptions = [
