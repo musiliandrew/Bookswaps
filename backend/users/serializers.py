@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 import logging
 from datetime import date
-from backend.utils.minio_storage import upload_profile_picture, delete_file
+from backend.utils.local_storage import upload_profile_picture, delete_file
 
 logger = logging.getLogger(__name__)
 

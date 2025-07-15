@@ -160,13 +160,13 @@ class AddBookSerializer(serializers.ModelSerializer):
 
             # Handle cover image upload
             if cover_image_file:
-                from backend.utils.minio_storage import upload_book_cover
+                from backend.utils.local_storage import upload_book_cover
                 validated_data['cover_image_url'] = upload_book_cover(cover_image_file, book_id)
 
-            # Generate QR code URL using MinIO
-            from backend.utils.minio_storage import get_minio_url
+            # Generate QR code URL using local storage
+            from backend.utils.local_storage import get_media_url
             qr_id = uuid.uuid4()
-            qr_code_url = get_minio_url(f"qr-codes/{qr_id}.png")
+            qr_code_url = get_media_url(f"{qr_id}.png", "qr-codes")
             now = timezone.now()
 
             with transaction.atomic():
