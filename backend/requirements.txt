@@ -1,8 +1,7 @@
 asgiref==3.8.1
 async-timeout==5.0.1
 bleach==6.2.0
-boto3==1.37.33
-botocore==1.37.33
+
 certifi==2025.1.31
 channels==4.2.2
 channels-redis==4.2.1
@@ -33,7 +32,7 @@ urllib3==2.4.0
 webencodings==0.5.1
 gunicorn==23.0.0
 django-extensions==3.2.3
-django-storages==1.14.4
+
 Pillow==10.4.0
 django-allauth==0.57.0
 google-auth==2.23.4

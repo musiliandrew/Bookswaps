@@ -91,7 +91,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'channels',
-    'storages',
     'axes',
     'django_extensions',
     'allauth',
@@ -317,26 +316,21 @@ CHANNEL_LAYERS = {
     },
 }
 
-# MinIO/S3 Configuration for production
-AWS_ACCESS_KEY_ID = os.getenv('MINIO_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = os.getenv('MINIO_SECRET_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME', 'bookswaps-prod')
-AWS_S3_ENDPOINT_URL = os.getenv('MINIO_ENDPOINT_URL')
-AWS_S3_REGION_NAME = os.getenv('MINIO_REGION', 'us-east-1')
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_USE_SSL = False  # MinIO is running on HTTP internally
-AWS_S3_VERIFY = False   # No SSL verification needed for internal MinIO
-AWS_S3_CUSTOM_DOMAIN = None
-AWS_DEFAULT_ACL = 'public-read'  # Allow public access to images
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',
-}
+# Local File Storage Configuration for production
+# Store media files directly on the server filesystem
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# File storage configuration
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
-# Use public domain for media URLs (proxied through nginx)
-MEDIA_URL = 'https://bookswaps.co.ke/media/'
+# Use default Django file storage (local filesystem)
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# File upload security settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Django Allauth Configuration
 SITE_ID = 1
