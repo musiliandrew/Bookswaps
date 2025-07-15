@@ -33,14 +33,18 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
 };
 
 /**
- * Get OpenLibrary cover image with size optimization
+ * Get OpenLibrary cover image with size optimization and error handling
  */
 export const getOpenLibraryImageUrl = (originalUrl, options = {}) => {
   const { width, height } = options;
-  
+
+  if (!originalUrl || !originalUrl.includes('openlibrary.org')) {
+    return originalUrl;
+  }
+
   // Determine best size based on dimensions
   let size = 'L'; // Large by default
-  
+
   if (width && height) {
     const maxDimension = Math.max(width, height);
     if (maxDimension <= 100) size = 'S';
@@ -48,10 +52,24 @@ export const getOpenLibraryImageUrl = (originalUrl, options = {}) => {
     else size = 'L';
   }
 
-  // Replace size in URL
-  return originalUrl
-    .replace(/-[SML]\.jpg$/, `-${size}.jpg`)
-    .replace(/\.jpg$/, `-${size}.jpg`);
+  try {
+    // Replace size in URL - be more careful with replacements
+    let processedUrl = originalUrl;
+
+    // If URL already has a size suffix, replace it
+    if (/-[SML]\.jpg$/.test(processedUrl)) {
+      processedUrl = processedUrl.replace(/-[SML]\.jpg$/, `-${size}.jpg`);
+    }
+    // If URL ends with .jpg but no size, add size
+    else if (/\.jpg$/.test(processedUrl)) {
+      processedUrl = processedUrl.replace(/\.jpg$/, `-${size}.jpg`);
+    }
+
+    return processedUrl;
+  } catch (error) {
+    console.warn('Error processing OpenLibrary URL:', error);
+    return originalUrl;
+  }
 };
 
 /**
@@ -124,7 +142,14 @@ export const generateImageFallbacks = (originalUrl) => {
 };
 
 /**
- * Get book cover image with intelligent fallbacks
+ * Check if network is available and external APIs are accessible
+ */
+export const isNetworkAvailable = () => {
+  return navigator.onLine;
+};
+
+/**
+ * Get book cover image with intelligent fallbacks and network awareness
  */
 export const getBookCoverUrl = (book, size = 'M') => {
   // Priority order for book cover sources
@@ -135,18 +160,21 @@ export const getBookCoverUrl = (book, size = 'M') => {
   ].filter(Boolean);
 
   if (sources.length === 0) {
-    // Generate from ISBN if available
-    if (book.isbn) {
-      const cleanIsbn = book.isbn.replace(/[^0-9]/g, '');
-      if (cleanIsbn.length >= 10) {
-        return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-${size}.jpg`;
+    // Only try external APIs if network is available
+    if (isNetworkAvailable()) {
+      // Generate from ISBN if available
+      if (book.isbn) {
+        const cleanIsbn = book.isbn.replace(/[^0-9]/g, '');
+        if (cleanIsbn.length >= 10) {
+          return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-${size}.jpg`;
+        }
       }
-    }
 
-    // Generate from OpenLibrary key if available
-    if (book.open_library_key) {
-      const olKey = book.open_library_key.replace('/works/', '').replace('/books/', '');
-      return `https://covers.openlibrary.org/b/olid/${olKey}-${size}.jpg`;
+      // Generate from OpenLibrary key if available
+      if (book.open_library_key) {
+        const olKey = book.open_library_key.replace('/works/', '').replace('/books/', '');
+        return `https://covers.openlibrary.org/b/olid/${olKey}-${size}.jpg`;
+      }
     }
 
     return null;
@@ -164,7 +192,8 @@ export const getBookCoverUrl = (book, size = 'M') => {
       book: book.title,
       originalUrl: sources[0],
       optimizedUrl: imageUrl,
-      size
+      size,
+      networkAvailable: isNetworkAvailable()
     });
   }
 

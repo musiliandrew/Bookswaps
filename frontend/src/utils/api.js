@@ -72,7 +72,21 @@ const createApi = (refreshTokenFn) => {
 
       // Handle network errors
       if (!error.response) {
-        console.error('Network error - server may be down');
+        // Check for specific network error types
+        const isNetworkChanged = error.code === 'ERR_NETWORK_CHANGED' ||
+                                error.message?.includes('ERR_NETWORK_CHANGED');
+        const isNetworkError = !navigator.onLine ||
+                              error.code === 'NETWORK_ERROR' ||
+                              error.message?.includes('Network Error');
+
+        if (isNetworkChanged) {
+          console.warn('Network changed during request - this is usually temporary');
+        } else if (isNetworkError) {
+          console.error('Network error - check internet connection');
+        } else {
+          console.error('Network error - server may be down');
+        }
+
         return Promise.reject(error);
       }
 
