@@ -153,7 +153,10 @@ def upload_profile_picture(image_file, username):
     except Exception as e:
         logger.error(f"Failed to upload profile picture: {str(e)}")
         # Return a placeholder URL if upload fails
-        return f"{settings.MEDIA_URL}profiles/placeholder.jpg"
+        placeholder_url = f"{settings.MEDIA_URL}profiles/placeholder.jpg"
+        # Ensure placeholder exists
+        ensure_placeholder_exists("profiles")
+        return placeholder_url
 
 def upload_book_cover(image_file, book_id):
     """Upload a book cover image."""
@@ -164,7 +167,10 @@ def upload_book_cover(image_file, book_id):
     except Exception as e:
         logger.error(f"Failed to upload book cover: {str(e)}")
         # Return a placeholder URL if upload fails
-        return f"{settings.MEDIA_URL}books/placeholder.jpg"
+        placeholder_url = f"{settings.MEDIA_URL}books/placeholder.jpg"
+        # Ensure placeholder exists
+        ensure_placeholder_exists("books")
+        return placeholder_url
 
 def upload_qr_code(qr_image, qr_id):
     """Upload a QR code image."""
@@ -182,3 +188,26 @@ def get_media_url(filename, folder=""):
     if folder:
         return f"{settings.MEDIA_URL}{folder}/{filename}"
     return f"{settings.MEDIA_URL}{filename}"
+
+def ensure_placeholder_exists(folder):
+    """Ensure placeholder image exists for the given folder."""
+    try:
+        placeholder_path = f"{folder}/placeholder.jpg"
+        if not default_storage.exists(placeholder_path):
+            logger.warning(f"Placeholder image missing for {folder}, creating simple placeholder")
+            # Create a simple placeholder if it doesn't exist
+            create_simple_placeholder(folder)
+    except Exception as e:
+        logger.error(f"Failed to ensure placeholder exists for {folder}: {str(e)}")
+
+def create_simple_placeholder(folder):
+    """Create a simple placeholder image if PIL is not available."""
+    try:
+        # Create a minimal placeholder file (1x1 transparent pixel)
+        placeholder_content = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xdb\x00\x00\x00\x00IEND\xaeB`\x82'
+        placeholder_path = f"{folder}/placeholder.jpg"
+        content_file = ContentFile(placeholder_content)
+        default_storage.save(placeholder_path, content_file)
+        logger.info(f"Created simple placeholder for {folder}")
+    except Exception as e:
+        logger.error(f"Failed to create simple placeholder for {folder}: {str(e)}")
