@@ -23,6 +23,11 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
     return getMinioImageUrl(originalUrl, { width, height, quality });
   }
 
+  // Handle local media URLs - ensure they're properly formatted
+  if (originalUrl.startsWith('/media/') || originalUrl.includes('/media/')) {
+    return getLocalMediaUrl(originalUrl);
+  }
+
   // Return original URL if no optimization available
   return originalUrl;
 };
@@ -54,10 +59,36 @@ export const getOpenLibraryImageUrl = (originalUrl, options = {}) => {
  */
 export const getMinioImageUrl = (originalUrl, options = {}) => {
   const { width, height, quality } = options;
-  
+
   // For now, return original URL
   // In the future, you could add image processing parameters
   return originalUrl;
+};
+
+/**
+ * Get local media URL - ensures proper formatting for local storage
+ */
+export const getLocalMediaUrl = (originalUrl) => {
+  if (!originalUrl) return null;
+
+  // If it's already a full URL (starts with http), return as is
+  if (originalUrl.startsWith('http')) {
+    return originalUrl;
+  }
+
+  // If it starts with /media/, it's already properly formatted
+  if (originalUrl.startsWith('/media/')) {
+    return originalUrl;
+  }
+
+  // If it contains /media/ but doesn't start with it, extract the media part
+  if (originalUrl.includes('/media/')) {
+    const mediaIndex = originalUrl.indexOf('/media/');
+    return originalUrl.substring(mediaIndex);
+  }
+
+  // Fallback: assume it's a relative path and prepend /media/
+  return `/media/${originalUrl}`;
 };
 
 /**
@@ -111,21 +142,33 @@ export const getBookCoverUrl = (book, size = 'M') => {
         return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-${size}.jpg`;
       }
     }
-    
+
     // Generate from OpenLibrary key if available
     if (book.open_library_key) {
       const olKey = book.open_library_key.replace('/works/', '').replace('/books/', '');
       return `https://covers.openlibrary.org/b/olid/${olKey}-${size}.jpg`;
     }
-    
+
     return null;
   }
 
   // Return the first available source, optimized
-  return getOptimizedImageUrl(sources[0], { 
+  const imageUrl = getOptimizedImageUrl(sources[0], {
     width: size === 'S' ? 100 : size === 'M' ? 300 : 600,
     height: size === 'S' ? 150 : size === 'M' ? 450 : 900
   });
+
+  // Debug logging to help troubleshoot image loading issues
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Book cover URL:', {
+      book: book.title,
+      originalUrl: sources[0],
+      optimizedUrl: imageUrl,
+      size
+    });
+  }
+
+  return imageUrl;
 };
 
 /**
@@ -133,7 +176,7 @@ export const getBookCoverUrl = (book, size = 'M') => {
  */
 export const getProfilePictureUrl = (user, size = 'M') => {
   if (!user) return null;
-  
+
   const sources = [
     user.profile_picture,
     user.avatar,
@@ -144,10 +187,22 @@ export const getProfilePictureUrl = (user, size = 'M') => {
     return null; // Will show initials fallback
   }
 
-  return getOptimizedImageUrl(sources[0], {
+  const imageUrl = getOptimizedImageUrl(sources[0], {
     width: size === 'S' ? 50 : size === 'M' ? 150 : 300,
     height: size === 'S' ? 50 : size === 'M' ? 150 : 300
   });
+
+  // Debug logging to help troubleshoot image loading issues
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Profile picture URL:', {
+      user: user.username,
+      originalUrl: sources[0],
+      optimizedUrl: imageUrl,
+      size
+    });
+  }
+
+  return imageUrl;
 };
 
 /**
