@@ -26,8 +26,16 @@ def validate_cover_image_url(value):
         'openlibrary.org',
         'covers.openlibrary.org',
         'bookswap-bucket.s3.amazonaws.com',  # Legacy AWS S3
-        settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')  # MinIO domain
     ]
+
+    # Add MinIO domain if it exists (for MinIO storage)
+    if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
+        minio_domain = settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')
+        allowed_domains.append(minio_domain)
+
+    # For local storage, allow local media URLs
+    if value.startswith('/media/') or 'bookswaps.co.ke/media/' in value:
+        return value
 
     if not any(domain in value for domain in allowed_domains):
         raise ValidationError(f"Cover image URL must be from an allowed domain: {', '.join(allowed_domains)}")

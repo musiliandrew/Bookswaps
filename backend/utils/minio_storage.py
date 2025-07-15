@@ -23,6 +23,10 @@ class MinIOStorage:
         """Lazy initialization of MinIO client."""
         if self.client is None:
             try:
+                # Check if MinIO settings are available
+                if not hasattr(settings, 'AWS_S3_ENDPOINT_URL') or not settings.AWS_S3_ENDPOINT_URL:
+                    raise Exception("MinIO settings not available - using local storage")
+
                 endpoint_url = settings.AWS_S3_ENDPOINT_URL
 
                 # Debug logging
@@ -277,12 +281,16 @@ def upload_profile_picture(image_file, username):
     except Exception as e:
         logger.error(f"Failed to upload profile picture: {str(e)}")
         # Return a placeholder URL if MinIO is not available
-        endpoint_url = settings.AWS_S3_ENDPOINT_URL
-        if 'minio:9000' in endpoint_url:
-            public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+        if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
+            endpoint_url = settings.AWS_S3_ENDPOINT_URL
+            if 'minio:9000' in endpoint_url:
+                public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+            else:
+                public_endpoint = endpoint_url
+            return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/profiles/placeholder.jpg"
         else:
-            public_endpoint = endpoint_url
-        return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/profiles/placeholder.jpg"
+            # Fallback to local storage placeholder
+            return "/media/profiles/placeholder.jpg"
 
 def upload_book_cover(image_file, book_id):
     """Upload a book cover image."""
@@ -293,12 +301,16 @@ def upload_book_cover(image_file, book_id):
     except Exception as e:
         logger.error(f"Failed to upload book cover: {str(e)}")
         # Return a placeholder URL if MinIO is not available
-        endpoint_url = settings.AWS_S3_ENDPOINT_URL
-        if 'minio:9000' in endpoint_url:
-            public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+        if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
+            endpoint_url = settings.AWS_S3_ENDPOINT_URL
+            if 'minio:9000' in endpoint_url:
+                public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+            else:
+                public_endpoint = endpoint_url
+            return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/books/placeholder.jpg"
         else:
-            public_endpoint = endpoint_url
-        return f"{public_endpoint}/{settings.AWS_STORAGE_BUCKET_NAME}/books/placeholder.jpg"
+            # Fallback to local storage placeholder
+            return "/media/books/placeholder.jpg"
 
 def upload_qr_code(qr_image, qr_id):
     """Upload a QR code image."""
