@@ -37,6 +37,22 @@ export default defineConfig({
           });
         },
       },
+      '/media': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('media proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Sending Media Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('Received Media Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
       '/ws': {
         target: 'ws://backend:8000',
         ws: true,

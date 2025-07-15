@@ -10,6 +10,7 @@ import {
   PlusIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
+import { getProfilePictureUrl } from '../../../utils/imageUtils';
 
 // Enhanced helper function to parse genres - handles multiple levels of encoding
 const parseGenres = (genres) => {
@@ -157,7 +158,9 @@ const ProfileForm = () => {
       };
       setFormData(data);
       setOriginalData(data);
-      setImagePreview(profile.profile_picture);
+      // Use image utility to get proper profile picture URL
+      const profileImageUrl = getProfilePictureUrl(profile);
+      setImagePreview(profileImageUrl);
       isFormInitialized.current = true;
     }
   }, [profile]);
@@ -232,7 +235,9 @@ const ProfileForm = () => {
 
   const removeImage = () => {
     setFormData(prev => ({ ...prev, profile_picture: null }));
-    setImagePreview(profile?.profile_picture || null);
+    // Use image utility to get proper profile picture URL
+    const profileImageUrl = getProfilePictureUrl(profile);
+    setImagePreview(profileImageUrl || null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -333,7 +338,8 @@ const ProfileForm = () => {
       setOriginalData(updatedData);
 
       // Always update image preview with the latest profile picture from backend
-      setImagePreview(result.profile_picture || imagePreview);
+      const updatedImageUrl = getProfilePictureUrl(result) || imagePreview;
+      setImagePreview(updatedImageUrl);
 
       // Clear file input
       if (fileInputRef.current) {
