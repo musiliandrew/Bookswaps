@@ -29,7 +29,7 @@ services:
     volumes:
       - ./backend:/app/backend
       - static_volume:/app/staticfiles
-      - media_volume:/app/media
+      - ./media:/app/media
     networks:
       - bookswaps_network
 
@@ -47,7 +47,6 @@ services:
 volumes:
   postgres_data:
   static_volume:
-  media_volume:
 
 networks:
   bookswaps_network:
