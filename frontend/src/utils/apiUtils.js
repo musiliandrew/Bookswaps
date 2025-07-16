@@ -67,7 +67,7 @@ export const handleApiCall = async (
   } catch (error) {
     const errorMessage = extractErrorMessage(error, actionName);
     setError(errorMessage);
-    toast.error(errorMessage);
+    // Removed automatic error toast - let components handle error display
     return null;
   } finally {
     setIsLoading(false);
@@ -92,7 +92,7 @@ export const handleApiCallWithResult = async (
   } catch (error) {
     const errorMessage = extractErrorMessage(error, actionName);
     setError(errorMessage);
-    toast.error(errorMessage);
+    // Removed automatic error toast - let components handle error display
     return false;
   } finally {
     setIsLoading(false);

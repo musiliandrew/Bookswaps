@@ -95,7 +95,7 @@ const BrowseBooksPage = () => {
       await getBook(bookId);
       setIsDetailModalOpen(true);
     } catch {
-      toast.error('Failed to fetch book details');
+      // Removed error toast - modal won't open if book fetch fails
     }
   };
 

@@ -139,21 +139,22 @@ function App() {
         </Routes>
       </main>
 
-      {/* Toast Container */}
+      {/* Toast Container - Minimal and less intrusive */}
       <ToastContainer
         position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
+        autoClose={2000}
+        hideProgressBar={true}
+        newestOnTop={true}
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        pauseOnFocusLoss={false}
         draggable
-        pauseOnHover
+        pauseOnHover={false}
         theme="light"
         toastClassName="bookish-toast"
         bodyClassName="bookish-toast-body"
         progressClassName="bookish-toast-progress"
+        limit={3}
       />
       </div>
     </ErrorBoundary>

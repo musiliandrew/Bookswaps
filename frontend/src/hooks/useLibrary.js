@@ -190,7 +190,7 @@ export function useLibrary() {
         await getUserLibrary();
         // Clear any previous errors on successful operation
         setError(null);
-        toast.success('📚 Book added successfully!');
+        // Removed toast - user can see book in library
       }
       return result;
 
@@ -213,7 +213,7 @@ export function useLibrary() {
       // Handle other errors with improved messaging
       const errorMessage = errorData?.error || errorData?.detail || 'Failed to add book';
       console.error('Book addition failed:', error);
-      toast.error(errorMessage);
+      // Removed toast - error will be handled by component
       throw error;
 
     } finally {
@@ -243,7 +243,7 @@ export function useLibrary() {
       () => api.delete(API_ENDPOINTS.REMOVE_BOOK(bookId)),
       setIsLoading,
       setError,
-      'Book removed!',
+      null, // Removed success toast
       'Remove book'
     );
     if (result) {
@@ -263,21 +263,20 @@ export function useLibrary() {
       if (result) {
         setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
         setBookmarks((prev) => [...prev, result]);
-        toast.success('Book bookmarked!');
+        // Removed success toast - user can see bookmark status change
       }
       return result;
     } catch (error) {
       const errorData = error.response?.data;
 
       if (error.response?.status === 409 && errorData?.error_type === 'DUPLICATE_BOOKMARK') {
-        // User already bookmarked this book
-        toast.info('This book is already in your bookmarks');
+        // User already bookmarked this book - silent success
         setBook((prev) => (prev?.id === bookId ? { ...prev, is_bookmarked: true } : prev));
         return true; // Consider it successful since the desired state is achieved
       } else {
         const errorMessage = errorData?.error || 'Failed to bookmark book';
         setError(errorMessage);
-        toast.error(errorMessage);
+        // Removed error toast - user can see bookmark didn't change
         return null;
       }
     } finally {
@@ -290,7 +289,7 @@ export function useLibrary() {
       () => api.delete(API_ENDPOINTS.REMOVE_BOOKMARK(bookId)),
       setIsLoading,
       setError,
-      'Bookmark removed!',
+      null, // Removed success toast
       'Remove bookmark'
     );
     if (result) {
@@ -310,21 +309,20 @@ export function useLibrary() {
       if (result) {
         setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
         setFavorites((prev) => [...prev, result]);
-        toast.success('Book favorited!');
+        // Removed success toast - user can see favorite status change
       }
       return result;
     } catch (error) {
       const errorData = error.response?.data;
 
       if (error.response?.status === 409 && errorData?.error_type === 'DUPLICATE_FAVORITE') {
-        // User already favorited this book
-        toast.info('This book is already in your favorites');
+        // User already favorited this book - silent success
         setBook((prev) => (prev?.id === bookId ? { ...prev, is_favorited: true } : prev));
         return true; // Consider it successful since the desired state is achieved
       } else {
         const errorMessage = errorData?.error || 'Failed to favorite book';
         setError(errorMessage);
-        toast.error(errorMessage);
+        // Removed error toast - user can see favorite didn't change
         return null;
       }
     } finally {
@@ -440,10 +438,10 @@ export function useLibrary() {
               : b
           )
         );
-        toast.info(`Book available: ${book.title}`);
+        // Removed toast - user can see availability change in UI
       } else if (type === 'book_added' || type === 'book_removed') {
         getUserLibrary();
-        toast.info(`Library updated: ${type === 'book_added' ? 'Book added' : 'Book removed'}`);
+        // Removed toast - user can see library changes
       }
     });
   }, [notifications, isWebSocketConnected, getUserLibrary]);

@@ -226,14 +226,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleAuthError = () => {
       clearAuthState();
-      toast.error('Authentication error, redirecting to login');
+      // Removed toast - user will see login page
     };
 
     const handleAuthLogout = (event) => {
       clearAuthState();
-      if (event.detail?.reason === 'token_refresh_failed') {
-        toast.error('Session expired, please log in again');
-      }
+      // Removed toast - silent logout for better UX
     };
 
     window.addEventListener('auth:error', handleAuthError);
@@ -267,7 +265,6 @@ export const AuthProvider = ({ children }) => {
       
       if (!accessToken) {
         setError('Missing access token in login response');
-        toast.error('Invalid login response - missing access token');
         clearAuthState();
         return false;
       }
@@ -283,14 +280,12 @@ export const AuthProvider = ({ children }) => {
       const profileData = await getProfileInternal(true);
       if (profileData) {
         setIsAuthenticated(true);
-        toast.success('Login successful!');
         return true;
       }
 
-      // Since the profile fetch failed but tokens are valid, 
+      // Since the profile fetch failed but tokens are valid,
       // let's still consider login successful
       setIsAuthenticated(true);
-      toast.success('Login successful!');
       return true;
     },
     [getProfileInternal, clearAuthState]
@@ -458,14 +453,12 @@ export const AuthProvider = ({ children }) => {
       const profileData = await getProfileInternal(true);
       if (profileData) {
         setIsAuthenticated(true);
-        toast.success('Google authentication successful!');
         return true;
       }
 
       // Since the profile fetch failed but tokens are valid,
       // let's still consider login successful
       setIsAuthenticated(true);
-      toast.success('Google authentication successful!');
       return true;
     },
     [getProfileInternal, clearAuthState]

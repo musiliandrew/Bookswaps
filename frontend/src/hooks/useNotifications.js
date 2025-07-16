@@ -106,7 +106,7 @@ export function useNotifications() {
       () => api.patch(API_ENDPOINTS.MARK_NOTIFICATION_READ(notificationId)),
       setIsLoading,
       setError,
-      'Notification marked as read',
+      null, // Removed success toast
       'Mark notification read'
     );
 
@@ -125,7 +125,7 @@ export function useNotifications() {
       () => api.post(API_ENDPOINTS.MARK_ALL_NOTIFICATIONS_READ),
       setIsLoading,
       setError,
-      'All notifications marked as read',
+      null, // Removed success toast
       'Mark all notifications read'
     );
 
@@ -260,7 +260,7 @@ export function useNotifications() {
         const uniqueNew = newNotifications.filter(n => !existingIds.has(n.notification_id));
         
         if (uniqueNew.length > 0) {
-          toast.info(`${uniqueNew.length} new notification${uniqueNew.length > 1 ? 's' : ''} received!`);
+          // Removed toast - notifications will show in notification badge
           return [...uniqueNew, ...prev];
         }
         return prev;

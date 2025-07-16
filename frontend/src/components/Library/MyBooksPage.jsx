@@ -116,7 +116,7 @@ const MyBooksPage = () => {
   const handleViewExistingBook = () => {
     setIsDuplicateModalOpen(false);
     // Navigate to book details or implement view logic
-    toast.info('Feature coming soon: View existing book details');
+    // Removed toast - feature not implemented yet
   };
 
   const handleAddAnyway = async () => {
@@ -138,9 +138,9 @@ const MyBooksPage = () => {
   const handleUpdateAvailability = async (bookId, data) => {
     try {
       await updateAvailability(bookId, data);
-      toast.success('Availability updated');
+      // Removed success toast - user can see availability change
     } catch {
-      toast.error('Failed to update availability');
+      // Removed error toast - user can see availability didn't change
     }
   };
 
@@ -148,9 +148,9 @@ const MyBooksPage = () => {
     if (window.confirm('Are you sure you want to remove this book?')) {
       try {
         await removeBook(bookId);
-        toast.success('Book removed');
+        // Removed success toast - user can see book is gone
       } catch {
-        toast.error('Failed to remove book');
+        // Removed error toast - user can see book is still there
       }
     }
   };
@@ -173,9 +173,9 @@ const MyBooksPage = () => {
     try {
       if (isFavorited) await unfavoriteBook(bookId);
       else await favoriteBook(bookId);
-      toast.success(isFavorited ? 'Removed from favorites' : 'Added to favorites');
+      // Removed success toast - user can see favorite status change
     } catch {
-      toast.error('Failed to update favorite');
+      // Removed error toast - user can see favorite didn't change
     }
   };
 
