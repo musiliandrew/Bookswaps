@@ -120,16 +120,15 @@ class AddBookSerializer(serializers.ModelSerializer):
         try:
             import qrcode
             from io import BytesIO
-            from django.core.files.base import ContentFile
-            from backend.utils.local_storage import get_local_storage
+            from django.conf import settings
             import os
+            import logging
 
-            # Create QR code data
-            qr_data = {
-                'book_id': str(book_id),
-                'qr_id': str(qr_id),
-                'type': 'book_swap'
-            }
+            logger = logging.getLogger(__name__)
+            logger.info(f"Generating QR code for book {book_id} with QR ID {qr_id}")
+
+            # Create QR code data - simple string for now
+            qr_data = f"bookswap://book/{book_id}"
 
             # Generate QR code
             qr = qrcode.QRCode(
@@ -138,21 +137,25 @@ class AddBookSerializer(serializers.ModelSerializer):
                 box_size=10,
                 border=4,
             )
-            qr.add_data(str(qr_data))
+            qr.add_data(qr_data)
             qr.make(fit=True)
 
             # Create image
             img = qr.make_image(fill_color="black", back_color="white")
 
-            # Save to BytesIO
-            img_buffer = BytesIO()
-            img.save(img_buffer, format='PNG')
-            img_buffer.seek(0)
+            # Create media directory if it doesn't exist
+            qr_dir = os.path.join(settings.MEDIA_ROOT, 'qr-codes')
+            os.makedirs(qr_dir, exist_ok=True)
 
-            # Upload using local storage
-            storage = get_local_storage()
+            # Save directly to file system
             filename = f"{qr_id}.png"
-            return storage.upload_file(img_buffer, filename, folder="qr-codes", content_type="image/png")
+            file_path = os.path.join(qr_dir, filename)
+            img.save(file_path)
+
+            logger.info(f"QR code saved to {file_path}")
+
+            # Return the media URL
+            return f"{settings.MEDIA_URL}qr-codes/{filename}"
 
         except Exception as e:
             from django.conf import settings
