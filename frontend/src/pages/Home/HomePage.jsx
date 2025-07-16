@@ -10,6 +10,7 @@ import Footer from '../../components/Home/Footer';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
+import AppLogo from '../../assets/icons/AppLogo.svg';
 
 function HomePage() {
   const navigate = useNavigate();
@@ -81,10 +82,10 @@ function HomePage() {
       {/* Navbar - Large Screens */}
       <nav className="hidden md:flex justify-between items-center px-8 py-4 w-full bg-[hsl(49,52%,88%)] shadow-lg">
         <div className="flex items-center space-x-3">
-          <img 
-            src="src/assets/icons/AppLogo.svg" 
-            alt="BookSwaps Logo" 
-            className="w-10 h-10" 
+          <img
+            src={AppLogo}
+            alt="BookSwaps Logo"
+            className="w-10 h-10"
             style={{ color: '#456A76' }}
             onError={(e) => {
               e.target.style.display = 'none';
@@ -128,10 +129,10 @@ function HomePage() {
       {/* Navbar - Small Screens */}
       <nav className="md:hidden flex justify-between items-center px-4 py-4 w-full bg-[hsl(49,52%,88%)] shadow-lg">
         <div className="flex items-center space-x-3">
-          <img 
-            src="src/assets/icons/AppLogo.svg" 
-            alt="BookSwaps Logo" 
-            className="w-8 h-8" 
+          <img
+            src={AppLogo}
+            alt="BookSwaps Logo"
+            className="w-8 h-8"
             style={{ color: '#456A76' }}
             onError={(e) => {
               e.target.style.display = 'none';
