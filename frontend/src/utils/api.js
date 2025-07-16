@@ -75,13 +75,19 @@ const createApi = (refreshTokenFn) => {
         // Check for specific network error types
         const isNetworkChanged = error.code === 'ERR_NETWORK_CHANGED' ||
                                 error.message?.includes('ERR_NETWORK_CHANGED');
+
+        if (isNetworkChanged) {
+          // Network changed errors are usually temporary and not user-facing issues
+          console.warn('Network changed during request - this is usually temporary');
+          // Don't show these to users as they're often false positives
+          return Promise.reject(error);
+        }
+
         const isNetworkError = !navigator.onLine ||
                               error.code === 'NETWORK_ERROR' ||
                               error.message?.includes('Network Error');
 
-        if (isNetworkChanged) {
-          console.warn('Network changed during request - this is usually temporary');
-        } else if (isNetworkError) {
+        if (isNetworkError) {
           console.error('Network error - check internet connection');
         } else {
           console.error('Network error - server may be down');

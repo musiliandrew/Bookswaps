@@ -186,9 +186,11 @@ export function useLibrary() {
       const result = response.data;
       if (result) {
         setUserLibrary((prev) => [result, ...prev]);
-        toast.success('📚 Book added successfully to your library!');
         setBook(result.data || result);
         await getUserLibrary();
+        // Clear any previous errors on successful operation
+        setError(null);
+        toast.success('📚 Book added successfully!');
       }
       return result;
 
@@ -210,7 +212,7 @@ export function useLibrary() {
 
       // Handle other errors with improved messaging
       const errorMessage = errorData?.error || errorData?.detail || 'Failed to add book';
-      setError(errorMessage);
+      console.error('Book addition failed:', error);
       toast.error(errorMessage);
       throw error;
 

@@ -109,39 +109,24 @@ const OptimizedImage = ({
   const handleImageError = (event) => {
     setIsLoading(false);
 
-    // Check if this is a network error (common with external APIs)
-    const isNetworkError = !navigator.onLine ||
-                          (event && event.target && event.target.naturalWidth === 0 && event.target.naturalHeight === 0);
-
-    if (!retryOnError || isNetworkError) {
-      console.warn(`Image load failed (network: ${isNetworkError}):`, currentSrc);
+    if (!retryOnError) {
       setHasError(true);
       onError();
       return;
     }
 
-    // Try fallback URLs only for non-network errors
+    // Try fallback URLs
     const fallbacks = generateFallbackUrls(currentSrc);
 
     if (retryCount < maxRetries && fallbacks.length > retryCount) {
       const nextSrc = fallbacks[retryCount];
-      console.log(`Image failed, trying fallback ${retryCount + 1}:`, nextSrc);
       setCurrentSrc(nextSrc);
       setRetryCount(prev => prev + 1);
       setIsLoading(true);
-
-      // Add a delay to prevent rapid retries
-      setTimeout(() => {
-        // Check if component is still mounted and retry is still needed
-        if (imgRef.current && hasError === false) {
-          setIsLoading(true);
-        }
-      }, 1000);
       return;
     }
 
     // All fallbacks failed
-    console.warn('All image fallbacks failed for:', src);
     setHasError(true);
     onError();
   };

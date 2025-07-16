@@ -6,7 +6,6 @@ import './App.css';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/Common/ErrorBoundary';
-import NetworkStatus from './components/Common/NetworkStatus';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import PasswordResetPage from './pages/Auth/PasswordResetPage';
@@ -43,9 +42,6 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="flex flex-col min-h-screen bg-gray-50">
-        {/* Network Status Indicator */}
-        <NetworkStatus />
-
         {/* Navbar with fixed positioning - only show when authenticated */}
         {isAuthenticated && (
           <div className="fixed top-0 left-0 right-0 z-50 shadow-sm">

@@ -101,7 +101,6 @@ const MyBooksPage = () => {
       if (result) {
         setIsAddModalOpen(false);
         resetBookForm();
-        toast.success('📚 Book added successfully to your library!');
       }
     } catch (error) {
       // Handle duplicate book error
@@ -130,7 +129,6 @@ const MyBooksPage = () => {
         setIsDuplicateModalOpen(false);
         resetBookForm();
         setDuplicateBookInfo(null);
-        toast.success('📚 Your copy has been added to your library!');
       }
     } catch (error) {
       console.error('Failed to add book anyway:', error);
