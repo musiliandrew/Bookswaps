@@ -174,9 +174,17 @@ def upload_book_cover(image_file, book_id):
 
 def upload_qr_code(qr_image, qr_id):
     """Upload a QR code image."""
-    filename = f"{qr_id}.png"
-    storage = get_local_storage()
-    return storage.upload_file(qr_image, filename, folder="qr-codes")
+    try:
+        filename = f"{qr_id}.png"
+        storage = get_local_storage()
+        return storage.upload_file(qr_image, filename, folder="qr-codes", content_type="image/png")
+    except Exception as e:
+        logger.error(f"Failed to upload QR code: {str(e)}")
+        # Return a placeholder URL if upload fails
+        placeholder_url = f"{settings.MEDIA_URL}qr-codes/placeholder.png"
+        # Ensure placeholder exists
+        ensure_placeholder_exists("qr-codes")
+        return placeholder_url
 
 def delete_file(file_url):
     """Delete a file by URL."""

@@ -115,6 +115,53 @@ class AddBookSerializer(serializers.ModelSerializer):
             })
         return cleaned_isbn
 
+    def generate_qr_code(self, book_id, qr_id):
+        """Generate QR code for book with actual image creation."""
+        try:
+            import qrcode
+            from io import BytesIO
+            from django.core.files.base import ContentFile
+            from backend.utils.local_storage import get_local_storage
+            import os
+
+            # Create QR code data
+            qr_data = {
+                'book_id': str(book_id),
+                'qr_id': str(qr_id),
+                'type': 'book_swap'
+            }
+
+            # Generate QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(str(qr_data))
+            qr.make(fit=True)
+
+            # Create image
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Save to BytesIO
+            img_buffer = BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+
+            # Upload using local storage
+            storage = get_local_storage()
+            filename = f"{qr_id}.png"
+            return storage.upload_file(img_buffer, filename, folder="qr-codes", content_type="image/png")
+
+        except Exception as e:
+            from django.conf import settings
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to generate QR code: {str(e)}")
+            # Return a placeholder URL
+            return f"{settings.MEDIA_URL}qr-codes/placeholder.png"
+
     def validate_cover_image_url(self, value):
         if not value:
             return value
@@ -171,10 +218,9 @@ class AddBookSerializer(serializers.ModelSerializer):
                 from backend.utils.local_storage import upload_book_cover
                 validated_data['cover_image_url'] = upload_book_cover(cover_image_file, book_id)
 
-            # Generate QR code URL using local storage
-            from backend.utils.local_storage import get_media_url
+            # Generate QR code with actual image creation
             qr_id = uuid.uuid4()
-            qr_code_url = get_media_url(f"{qr_id}.png", "qr-codes")
+            qr_code_url = self.generate_qr_code(book_id, qr_id)
             now = timezone.now()
 
             with transaction.atomic():
