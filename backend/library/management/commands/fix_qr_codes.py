@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from library.models import Book
+from backend.library.models import Book
 import uuid
 import qrcode
 import os
