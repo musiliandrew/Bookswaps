@@ -37,6 +37,7 @@ class BookListView(generics.ListAPIView):
     ordering_fields = ['title', 'author', 'created_at']
     ordering = ['title']
     pagination_class = StandardPagination
+    permission_classes = []  # Allow public access to book list
 
     def get_queryset(self):
         cache_key = f"book_list_{self.request.query_params.get('genre', '')}_{self.request.query_params.get('available', '')}"
@@ -67,6 +68,7 @@ class BookDetailView(generics.RetrieveAPIView):
     queryset = Book.objects.select_related('user', 'original_owner')
     serializer_class = BookDetailSerializer
     lookup_field = 'book_id'
+    permission_classes = []  # Allow public access to book details
 
     def get_object(self):
         try:
@@ -77,6 +79,7 @@ class BookDetailView(generics.RetrieveAPIView):
 class BookSearchView(generics.ListAPIView):
     serializer_class = BookMiniSerializer
     pagination_class = StandardPagination
+    permission_classes = []  # Allow public access to book search
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '').strip()
