@@ -114,9 +114,14 @@ export const getLocalMediaUrl = (originalUrl) => {
  */
 export const generateImageFallbacks = (originalUrl) => {
   if (!originalUrl) return [];
-  
+
+  // Skip broken MinIO URLs entirely - return empty array to trigger placeholder
+  if (originalUrl.includes('minio:9000') || (originalUrl.includes('minio') && originalUrl.includes('9000'))) {
+    return [];
+  }
+
   const fallbacks = [];
-  
+
   // OpenLibrary fallbacks
   if (originalUrl.includes('covers.openlibrary.org')) {
     if (originalUrl.includes('-L.jpg')) {
@@ -130,14 +135,25 @@ export const generateImageFallbacks = (originalUrl) => {
       fallbacks.push(originalUrl.replace('-S.jpg', '-L.jpg'));
     }
   }
-  
-  // Protocol fallbacks
-  if (originalUrl.startsWith('http://')) {
+
+  // Local media fallbacks
+  if (originalUrl.startsWith('/media/')) {
+    if (originalUrl.includes('/profiles/')) {
+      fallbacks.push('/media/profiles/placeholder.jpg');
+    } else if (originalUrl.includes('/books/')) {
+      fallbacks.push('/media/books/placeholder.jpg');
+    } else if (originalUrl.includes('/qr-codes/')) {
+      fallbacks.push('/media/qr-codes/placeholder.png');
+    }
+  }
+
+  // Protocol fallbacks (only for external URLs)
+  if (originalUrl.startsWith('http://') && !originalUrl.includes('localhost')) {
     fallbacks.push(originalUrl.replace('http://', 'https://'));
-  } else if (originalUrl.startsWith('https://')) {
+  } else if (originalUrl.startsWith('https://') && !originalUrl.includes('localhost')) {
     fallbacks.push(originalUrl.replace('https://', 'http://'));
   }
-  
+
   return [...new Set(fallbacks)]; // Remove duplicates
 };
 

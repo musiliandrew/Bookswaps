@@ -23,9 +23,14 @@ const OptimizedImage = ({
   lazy = false,
   ...props
 }) => {
-  const [currentSrc, setCurrentSrc] = useState(src);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  // Check if src is a broken MinIO URL and skip it immediately
+  const initialSrc = (src && (src.includes('minio:9000') || (src.includes('minio') && src.includes('9000'))))
+    ? null
+    : src;
+
+  const [currentSrc, setCurrentSrc] = useState(initialSrc);
+  const [isLoading, setIsLoading] = useState(!!initialSrc);
+  const [hasError, setHasError] = useState(!initialSrc && !fallbackSrc);
   const [retryCount, setRetryCount] = useState(0);
   const [isInView, setIsInView] = useState(!lazy);
   const imgRef = useRef(null);
@@ -55,19 +60,29 @@ const OptimizedImage = ({
   // Reset state when src changes
   useEffect(() => {
     if (src !== currentSrc) {
-      setCurrentSrc(src);
-      setIsLoading(true);
-      setHasError(false);
+      // Check if new src is a broken MinIO URL
+      const newSrc = (src && (src.includes('minio:9000') || (src.includes('minio') && src.includes('9000'))))
+        ? null
+        : src;
+
+      setCurrentSrc(newSrc);
+      setIsLoading(!!newSrc);
+      setHasError(!newSrc && !fallbackSrc);
       setRetryCount(0);
     }
-  }, [src, currentSrc]);
+  }, [src, currentSrc, fallbackSrc]);
 
   // Generate comprehensive fallback URLs
   const generateFallbackUrls = (originalSrc) => {
     if (!originalSrc) return [];
-    
+
+    // Skip broken MinIO URLs entirely - go straight to placeholder
+    if (originalSrc.includes('minio:9000') || (originalSrc.includes('minio') && originalSrc.includes('9000'))) {
+      return fallbackSrc ? [fallbackSrc] : [];
+    }
+
     const fallbacks = [];
-    
+
     // OpenLibrary cover fallbacks
     if (originalSrc.includes('covers.openlibrary.org')) {
       if (originalSrc.includes('-L.jpg')) {
@@ -81,22 +96,33 @@ const OptimizedImage = ({
         fallbacks.push(originalSrc.replace('-S.jpg', '-L.jpg'));
       }
     }
-    
-    // Try HTTPS if HTTP fails
-    if (originalSrc.startsWith('http://')) {
+
+    // Local media fallbacks
+    if (originalSrc.startsWith('/media/')) {
+      if (originalSrc.includes('/profiles/')) {
+        fallbacks.push('/media/profiles/placeholder.jpg');
+      } else if (originalSrc.includes('/books/')) {
+        fallbacks.push('/media/books/placeholder.jpg');
+      } else if (originalSrc.includes('/qr-codes/')) {
+        fallbacks.push('/media/qr-codes/placeholder.png');
+      }
+    }
+
+    // Try HTTPS if HTTP fails (only for external URLs)
+    if (originalSrc.startsWith('http://') && !originalSrc.includes('localhost')) {
       fallbacks.push(originalSrc.replace('http://', 'https://'));
     }
-    
-    // Try HTTP if HTTPS fails (for local development)
-    if (originalSrc.startsWith('https://')) {
+
+    // Try HTTP if HTTPS fails (for local development, only for external URLs)
+    if (originalSrc.startsWith('https://') && !originalSrc.includes('localhost')) {
       fallbacks.push(originalSrc.replace('https://', 'http://'));
     }
-    
+
     // Add custom fallback if provided
     if (fallbackSrc && !fallbacks.includes(fallbackSrc)) {
       fallbacks.push(fallbackSrc);
     }
-    
+
     return fallbacks;
   };
 
