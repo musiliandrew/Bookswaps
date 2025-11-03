@@ -250,7 +250,7 @@ const EnhancedMediaUpload = ({
             </div>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5 text-primary/70" />
             </button>
@@ -261,7 +261,7 @@ const EnhancedMediaUpload = ({
             className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
               dragActive
                 ? 'border-accent bg-accent/10'
-                : 'border-white/20 hover:border-white/40 hover:bg-white/5'
+                : 'border-white/20 hover:border-white/40 hover:bg-[var(--bg-card)]/5'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -304,7 +304,7 @@ const EnhancedMediaUpload = ({
                   return (
                     <motion.div
                       key={fileData.id}
-                      className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10"
+                      className="flex items-center gap-4 p-4 bg-[var(--bg-card)]/5 rounded-xl border border-white/10"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
@@ -317,7 +317,7 @@ const EnhancedMediaUpload = ({
                             className="w-12 h-12 object-cover rounded-lg"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
+                          <div className="w-12 h-12 bg-[var(--bg-card)]/10 rounded-lg flex items-center justify-center">
                             <IconComponent className="w-6 h-6 text-primary/70" />
                           </div>
                         )}
@@ -335,7 +335,7 @@ const EnhancedMediaUpload = ({
                         {/* Progress Bar */}
                         {isUploading && (
                           <div className="mt-2">
-                            <div className="w-full bg-white/10 rounded-full h-2">
+                            <div className="w-full bg-[var(--bg-card)]/10 rounded-full h-2">
                               <div
                                 className="bg-accent h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${progress}%` }}
@@ -357,7 +357,7 @@ const EnhancedMediaUpload = ({
                         ) : !isUploading ? (
                           <button
                             onClick={() => removeFile(fileData.id)}
-                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            className="p-1 hover:bg-[var(--bg-card)]/10 rounded transition-colors"
                           >
                             <XMarkIcon className="w-4 h-4 text-primary/70" />
                           </button>
@@ -374,7 +374,7 @@ const EnhancedMediaUpload = ({
           <div className="flex gap-3 mt-6 pt-6 border-t border-white/10">
             <button
               onClick={handleClose}
-              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-primary"
+              className="flex-1 px-4 py-3 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-xl transition-colors text-primary"
             >
               Cancel
             </button>

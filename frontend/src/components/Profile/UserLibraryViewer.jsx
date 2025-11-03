@@ -123,7 +123,7 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-5 h-5 text-primary/70" />
               </button>
@@ -310,7 +310,7 @@ const SwapRequestModal = ({ book, onClose, onSwapRequest }) => {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-primary"
+            className="flex-1 px-4 py-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-lg transition-colors text-primary"
           >
             Cancel
           </button>

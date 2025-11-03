@@ -125,8 +125,8 @@ const GoogleAuthButton = ({ onSuccess, onError, text = "Continue with Google", c
         onClick={handleGoogleAuth}
         className={`
           w-full flex items-center justify-center gap-3 px-6 py-3
-          border border-gray-300 rounded-lg bg-white text-gray-700
-          hover:bg-gray-50 hover:border-gray-400 transition-all duration-200
+          border border-gray-300 rounded-lg bg-[var(--bg-card)] text-gray-700
+          hover:bg-[var(--bg-primary)] hover:border-gray-400 transition-all duration-200
           font-medium shadow-sm hover:shadow-md
           ${className}
         `}

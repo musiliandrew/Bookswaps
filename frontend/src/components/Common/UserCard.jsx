@@ -84,7 +84,7 @@ const UserCard = ({
 
   return (
     <motion.div
-      className={`bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer ${sizeClasses.container} ${className}`}
+      className={`bg-[var(--bg-card)] rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer ${sizeClasses.container} ${className}`}
       onClick={handleProfileClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}

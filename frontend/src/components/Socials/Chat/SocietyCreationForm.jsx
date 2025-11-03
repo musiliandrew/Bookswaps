@@ -2,7 +2,7 @@ import React from 'react';
 
 const SocietyCreationForm = ({ newSociety, setNewSociety, handleCreateSociety }) => {
   return (
-    <div className="bg-white p-4 rounded shadow mb-4">
+    <div className="bg-[var(--bg-card)] p-4 rounded shadow mb-4">
       <h3 className="text-xl font-bold mb-2">Create a New Society</h3>
       <input
         type="text"

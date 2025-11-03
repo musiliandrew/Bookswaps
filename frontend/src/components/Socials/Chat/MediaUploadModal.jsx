@@ -86,7 +86,7 @@ const MediaUploadModal = ({ isOpen, onClose, onUpload }) => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-md"
+            className="bg-[var(--bg-card)] rounded-2xl p-6 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -142,7 +142,7 @@ const MediaUploadModal = ({ isOpen, onClose, onUpload }) => {
 
             {/* Selected File Info */}
             {selectedFile && !preview && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="mb-4 p-3 bg-[var(--bg-primary)] rounded-lg">
                 <div className="flex items-center space-x-3">
                   <DocumentIcon className="w-8 h-8 text-[var(--primary)]" />
                   <div className="flex-1 min-w-0">
@@ -173,7 +173,7 @@ const MediaUploadModal = ({ isOpen, onClose, onUpload }) => {
             <div className="flex space-x-3">
               <button
                 onClick={handleClose}
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-[var(--text)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-[var(--text)] hover:bg-[var(--bg-primary)] transition-colors"
               >
                 Cancel
               </button>

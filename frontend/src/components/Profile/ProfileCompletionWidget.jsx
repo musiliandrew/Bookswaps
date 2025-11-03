@@ -93,7 +93,7 @@ const ProfileCompletionWidget = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`bg-white/50 backdrop-blur-sm border border-[var(--primary)]/20 rounded-lg p-4 ${className}`}
+        className={`bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--primary)]/20 rounded-lg p-4 ${className}`}
       >
         <div className="flex items-center gap-3">
           {/* Mini Progress Circle */}
@@ -158,7 +158,7 @@ const ProfileCompletionWidget = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white/50 backdrop-blur-sm border border-[var(--primary)]/20 rounded-lg p-6 ${className}`}
+      className={`bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--primary)]/20 rounded-lg p-6 ${className}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">

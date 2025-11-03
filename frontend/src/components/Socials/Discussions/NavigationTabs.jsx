@@ -33,7 +33,7 @@ const NavigationTabs = ({ activeTab, setActiveTab }) => {
               className={`relative flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-300 font-medium ${
                 activeTab === tab.id
                   ? 'text-white shadow-lg'
-                  : 'text-primary/70 hover:text-primary hover:bg-white/10'
+                  : 'text-primary/70 hover:text-primary hover:bg-[var(--bg-card)]/10'
               }`}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}

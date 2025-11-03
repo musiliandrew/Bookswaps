@@ -15,7 +15,7 @@ const BookPreviewTooltip = ({ book, position, onClose }) => {
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 10 }}
-        className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-4 max-w-sm"
+        className="fixed z-50 bg-[var(--bg-card)] border border-gray-200 rounded-lg shadow-xl p-4 max-w-sm"
         style={{
           top: position.y - 10,
           left: Math.min(position.x, window.innerWidth - 300),

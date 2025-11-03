@@ -135,7 +135,7 @@ const MessageReactions = ({ messageId, reactions = [], onReactionAdd, onReaction
                 className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all duration-200 ${
                   reaction.hasUserReacted
                     ? `${reaction.bgColor} ${reaction.color} border border-current`
-                    : 'bg-white/10 text-primary/70 hover:bg-white/20 border border-transparent'
+                    : 'bg-[var(--bg-card)]/10 text-primary/70 hover:bg-[var(--bg-card)]/20 border border-transparent'
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -153,7 +153,7 @@ const MessageReactions = ({ messageId, reactions = [], onReactionAdd, onReaction
       <div className="relative">
         <button
           onClick={() => setShowReactionPicker(!showReactionPicker)}
-          className="flex items-center gap-1 px-2 py-1 text-xs text-primary/50 hover:text-primary/70 hover:bg-white/10 rounded-full transition-all duration-200"
+          className="flex items-center gap-1 px-2 py-1 text-xs text-primary/50 hover:text-primary/70 hover:bg-[var(--bg-card)]/10 rounded-full transition-all duration-200"
         >
           <PlusIcon className="w-3 h-3" />
           <span>React</span>
@@ -190,7 +190,7 @@ const MessageReactions = ({ messageId, reactions = [], onReactionAdd, onReaction
                         className={`p-2 rounded-lg transition-all duration-200 ${
                           hasReacted
                             ? `${reaction.bgColor} ${reaction.color}`
-                            : 'hover:bg-white/20 text-primary/70'
+                            : 'hover:bg-[var(--bg-card)]/20 text-primary/70'
                         }`}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}

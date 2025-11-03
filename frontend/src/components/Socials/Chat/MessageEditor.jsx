@@ -86,7 +86,7 @@ const MessageEditor = ({
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50"
+              className="w-full px-3 py-2 bg-[var(--bg-card)]/10 border border-white/20 rounded-lg text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50"
               rows={Math.max(2, editContent.split('\n').length)}
               placeholder="Edit your message..."
               disabled={isLoading}
@@ -144,7 +144,7 @@ const MessageEditor = ({
           {canEdit && (
             <motion.button
               onClick={onStartEdit}
-              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 p-1 bg-white/10 hover:bg-white/20 rounded text-primary/70 hover:text-primary transition-all duration-200"
+              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 p-1 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded text-primary/70 hover:text-primary transition-all duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               title="Edit message"

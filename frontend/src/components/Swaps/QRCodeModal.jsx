@@ -163,7 +163,7 @@ const QRCodeModal = ({ isOpen, onClose, swap, currentUserId }) => {
                 </div>
               ) : qrData?.qr_code_url ? (
                 <div className="space-y-3 sm:space-y-4">
-                  <div className="bg-white p-3 sm:p-4 rounded-xl mx-auto inline-block">
+                  <div className="bg-[var(--bg-card)] p-3 sm:p-4 rounded-xl mx-auto inline-block">
                     <img
                       src={qrData.qr_code_url}
                       alt="Swap QR Code"

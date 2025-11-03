@@ -118,7 +118,7 @@ const ProfileCompletionGuide = ({
               <motion.button
                 key={field.field}
                 onClick={() => handleFieldClick(field.field)}
-                className="flex items-center gap-2 p-3 bg-white/50 rounded-lg border border-[var(--primary)]/20 hover:border-[var(--accent)] transition-all text-left"
+                className="flex items-center gap-2 p-3 bg-[var(--bg-card)]/50 rounded-lg border border-[var(--primary)]/20 hover:border-[var(--accent)] transition-all text-left"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -155,7 +155,7 @@ const ProfileCompletionGuide = ({
             <div key={categoryKey} className="border border-[var(--primary)]/10 rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleCategory(categoryKey)}
-                className="w-full flex items-center justify-between p-4 bg-white/30 hover:bg-white/50 transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-[var(--bg-card)]/30 hover:bg-[var(--bg-card)]/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Icon className="w-5 h-5 text-[var(--primary)]" />
@@ -189,7 +189,7 @@ const ProfileCompletionGuide = ({
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                   >
-                    <div className="p-4 bg-white/20 space-y-2">
+                    <div className="p-4 bg-[var(--bg-card)]/20 space-y-2">
                       {categoryFields.map((field) => (
                         <motion.div
                           key={field.field}

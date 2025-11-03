@@ -243,13 +243,13 @@ const SocietyChatView = ({
           <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
             <button
               onClick={() => setShowSocietyInfo(!showSocietyInfo)}
-              className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors"
               title="Society Information"
             >
               <InformationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
             </button>
             <button
-              className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors"
               title="More Options"
             >
               <EllipsisVerticalIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
@@ -267,7 +267,7 @@ const SocietyChatView = ({
               transition={{ duration: 0.2 }}
               className="mt-3 pt-3 border-t border-[var(--secondary)]/30 overflow-hidden"
             >
-              <div className="bg-white/50 rounded-lg p-3 space-y-2">
+              <div className="bg-[var(--bg-card)]/50 rounded-lg p-3 space-y-2">
                 <p className="text-sm text-[var(--text)] font-open-sans">
                   {society.description ?
                     society.description.replace(/<[^>]*>/g, '') :

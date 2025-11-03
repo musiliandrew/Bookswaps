@@ -25,8 +25,8 @@ const SearchBar = ({ searchQuery, onSearch }) => {
           onChange={(e) => onSearch(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className={`w-full px-6 py-4 pl-14 pr-12 input rounded-2xl border-0 bg-white/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 mobile-search-input ${
-            isFocused ? 'bg-white/30 shadow-lg' : 'bg-white/10'
+          className={`w-full px-6 py-4 pl-14 pr-12 input rounded-2xl border-0 bg-[var(--bg-card)]/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 mobile-search-input ${
+            isFocused ? 'bg-[var(--bg-card)]/30 shadow-lg' : 'bg-[var(--bg-card)]/10'
           }`}
         />
 

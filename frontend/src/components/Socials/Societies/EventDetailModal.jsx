@@ -144,14 +144,14 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleShare}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
                 title="Share event"
               >
                 <ShareIcon className="w-5 h-5 text-primary/70" />
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-5 h-5 text-primary/70" />
               </button>
@@ -170,7 +170,7 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
 
             {/* Date and Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-[var(--bg-card)]/5 rounded-xl">
                 <CalendarIcon className="w-5 h-5 text-accent" />
                 <div>
                   <p className="font-semibold text-primary">Start</p>
@@ -180,7 +180,7 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
               </div>
               
               {endDateTime && (
-                <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+                <div className="flex items-center gap-3 p-4 bg-[var(--bg-card)]/5 rounded-xl">
                   <ClockIcon className="w-5 h-5 text-accent" />
                   <div>
                     <p className="font-semibold text-primary">End</p>
@@ -192,7 +192,7 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
             </div>
 
             {/* Location */}
-            <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+            <div className="flex items-center gap-3 p-4 bg-[var(--bg-card)]/5 rounded-xl">
               {event.is_virtual ? (
                 <LinkIcon className="w-5 h-5 text-accent" />
               ) : (
@@ -224,7 +224,7 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
             </div>
 
             {/* Attendees */}
-            <div className="p-4 bg-white/5 rounded-xl">
+            <div className="p-4 bg-[var(--bg-card)]/5 rounded-xl">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <UsersIcon className="w-5 h-5 text-accent" />
@@ -244,7 +244,7 @@ const EventDetailModal = ({ isOpen, onClose, event, societyId }) => {
                     .map((attendee) => (
                       <div
                         key={attendee.user_id}
-                        className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-sm"
+                        className="flex items-center gap-2 px-3 py-1 bg-[var(--bg-card)]/10 rounded-full text-sm"
                       >
                         <div className="w-6 h-6 bg-gradient-to-br from-accent/20 to-primary/20 rounded-full flex items-center justify-center">
                           <span className="text-xs font-semibold text-primary">

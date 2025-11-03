@@ -265,7 +265,7 @@ const ShareableProfileCard = ({ user, stats, onClose, isInline = false }) => {
                   {availableStats.filter(stat => selectedStats[stat.key]).map((stat) => {
                     const IconComponent = stat.icon;
                     return (
-                      <div key={stat.key} className={`bg-white/5 rounded-lg ${isCompact ? 'p-2' : 'p-3'} border border-white/10`}>
+                      <div key={stat.key} className={`bg-[var(--bg-card)]/5 rounded-lg ${isCompact ? 'p-2' : 'p-3'} border border-white/10`}>
                         <div className={`flex items-center ${isCompact ? 'gap-1 mb-1' : 'gap-2 mb-1'}`}>
                           <IconComponent className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} text-[#D2691E]`} />
                           <span className="text-xs text-gray-400 uppercase tracking-wide">{stat.label}</span>
@@ -307,8 +307,8 @@ const ShareableProfileCard = ({ user, stats, onClose, isInline = false }) => {
             </div>
 
             {/* Right Section - QR Code */}
-            <div className={`${isCompact ? 'w-20' : 'w-32'} ${isCompact ? 'p-4' : 'p-6'} flex flex-col items-center justify-center bg-white/5 border-l border-white/10`}>
-              <div className={`${isCompact ? 'w-12 h-12' : 'w-20 h-20'} bg-white rounded-lg ${isCompact ? 'p-1 mb-1' : 'p-2 mb-2'}`}>
+            <div className={`${isCompact ? 'w-20' : 'w-32'} ${isCompact ? 'p-4' : 'p-6'} flex flex-col items-center justify-center bg-[var(--bg-card)]/5 border-l border-white/10`}>
+              <div className={`${isCompact ? 'w-12 h-12' : 'w-20 h-20'} bg-[var(--bg-card)] rounded-lg ${isCompact ? 'p-1 mb-1' : 'p-2 mb-2'}`}>
                 <div className="w-full h-full bg-black rounded flex items-center justify-center">
                   <div className="text-white text-xs font-mono">QR</div>
                 </div>

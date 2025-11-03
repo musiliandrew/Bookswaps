@@ -325,7 +325,7 @@ const ProfileCompletionTracker = ({
                         <motion.button
                           key={field.field}
                           onClick={() => handleFieldClick(field.field)}
-                          className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-[var(--primary)]/20 hover:border-[var(--accent)] transition-all text-sm"
+                          className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-card)]/50 rounded-lg border border-[var(--primary)]/20 hover:border-[var(--accent)] transition-all text-sm"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                         >
@@ -359,7 +359,7 @@ const ProfileCompletionTracker = ({
                 </motion.button>
                 <motion.button
                   onClick={() => setShowGuide(!showGuide)}
-                  className="bg-white/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors"
+                  className="bg-[var(--bg-card)]/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-[var(--bg-card)]/70 transition-colors"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -463,7 +463,7 @@ const ProfileCompletionTracker = ({
                       className={`p-4 rounded-lg border-2 transition-all ${
                         categoryPercentage === 100
                           ? 'border-green-200 bg-green-50'
-                          : 'border-[var(--primary)]/20 bg-white/50'
+                          : 'border-[var(--primary)]/20 bg-[var(--bg-card)]/50'
                       }`}
                       whileHover={{ scale: 1.02 }}
                     >
@@ -512,7 +512,7 @@ const ProfileCompletionTracker = ({
                               className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left ${
                                 field.completed
                                   ? 'bg-green-100 cursor-default'
-                                  : 'bg-white/70 hover:bg-white cursor-pointer hover:shadow-sm'
+                                  : 'bg-[var(--bg-card)]/70 hover:bg-[var(--bg-card)] cursor-pointer hover:shadow-sm'
                               }`}
                               whileHover={!field.completed ? { scale: 1.01 } : {}}
                               disabled={field.completed}

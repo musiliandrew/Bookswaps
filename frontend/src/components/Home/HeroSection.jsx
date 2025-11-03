@@ -141,7 +141,7 @@ const HeroSection = () => {
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
                 index === currentImage 
                   ? 'scale-125' 
-                  : 'bg-white opacity-50 hover:opacity-75'
+                  : 'bg-[var(--bg-card)] opacity-50 hover:opacity-75'
               }`}
               style={{
                 backgroundColor: index === currentImage ? 'var(--accent)' : undefined

@@ -179,7 +179,7 @@ const ConversationView = ({
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-[var(--bg-primary)]">
         <div className="text-center">
           <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20 rounded-full flex items-center justify-center">
             <svg className="w-16 h-16 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@ const ConversationView = ({
   }
 
   return (
-    <div className={`flex-1 flex flex-col ${isMobileModal ? 'bg-transparent h-full' : 'bg-white'}`}>
+    <div className={`flex-1 flex flex-col ${isMobileModal ? 'bg-transparent h-full' : 'bg-[var(--bg-card)]'}`}>
       {/* Chat Header - Mobile Optimized */}
       <div className={`${isMobileModal ? 'bg-[var(--primary)]/10 border-b border-[var(--primary)]/20' : 'bg-gradient-to-r from-[var(--secondary)]/30 to-white/80 backdrop-blur-sm border-b border-[var(--secondary)]'} px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between flex-shrink-0`}>
         <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
@@ -231,16 +231,16 @@ const ConversationView = ({
         </div>
 
         <div className="flex items-center space-x-0.5 sm:space-x-2 flex-shrink-0">
-          <button className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors">
+          <button className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors">
             <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
           </button>
-          <button className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors">
+          <button className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors">
             <VideoCameraIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
           </button>
-          <button className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors">
+          <button className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors">
             <InformationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
           </button>
-          <button className="p-1.5 sm:p-2 hover:bg-white/50 rounded-full transition-colors">
+          <button className="p-1.5 sm:p-2 hover:bg-[var(--bg-card)]/50 rounded-full transition-colors">
             <EllipsisVerticalIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" />
           </button>
         </div>

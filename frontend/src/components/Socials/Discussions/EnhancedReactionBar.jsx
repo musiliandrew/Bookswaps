@@ -77,7 +77,7 @@ const EnhancedReactionBar = ({
   };
 
   return (
-    <div className="px-2 sm:px-4 py-2 sm:py-3 bg-white/30 backdrop-blur-sm border-t border-white/20">
+    <div className="px-2 sm:px-4 py-2 sm:py-3 bg-[var(--bg-card)]/30 backdrop-blur-sm border-t border-white/20">
 
       {/* Mobile Layout: Two Columns */}
       <div className="flex items-center justify-between sm:hidden">
@@ -189,7 +189,7 @@ const EnhancedReactionBar = ({
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
+                  className="absolute bottom-full right-0 mb-2 bg-[var(--bg-card)]/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
                 >
                   <button
                     onClick={() => handleShare('copy')}
@@ -342,7 +342,7 @@ const EnhancedReactionBar = ({
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[140px]"
+                  className="absolute bottom-full right-0 mb-2 bg-[var(--bg-card)]/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[140px]"
                 >
                   <button
                     onClick={() => handleShare('copy')}
@@ -385,7 +385,7 @@ const EnhancedReactionBar = ({
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full right-0 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
+                  className="absolute bottom-full right-0 mb-2 bg-[var(--bg-card)]/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-2 z-20 min-w-[120px]"
                 >
                   <button
                     onClick={() => handleMoreAction('report')}

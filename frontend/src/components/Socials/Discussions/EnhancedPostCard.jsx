@@ -125,7 +125,7 @@ const EnhancedPostCard = ({
     <motion.div
       className={`${
         isEmbedded
-          ? 'bg-white/30 rounded-xl border border-white/10 hover:border-white/20'
+          ? 'bg-[var(--bg-card)]/30 rounded-xl border border-white/10 hover:border-white/20'
           : 'card rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 shadow-elevated'
       } transition-all duration-300 overflow-hidden group relative mobile-post-card ${!isEmbedded ? 'cursor-pointer' : ''}
       mx-2 sm:mx-0 max-w-sm sm:max-w-none`}
@@ -139,7 +139,7 @@ const EnhancedPostCard = ({
       {/* Enhanced Hover Tooltip for Book References */}
       {post.book && (
         <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
-          <div className="bg-white/95 backdrop-blur-md border border-white/30 rounded-xl shadow-xl p-5 min-w-72 card">
+          <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border border-white/30 rounded-xl shadow-xl p-5 min-w-72 card">
             <div className="space-y-3">
               {/* Book Title with Link */}
               <div className="border-b border-white/20 pb-3">
@@ -354,7 +354,7 @@ const EnhancedPostCard = ({
             })}
 
             {post.tags.length > 4 && (
-              <span className="px-2.5 py-1 text-xs text-gray-500 bg-gray-50 rounded-full font-open-sans">
+              <span className="px-2.5 py-1 text-xs text-gray-500 bg-[var(--bg-primary)] rounded-full font-open-sans">
                 +{post.tags.length - 4}
               </span>
             )}

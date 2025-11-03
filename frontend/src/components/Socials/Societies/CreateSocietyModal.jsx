@@ -141,7 +141,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Mystery Book Lovers"
-                    className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                     required
                   />
                 </div>
@@ -155,7 +155,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe what your society is about..."
                     rows={3}
-                    className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 resize-none"
+                    className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 resize-none"
                     required
                   />
                 </div>
@@ -172,7 +172,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                       className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all min-h-[44px] ${
                         formData.visibility === 'public'
                           ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                          : 'border-[var(--primary)]/20 bg-white/50 text-[var(--primary)]/70 hover:bg-[var(--primary)]/10'
+                          : 'border-[var(--primary)]/20 bg-[var(--bg-card)]/50 text-[var(--primary)]/70 hover:bg-[var(--primary)]/10'
                       }`}
                     >
                       <GlobeAltIcon className="w-4 h-4" />
@@ -188,7 +188,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                       className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all min-h-[44px] ${
                         formData.visibility === 'private'
                           ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                          : 'border-[var(--primary)]/20 bg-white/50 text-[var(--primary)]/70 hover:bg-[var(--primary)]/10'
+                          : 'border-[var(--primary)]/20 bg-[var(--bg-card)]/50 text-[var(--primary)]/70 hover:bg-[var(--primary)]/10'
                       }`}
                     >
                       <LockClosedIcon className="w-4 h-4" />
@@ -208,7 +208,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                   <select
                     value={formData.focus_type}
                     onChange={(e) => setFormData(prev => ({ ...prev, focus_type: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   >
                     <option value="">👥 General Discussion</option>
                     <option value="Genre">🏷️ Genre Focused</option>
@@ -225,7 +225,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                     <select
                       value={selectedGenre}
                       onChange={(e) => setSelectedGenre(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 mb-2"
+                      className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 mb-2"
                     >
                       <option value="">Choose a genre</option>
                       {genres.map((genre) => (
@@ -240,7 +240,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                         value={customGenre}
                         onChange={(e) => setCustomGenre(e.target.value)}
                         placeholder="Enter custom genre"
-                        className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                       />
                     )}
                   </div>
@@ -255,7 +255,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                     <select
                       value={formData.focus_id}
                       onChange={(e) => setFormData(prev => ({ ...prev, focus_id: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                      className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                     >
                       <option value="">Choose a book</option>
                       {books?.map((book) => (

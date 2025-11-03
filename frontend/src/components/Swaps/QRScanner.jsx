@@ -178,7 +178,7 @@ const QRScanner = ({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="bg-[var(--bg-card)] rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

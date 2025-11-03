@@ -187,7 +187,7 @@ const EnhancedImage = ({
                   setCurrentSrc(fixMinioUrl(src));
                   setRetryCount(0);
                 }}
-                className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-white/20 transition-colors"
+                className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-[var(--bg-card)]/20 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

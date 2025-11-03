@@ -24,8 +24,8 @@ const PostFilters = ({ postFilters, setPostFilters }) => {
     setPostFilters({ type: '', book_id: '', tag: '' });
   };
 
-  const selectClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30";
-  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const selectClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-[var(--bg-card)]/20 focus:bg-[var(--bg-card)]/30";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-[var(--bg-card)]/20 transition-all duration-300";
 
   return (
     <motion.div

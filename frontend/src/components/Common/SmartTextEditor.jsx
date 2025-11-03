@@ -281,7 +281,7 @@ const SmartTextEditor = ({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         maxLength={maxLength}
-        className={`w-full resize-none border border-[var(--accent)]/30 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all bg-white/80 backdrop-blur-sm text-[var(--dark-primary)] placeholder-[var(--text)] font-open-sans ${className}`}
+        className={`w-full resize-none border border-[var(--accent)]/30 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all bg-[var(--bg-card)]/80 backdrop-blur-sm text-[var(--dark-primary)] placeholder-[var(--text)] font-open-sans ${className}`}
         rows={minRows}
         style={{ minHeight: `${24 * minRows}px`, maxHeight: `${24 * maxRows}px` }}
       />

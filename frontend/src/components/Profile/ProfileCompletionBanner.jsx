@@ -166,7 +166,7 @@ const ProfileCompletionBanner = ({
               {onShowGuide && (
                 <motion.button
                   onClick={onShowGuide}
-                  className="bg-white/50 text-[var(--primary)] px-3 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors text-sm"
+                  className="bg-[var(--bg-card)]/50 text-[var(--primary)] px-3 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-[var(--bg-card)]/70 transition-colors text-sm"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -260,7 +260,7 @@ const ProfileCompletionBanner = ({
                 {onShowGuide && (
                   <motion.button
                     onClick={onShowGuide}
-                    className="bg-white/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-white/70 transition-colors"
+                    className="bg-[var(--bg-card)]/50 text-[var(--primary)] px-4 py-2 rounded-lg font-medium font-['Open_Sans'] border border-[var(--primary)]/30 hover:bg-[var(--bg-card)]/70 transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

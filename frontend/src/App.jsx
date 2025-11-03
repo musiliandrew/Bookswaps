@@ -30,10 +30,10 @@ function App() {
   // Loading state with proper JSX structure
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
+      <div className="flex justify-center items-center h-screen bg-[var(--bg-primary)]">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-          <span className="text-lg font-medium text-gray-700">Loading...</span>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary-500)] border-t-transparent"></div>
+          <span className="text-lg font-medium text-[var(--text-primary)]">Loading...</span>
         </div>
       </div>
     );
@@ -41,7 +41,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
         {/* Navbar with fixed positioning - only show when authenticated */}
         {isAuthenticated && (
           <div className="fixed top-0 left-0 right-0 z-50 shadow-sm">

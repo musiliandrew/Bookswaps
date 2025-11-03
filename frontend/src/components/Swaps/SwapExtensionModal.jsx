@@ -102,14 +102,14 @@ const SwapExtensionModal = ({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5 text-primary/70" />
             </button>
           </div>
 
           {/* Swap Info */}
-          <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+          <div className="mb-6 p-4 bg-[var(--bg-card)]/5 rounded-xl border border-white/10">
             <div className="flex items-center gap-3">
               <img
                 src={swap?.initiator_book?.cover_image_url || '/placeholder-book.jpg'}
@@ -146,7 +146,7 @@ const SwapExtensionModal = ({
                 <select
                   value={formData.days}
                   onChange={(e) => setFormData(prev => ({ ...prev, days: parseInt(e.target.value) }))}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                 >
                   <option value={3}>3 days</option>
                   <option value={7}>1 week</option>
@@ -164,7 +164,7 @@ const SwapExtensionModal = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   placeholder="Please explain why you need more time..."
                   rows={4}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
 
@@ -183,7 +183,7 @@ const SwapExtensionModal = ({
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-primary"
+                  className="flex-1 px-4 py-3 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-xl transition-colors text-primary"
                 >
                   Cancel
                 </button>
@@ -200,7 +200,7 @@ const SwapExtensionModal = ({
             /* Respond to Extension */
             <div className="space-y-4">
               {extensionRequest && (
-                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="p-4 bg-[var(--bg-card)]/5 rounded-xl border border-white/10">
                   <div className="flex items-center gap-2 mb-3">
                     <ClockIcon className="w-5 h-5 text-accent" />
                     <span className="font-semibold text-primary">Extension Request</span>
@@ -215,7 +215,7 @@ const SwapExtensionModal = ({
                     <p className="text-primary">
                       <span className="text-primary/70">Reason:</span>
                     </p>
-                    <p className="text-primary bg-white/5 p-3 rounded-lg">
+                    <p className="text-primary bg-[var(--bg-card)]/5 p-3 rounded-lg">
                       {extensionRequest.reason}
                     </p>
                   </div>
@@ -231,7 +231,7 @@ const SwapExtensionModal = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   placeholder="Add any notes about your decision..."
                   rows={3}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
 

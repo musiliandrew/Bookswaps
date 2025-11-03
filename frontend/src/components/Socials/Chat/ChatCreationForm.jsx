@@ -5,7 +5,7 @@ import { ChatBubbleOvalLeftEllipsisIcon, UserIcon, BookOpenIcon, PaperAirplaneIc
 const ChatCreationForm = ({ newChat, setNewChat, handleStartChat }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-[var(--bg-card)]/20 transition-all duration-300";
   const labelClasses = "flex items-center space-x-2 text-sm font-medium text-primary mb-2";
 
   return (

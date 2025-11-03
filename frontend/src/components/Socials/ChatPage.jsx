@@ -553,7 +553,7 @@ const ChatPage = () => {
                 }
                 setShowUserSearch(!showUserSearch);
               }}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-[var(--bg-card)]/10 rounded-full transition-colors"
               title="Start new conversation"
               disabled={!currentUser}
             >
@@ -569,7 +569,7 @@ const ChatPage = () => {
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-full text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 font-open-sans mobile-search-input"
+              className="w-full pl-10 pr-4 py-2 bg-[var(--bg-card)]/10 border border-white/20 rounded-full text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-[var(--bg-card)]/20 font-open-sans mobile-search-input"
             />
           </div>
         </div>
@@ -580,8 +580,8 @@ const ChatPage = () => {
             onClick={() => setActiveTab('dm')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-all font-open-sans ${
               activeTab === 'dm'
-                ? 'text-[var(--primary)] border-b-2 border-[var(--accent)] bg-white/80'
-                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/40'
+                ? 'text-[var(--primary)] border-b-2 border-[var(--accent)] bg-[var(--bg-card)]/80'
+                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)]/40'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
@@ -593,8 +593,8 @@ const ChatPage = () => {
             onClick={() => setActiveTab('societies')}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-all font-open-sans ${
               activeTab === 'societies'
-                ? 'text-[var(--primary)] border-b-2 border-[var(--accent)] bg-white/80'
-                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/40'
+                ? 'text-[var(--primary)] border-b-2 border-[var(--accent)] bg-[var(--bg-card)]/80'
+                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)]/40'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">

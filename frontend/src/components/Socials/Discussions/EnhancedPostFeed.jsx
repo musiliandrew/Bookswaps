@@ -178,7 +178,7 @@ const EnhancedPostFeed = ({
                     {option.count > 0 && (
                       <span className={`px-2 py-0.5 text-xs rounded-full transition-all duration-300 ${
                         activeFilter === option.value
-                          ? 'bg-white/20 text-white'
+                          ? 'bg-[var(--bg-card)]/20 text-white'
                           : 'bg-primary/10 text-primary'
                       }`}>
                         {option.count}
@@ -214,7 +214,7 @@ const EnhancedPostFeed = ({
                 className="card border border-white/20 rounded-xl px-4 py-3 text-sm font-medium text-primary bg-transparent backdrop-blur-xl appearance-none cursor-pointer min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent/50"
               >
                 {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value} className="bg-white text-primary">
+                  <option key={option.value} value={option.value} className="bg-[var(--bg-card)] text-primary">
                     {option.label}
                   </option>
                 ))}
@@ -273,7 +273,7 @@ const EnhancedPostFeed = ({
                 <motion.button
                   onClick={onLoadMore}
                   disabled={isLoading}
-                  className="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
+                  className="px-8 py-3 bg-[var(--bg-card)] border border-gray-200 text-gray-700 rounded-xl hover:bg-[var(--bg-primary)] transition-all disabled:opacity-50"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

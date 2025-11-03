@@ -54,7 +54,7 @@ const MessagePinning = ({
           className={`p-1 rounded transition-all duration-200 ${
             message?.is_pinned
               ? 'text-yellow-500 hover:text-yellow-400'
-              : 'text-primary/50 hover:text-primary/70 hover:bg-white/10'
+              : 'text-primary/50 hover:text-primary/70 hover:bg-[var(--bg-card)]/10'
           }`}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -103,7 +103,7 @@ const MessagePinning = ({
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowConfirm(false)}
-                  className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-primary text-sm"
+                  className="flex-1 px-3 py-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-lg transition-colors text-primary text-sm"
                 >
                   Cancel
                 </button>
@@ -178,7 +178,7 @@ export const PinnedMessagesSection = ({
               {pinnedMessages.map((message) => (
                 <motion.div
                   key={message.message_id}
-                  className="p-3 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="p-3 bg-[var(--bg-card)]/5 rounded-lg border border-white/10 cursor-pointer hover:bg-[var(--bg-card)]/10 transition-colors"
                   onClick={() => onMessageClick?.(message)}
                   whileHover={{ scale: 1.02 }}
                 >

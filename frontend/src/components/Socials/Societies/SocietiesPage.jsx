@@ -160,14 +160,14 @@ const SocietiesPage = () => {
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               placeholder="Search societies..."
-              className="w-full pl-10 pr-4 py-2 input rounded-lg border-0 bg-white/10 text-primary mobile-search-input"
+              className="w-full pl-10 pr-4 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary mobile-search-input"
             />
           </div>
 
           <select
             value={filters.visibility}
             onChange={(e) => setFilters(prev => ({ ...prev, visibility: e.target.value }))}
-            className="px-4 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+            className="px-4 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
           >
             <option value="">All Visibility</option>
             <option value="public">Public</option>
@@ -177,7 +177,7 @@ const SocietiesPage = () => {
           <select
             value={filters.focus_type}
             onChange={(e) => setFilters(prev => ({ ...prev, focus_type: e.target.value }))}
-            className="px-4 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+            className="px-4 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
           >
             <option value="">All Types</option>
             <option value="Genre">Genre-based</option>
@@ -186,7 +186,7 @@ const SocietiesPage = () => {
 
           <button
             onClick={() => setFilters({ search: '', visibility: '', focus_type: '', my_societies: false })}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-primary"
+            className="px-4 py-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-lg transition-colors text-primary"
           >
             Clear Filters
           </button>

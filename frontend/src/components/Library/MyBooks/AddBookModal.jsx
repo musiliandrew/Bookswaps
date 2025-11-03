@@ -113,7 +113,7 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
                 {/* Manual Add Option */}
                 <motion.button
                   onClick={handleManualAdd}
-                  className="p-4 sm:p-6 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-primary/50 transition-all group"
+                  className="p-4 sm:p-6 bg-[var(--bg-card)]/5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-primary/50 transition-all group"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -331,7 +331,7 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
 
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <motion.label
-              className="flex items-center p-2.5 sm:p-3 bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer min-h-[44px]"
+              className="flex items-center p-2.5 sm:p-3 bg-[var(--bg-card)]/10 rounded-lg border border-white/20 hover:bg-[var(--bg-card)]/20 transition-all duration-200 cursor-pointer min-h-[44px]"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
@@ -348,7 +348,7 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
             </motion.label>
 
             <motion.label
-              className="flex items-center p-2.5 sm:p-3 bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer min-h-[44px]"
+              className="flex items-center p-2.5 sm:p-3 bg-[var(--bg-card)]/10 rounded-lg border border-white/20 hover:bg-[var(--bg-card)]/20 transition-all duration-200 cursor-pointer min-h-[44px]"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >

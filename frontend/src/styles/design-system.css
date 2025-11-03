@@ -1,83 +1,109 @@
 /* ==========================================
-   BookSwaps - Professional Design System
-   Mobile-First, Modern, Accessible
+   BookSwaps - Vintage Bookstore Design System
+   Warm, Cozy, Book-Lover Aesthetic
+   Mobile-First, Accessible
    ========================================== */
 
 /* ==========================================
-   COLOR SYSTEM
+   COLOR SYSTEM - Warm Vintage Palette
    ========================================== */
 :root {
-  /* Primary Colors - Professional & Trustworthy */
+  /* Secondary Colors - Warm Cream (MAIN BACKGROUNDS) */
+  --secondary-50: #fcfaf7;
+  --secondary-100: #f8f5f0;
+  --secondary-200: #F0EAD0; /* Main secondary - Cream (use for large areas!) */
+  --secondary-300: #e8e0c0;
+  --secondary-400: #e0d6b0;
+  --secondary-500: #d8cca0;
+  --secondary-600: #b8ac80;
+  --secondary-700: #988c60;
+  --secondary-800: #786c40;
+  --secondary-900: #584c20;
+
+  /* Background Colors - Soft Sage (SECONDARY BACKGROUNDS) */
+  --background-50: #f0f2f0;
+  --background-100: #e1e5e1;
+  --background-200: #d2d9d2;
+  --background-300: #c3cdc3;
+  --background-400: #B8C1B0; /* Main background - Sage green (use widely!) */
+  --background-500: #a9b5a1;
+  --background-600: #8a9681;
+  --background-700: #6b7761;
+  --background-800: #4c5841;
+  --background-900: #2d3921;
+
+  /* Primary Colors - Teal (USE FOR ACTIONS/BUTTONS ONLY) */
   --primary-50: #f0f4f5;
   --primary-100: #dae4e7;
   --primary-200: #b5c9cf;
   --primary-300: #8faeb7;
-  --primary-400: #6a93 9f;
-  --primary-500: #456A76; /* Main primary */
+  --primary-400: #6a939f;
+  --primary-500: #456A76; /* Main primary - Teal (buttons, links, actions) */
   --primary-600: #375563;
   --primary-700: #29404a;
   --primary-800: #1c2a32;
   --primary-900: #0e1519;
 
-  /* Accent Colors - Warm & Inviting */
+  /* Accent Colors - Gold (USE FOR HIGHLIGHTS/IMPORTANT ACTIONS ONLY) */
   --accent-50: #fef7e6;
   --accent-100: #fdefc8;
-  --accent-200: #fbdf91;
+  --accent-200: #FEF3C7; /* Light accent - soft yellow */
   --accent-300: #f9cf5a;
   --accent-400: #f7bf23;
-  --accent-500: #D4A017; /* Main accent */
+  --accent-500: #D4A017; /* Main accent - Gold (CTAs, badges, highlights) */
   --accent-600: #aa8012;
   --accent-700: #7f600e;
   --accent-800: #554009;
   --accent-900: #2a2005;
 
-  /* Neutral Colors - Clean & Modern */
+  /* Neutral Colors - Warm Grays */
   --neutral-0: #ffffff;
-  --neutral-50: #f9fafb;
-  --neutral-100: #f3f4f6;
-  --neutral-200: #e5e7eb;
-  --neutral-300: #d1d5db;
-  --neutral-400: #9ca3af;
+  --neutral-50: #f9f8f6;
+  --neutral-100: #f3f1ed;
+  --neutral-200: #e8e5df;
+  --neutral-300: #d6d1c7;
+  --neutral-400: #b0a99a;
   --neutral-500: #6b7280;
   --neutral-600: #4b5563;
   --neutral-700: #374151;
   --neutral-800: #1f2937;
   --neutral-900: #111827;
 
-  /* Semantic Colors */
+  /* Semantic Colors (Muted for vintage feel) */
   --success-50: #f0fdf4;
-  --success-500: #10b981;
-  --success-600: #059669;
+  --success-500: #059669;  /* Muted green */
+  --success-600: #047857;
 
   --warning-50: #fffbeb;
-  --warning-500: #f59e0b;
-  --warning-600: #d97706;
+  --warning-500: #D4A017;  /* Using gold for warnings */
+  --warning-600: #aa8012;
 
   --error-50: #fef2f2;
-  --error-500: #ef4444;
-  --error-600: #dc2626;
+  --error-500: #9B2D30;  /* Muted dark red (vintage) */
+  --error-600: #7c2426;
 
   --info-50: #eff6ff;
-  --info-500: #3b82f6;
-  --info-600: #2563eb;
+  --info-500: #456A76;  /* Using teal for info */
+  --info-600: #375563;
 
-  /* Background Colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-tertiary: #f3f4f6;
+  /* Background Colors - VINTAGE WARM SCHEME */
+  --bg-primary: #F0EAD0;    /* Cream - MAIN background for large areas */
+  --bg-secondary: #B8C1B0;   /* Sage - Secondary background */
+  --bg-tertiary: #FEF3C7;    /* Light yellow - Accents */
+  --bg-card: rgba(240, 234, 208, 0.95);  /* Cream with slight transparency */
   --bg-overlay: rgba(0, 0, 0, 0.5);
 
-  /* Text Colors */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
+  /* Text Colors - Dark for readability on light backgrounds */
+  --text-primary: #2d3921;   /* Dark sage green */
+  --text-secondary: #4b5563; /* Medium gray */
+  --text-tertiary: #6b7280;  /* Light gray */
   --text-disabled: #9ca3af;
   --text-inverse: #ffffff;
 
-  /* Border Colors */
-  --border-light: #f3f4f6;
-  --border-medium: #e5e7eb;
-  --border-dark: #d1d5db;
+  /* Border Colors - Subtle warm tones */
+  --border-light: rgba(69, 106, 118, 0.1);
+  --border-medium: rgba(69, 106, 118, 0.2);
+  --border-dark: rgba(69, 106, 118, 0.3);
   --border-focus: var(--primary-500);
 }
 

@@ -76,7 +76,7 @@ const ExtensionRequest = ({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="bg-[var(--bg-card)] rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -98,7 +98,7 @@ const ExtensionRequest = ({
           {/* Content */}
           <div className="p-4">
             {/* Book Info */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="mb-4 p-3 bg-[var(--bg-primary)] rounded-lg">
               <h4 className="font-medium text-gray-900 mb-1">
                 {swap.initiator_book?.title}
               </h4>
@@ -283,7 +283,7 @@ const ExtensionRequest = ({
                   {swap.extension_requests
                     .filter(req => req.status !== 'pending')
                     .map((request) => (
-                      <div key={request.extension_id} className="p-3 bg-gray-50 rounded-lg text-sm">
+                      <div key={request.extension_id} className="p-3 bg-[var(--bg-primary)] rounded-lg text-sm">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium">
                             {request.days_requested} days requested

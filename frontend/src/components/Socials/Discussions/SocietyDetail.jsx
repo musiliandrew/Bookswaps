@@ -12,7 +12,7 @@ const SocietyDetail = ({ societyId, societies, joinSociety, leaveSociety, active
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white p-4 rounded shadow"
+      className="bg-[var(--bg-card)] p-4 rounded shadow"
     >
       <h2 className="text-2xl font-bold">{society?.name}</h2>
       <div>

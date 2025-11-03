@@ -169,7 +169,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5 text-primary/70" />
             </button>
@@ -200,7 +200,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
             {userLocation && (
               <button
                 onClick={() => handleGetMidpoint({ latitude: 0, longitude: 0 })} // Demo coordinates
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-primary"
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-xl transition-colors text-primary"
               >
                 <GlobeAltIcon className="w-4 h-4" />
                 Find Midpoint
@@ -215,7 +215,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10"
+                className="mb-6 p-4 bg-[var(--bg-card)]/5 rounded-xl border border-white/10"
               >
                 <h4 className="font-semibold text-primary mb-4">Add New Location</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,7 +228,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.name}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., Central Library"
-                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                     />
                   </div>
                   
@@ -241,7 +241,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.city}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, city: e.target.value }))}
                       placeholder="City name"
-                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                     />
                   </div>
                   
@@ -263,7 +263,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                             getCurrentLocation();
                           }
                         }}
-                        className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-primary transition-colors"
+                        className="text-xs px-2 py-1 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded text-primary transition-colors"
                       >
                         Use Current Location
                       </button>
@@ -275,7 +275,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                         value={newLocation.latitude}
                         onChange={(e) => setNewLocation(prev => ({ ...prev, latitude: e.target.value }))}
                         placeholder="Latitude"
-                        className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                        className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                         required
                       />
                       <input
@@ -284,7 +284,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                         value={newLocation.longitude}
                         onChange={(e) => setNewLocation(prev => ({ ...prev, longitude: e.target.value }))}
                         placeholder="Longitude"
-                        className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                        className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                         required
                       />
                     </div>
@@ -297,7 +297,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                     <select
                       value={newLocation.type}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                     >
                       <option value="library">Library</option>
                       <option value="cafe">Cafe</option>
@@ -321,7 +321,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.rating || ''}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, rating: e.target.value ? parseFloat(e.target.value) : null }))}
                       placeholder="4.5"
-                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-[var(--bg-card)]/10 text-primary"
                     />
                   </div>
                 </div>
@@ -329,7 +329,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setShowAddForm(false)}
-                    className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-primary"
+                    className="flex-1 px-4 py-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-lg transition-colors text-primary"
                   >
                     Cancel
                   </button>
@@ -374,7 +374,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                 {locations.map((location) => (
                   <motion.div
                     key={location.id}
-                    className="p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 cursor-pointer transition-all"
+                    className="p-4 bg-[var(--bg-card)]/5 hover:bg-[var(--bg-card)]/10 rounded-xl border border-white/10 cursor-pointer transition-all"
                     whileHover={{ scale: 1.02 }}
                     onClick={() => handleLocationSelect(location)}
                   >

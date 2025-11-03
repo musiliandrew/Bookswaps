@@ -306,7 +306,7 @@ const SwapList = ({
               value={qrCode}
               onChange={(e) => setQrCode(e.target.value)}
               placeholder="Enter QR code"
-              className="w-full px-3 sm:px-4 py-3 border border-[var(--primary)]/20 rounded-xl focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--primary)] bg-white/80 text-[var(--primary)] mb-3 sm:mb-4 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-3 border border-[var(--primary)]/20 rounded-xl focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--primary)] bg-[var(--bg-card)]/80 text-[var(--primary)] mb-3 sm:mb-4 text-sm sm:text-base"
             />
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button

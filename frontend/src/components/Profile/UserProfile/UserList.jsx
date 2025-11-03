@@ -39,7 +39,7 @@ const UserList = ({
                 text: 'Remove',
                 shortText: 'Remove',
                 action: () => onRemoveFollower && onRemoveFollower(user.user_id),
-                className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
+                className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-[var(--bg-card)]'
               });
             } else {
               // Not mutual: show "Follow Back" and "Remove"
@@ -53,7 +53,7 @@ const UserList = ({
                 text: 'Remove',
                 shortText: 'Remove',
                 action: () => onRemoveFollower && onRemoveFollower(user.user_id),
-                className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
+                className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-[var(--bg-card)]'
               });
             }
           } else if (listType === 'mutual') {
@@ -68,7 +68,7 @@ const UserList = ({
               text: 'Remove',
               shortText: 'Remove',
               action: () => onRemoveFollower && onRemoveFollower(user.user_id),
-              className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-white'
+              className: 'border border-red-300 text-red-600 hover:bg-red-50 bg-[var(--bg-card)]'
             });
           } else {
             // Search/Recommended

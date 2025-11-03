@@ -57,7 +57,7 @@ const EnhancedSwapCard = ({
         };
       default:
         return {
-          color: 'text-gray-600 bg-gray-50 border-gray-200',
+          color: 'text-gray-600 bg-[var(--bg-primary)] border-gray-200',
           icon: <ClockIcon className="w-4 h-4" />,
           text: swap.status
         };
@@ -73,7 +73,7 @@ const EnhancedSwapCard = ({
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+      className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
@@ -165,7 +165,7 @@ const EnhancedSwapCard = ({
       </div>
 
       {/* Actions */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50">
+      <div className="p-4 border-t border-gray-100 bg-[var(--bg-primary)]">
         <div className="flex flex-wrap gap-2">
           {canAccept && (
             <motion.button

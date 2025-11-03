@@ -10,7 +10,7 @@ const ChatList = ({ messages, isChatLoading, listMessages, chatFilters, chatPagi
         <>
           {messages.map(msg => (
             <Link to={`/chat/direct/${msg.sender_id || msg.receiver_id}`} key={msg.id}>
-              <div className="bg-white p-4 rounded shadow mb-2 flex items-center">
+              <div className="bg-[var(--bg-card)] p-4 rounded shadow mb-2 flex items-center">
                 <div className="w-10 h-10 bg-gray-300 rounded-full mr-2"></div>
                 <div>
                   <p className="font-bold">{msg.sender_name || 'User'}</p>

@@ -21,7 +21,7 @@ const MobileFilterDropdown = ({ activeFilter, setActiveFilter, filterOptions }) 
       {/* Filter Button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 text-primary font-medium mobile-button mobile-touch-feedback"
+        className="flex items-center justify-between w-full px-4 py-3 bg-[var(--bg-card)]/80 backdrop-blur-sm rounded-xl border border-white/20 text-primary font-medium mobile-button mobile-touch-feedback"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -50,7 +50,7 @@ const MobileFilterDropdown = ({ activeFilter, setActiveFilter, filterOptions }) 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg z-50 overflow-hidden dropdown-menu"
+            className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-card)]/95 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg z-50 overflow-hidden dropdown-menu"
           >
             {filterOptions.map((option, index) => (
               <motion.button

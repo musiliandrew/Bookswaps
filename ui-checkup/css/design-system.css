@@ -1,5 +1,6 @@
 /* ==========================================
-   BOOKSWAP DESIGN SYSTEM
+   BOOKSWAP - Vintage Bookstore Design System
+   Warm, Cozy, Book-Lover Aesthetic
    Mobile-First Design for Book Swapping Platform
    ========================================== */
 
@@ -11,58 +12,84 @@
    ========================================== */
 
 :root {
-  /* Primary Colors */
-  --primary-50: #EFF6FF;
-  --primary-100: #DBEAFE;
-  --primary-200: #BFDBFE;
-  --primary-300: #93C5FD;
-  --primary-400: #60A5FA;
-  --primary-500: #3B82F6;
-  --primary-600: #2563EB;
-  --primary-700: #1D4ED8;
-  --primary-800: #1E40AF;
-  --primary-900: #1E3A8A;
+  /* Secondary Colors - Warm Cream (MAIN BACKGROUNDS) */
+  --secondary-50: #fcfaf7;
+  --secondary-100: #f8f5f0;
+  --secondary-200: #F0EAD0; /* Main secondary - Cream (use for large areas!) */
+  --secondary-300: #e8e0c0;
+  --secondary-400: #e0d6b0;
+  --secondary-500: #d8cca0;
+  --secondary-600: #b8ac80;
+  --secondary-700: #988c60;
+  --secondary-800: #786c40;
+  --secondary-900: #584c20;
 
-  /* Accent Colors */
-  --accent-50: #FAF5FF;
-  --accent-100: #F3E8FF;
-  --accent-200: #E9D5FF;
-  --accent-300: #D8B4FE;
-  --accent-400: #C084FC;
-  --accent-500: #A855F7;
-  --accent-600: #9333EA;
-  --accent-700: #7E22CE;
-  --accent-800: #6B21A8;
-  --accent-900: #581C87;
+  /* Background Colors - Soft Sage (SECONDARY BACKGROUNDS) */
+  --background-50: #f0f2f0;
+  --background-100: #e1e5e1;
+  --background-200: #d2d9d2;
+  --background-300: #c3cdc3;
+  --background-400: #B8C1B0; /* Main background - Sage green (use widely!) */
+  --background-500: #a9b5a1;
+  --background-600: #8a9681;
+  --background-700: #6b7761;
+  --background-800: #4c5841;
+  --background-900: #2d3921;
 
-  /* Neutral Colors */
-  --neutral-50: #F9FAFB;
-  --neutral-100: #F3F4F6;
-  --neutral-200: #E5E7EB;
-  --neutral-300: #D1D5DB;
-  --neutral-400: #9CA3AF;
-  --neutral-500: #6B7280;
-  --neutral-600: #4B5563;
+  /* Primary Colors - Teal (USE FOR ACTIONS/BUTTONS ONLY) */
+  --primary-50: #f0f4f5;
+  --primary-100: #dae4e7;
+  --primary-200: #b5c9cf;
+  --primary-300: #8faeb7;
+  --primary-400: #6a939f;
+  --primary-500: #456A76; /* Main primary - Teal (buttons, links, actions) */
+  --primary-600: #375563;
+  --primary-700: #29404a;
+  --primary-800: #1c2a32;
+  --primary-900: #0e1519;
+
+  /* Accent Colors - Gold (USE FOR HIGHLIGHTS/IMPORTANT ACTIONS ONLY) */
+  --accent-50: #fef7e6;
+  --accent-100: #fdefc8;
+  --accent-200: #FEF3C7; /* Light accent - soft yellow */
+  --accent-300: #f9cf5a;
+  --accent-400: #f7bf23;
+  --accent-500: #D4A017; /* Main accent - Gold (CTAs, badges, highlights) */
+  --accent-600: #aa8012;
+  --accent-700: #7f600e;
+  --accent-800: #554009;
+  --accent-900: #2a2005;
+
+  /* Neutral Colors - Warm Grays */
+  --neutral-0: #ffffff;
+  --neutral-50: #f9f8f6;
+  --neutral-100: #f3f1ed;
+  --neutral-200: #e8e5df;
+  --neutral-300: #d6d1c7;
+  --neutral-400: #b0a99a;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
   --neutral-700: #374151;
-  --neutral-800: #1F2937;
+  --neutral-800: #1f2937;
   --neutral-900: #111827;
 
-  /* Semantic Colors */
-  --success-500: #10B981;
-  --error-500: #EF4444;
-  --warning-500: #F59E0B;
-  --info-500: #3B82F6;
+  /* Semantic Colors (Muted for vintage feel) */
+  --success-500: #059669;
+  --error-500: #9B2D30;
+  --warning-500: #D4A017;
+  --info-500: #456A76;
 
-  /* Background Colors */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F9FAFB;
-  --bg-tertiary: #F3F4F6;
+  /* Background Colors - VINTAGE WARM SCHEME */
+  --bg-primary: #F0EAD0;    /* Cream - MAIN background for large areas */
+  --bg-secondary: #B8C1B0;   /* Sage - Secondary background */
+  --bg-tertiary: #FEF3C7;    /* Light yellow - Accents */
+  --bg-card: rgba(240, 234, 208, 0.95);  /* Cream with slight transparency */
 
-  /* Text Colors */
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-tertiary: #6B7280;
-  --text-inverse: #FFFFFF;
+  /* Text Colors - Dark for readability on light backgrounds */
+  --text-primary: #2d3921;   /* Dark sage green */
+  --text-secondary: #4b5563; /* Medium gray */
+  --text-tertiary: #6b7280;  /* Light gray */
+  --text-inverse: #ffffff;
 
   /* Border Radius */
   --radius-sm: 0.25rem;   /* 4px */
@@ -123,7 +150,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--text-primary);
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-primary);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -169,13 +196,13 @@ img {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
   color: var(--text-inverse);
   box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
   box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
 }
@@ -198,11 +225,11 @@ img {
 
 /* Cards */
 .card {
-  background: var(--bg-primary);
+  background: var(--bg-card);
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-md);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid rgba(69, 106, 118, 0.1);
 }
 
 .card-hover {
@@ -221,8 +248,8 @@ img {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   color: var(--text-primary);
-  background: var(--bg-primary);
-  border: 1px solid var(--neutral-300);
+  background: var(--neutral-0);
+  border: 1px solid rgba(69, 106, 118, 0.2);
   border-radius: var(--radius-lg);
   transition: all 0.2s ease;
 }
@@ -239,7 +266,7 @@ img {
 
 /* Text Gradient */
 .text-gradient {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--accent-500) 100%);
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -272,8 +299,8 @@ img {
   left: 0;
   right: 0;
   height: 72px;
-  background: var(--bg-primary);
-  border-top: 1px solid var(--neutral-200);
+  background: var(--bg-card);
+  border-top: 1px solid rgba(69, 106, 118, 0.2);
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -295,7 +322,7 @@ img {
 }
 
 .bottom-nav-item.active {
-  color: var(--primary-600);
+  color: var(--primary-500);
 }
 
 .bottom-nav-item span {
@@ -309,8 +336,8 @@ img {
   left: 0;
   right: 0;
   height: 64px;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--neutral-200);
+  background: var(--bg-card);
+  border-bottom: 1px solid rgba(69, 106, 118, 0.2);
   display: flex;
   align-items: center;
   padding: 0 var(--space-4);

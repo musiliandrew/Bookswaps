@@ -108,7 +108,7 @@ const CommentItem = ({
         </div>
 
         {/* Exact same reaction bar as posts - No heart button */}
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-white/30 backdrop-blur-sm border-t border-white/20">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-[var(--bg-card)]/30 backdrop-blur-sm border-t border-white/20">
           {/* Main actions - Same as posts */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Agree/Disagree */}

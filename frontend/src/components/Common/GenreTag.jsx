@@ -13,7 +13,7 @@ const GenreTag = ({ genre, onRemove }) => (
     <motion.button
       type="button"
       onClick={() => onRemove(genre)}
-      className="ml-2 w-5 h-5 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all duration-200"
+      className="ml-2 w-5 h-5 rounded-full bg-[var(--bg-card)] bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all duration-200"
       whileHover={{ scale: 1.2, rotate: 90 }}
       whileTap={{ scale: 0.9 }}
       aria-label={`Remove ${genre}`}

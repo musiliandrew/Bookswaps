@@ -113,7 +113,7 @@ const QuickCreateButton = ({ onOpenModal }) => {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => handleQuickCreate(action.type)}
-                    className="flex items-center space-x-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all p-3 pr-4 group"
+                    className="flex items-center space-x-3 bg-[var(--bg-card)] rounded-full shadow-lg hover:shadow-xl transition-all p-3 pr-4 group"
                     whileHover={{ scale: 1.05, x: -5 }}
                     whileTap={{ scale: 0.95 }}
                   >

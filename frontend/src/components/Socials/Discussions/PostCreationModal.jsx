@@ -286,7 +286,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                         <select
                           value={postData.type}
                           onChange={(e) => setPostData({ ...postData, type: e.target.value })}
-                          className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 appearance-none cursor-pointer"
+                          className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 appearance-none cursor-pointer"
                         >
                           {postTypes.map((type) => (
                             <option key={type.value} value={type.value}>
@@ -352,7 +352,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                         type="text"
                         value={postData.title}
                         onChange={(e) => setPostData({ ...postData, title: e.target.value })}
-                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans text-sm bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="What's your post about?"
                         maxLength={200}
                       />
@@ -369,7 +369,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <textarea
                         value={postData.content}
                         onChange={(e) => setPostData({ ...postData, content: e.target.value })}
-                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans resize-none text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans resize-none text-sm bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="Share your thoughts, insights, or questions..."
                         rows={3}
                         maxLength={maxChars}
@@ -422,7 +422,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                           <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="absolute z-10 w-full mt-2 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+                            className="absolute z-10 w-full mt-2 bg-[var(--bg-card)]/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg max-h-60 overflow-y-auto"
                           >
                             {searchResults.slice(0, 5).map((book) => (
                               <button
@@ -592,7 +592,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                             setPostData({ ...postData, tags });
                           }}
                           placeholder="e.g., romance, mystery, character-development"
-                          className="w-full px-3 py-2.5 bg-white/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                          className="w-full px-3 py-2.5 bg-[var(--bg-card)]/80 border border-[var(--primary)]/20 rounded-xl text-[var(--primary)] font-open-sans text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         />
                         <p className="text-xs text-[var(--primary)]/60 mt-1 font-open-sans">
                           Separate tags with commas. Max 5 tags.

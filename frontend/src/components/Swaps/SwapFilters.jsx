@@ -53,7 +53,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
+              className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-[var(--bg-card)]/20 focus:bg-[var(--bg-card)]/30"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -82,7 +82,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
             <select
               value={filters.type}
               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
+              className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-[var(--bg-card)]/20 focus:bg-[var(--bg-card)]/30"
             >
               {typeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -112,7 +112,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
 
           <motion.button
             onClick={() => setFilters({ status: '', type: 'all' })}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 text-primary rounded-xl hover:bg-white/20 transition-all duration-300 font-medium border border-white/20"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-[var(--bg-card)]/10 text-primary rounded-xl hover:bg-[var(--bg-card)]/20 transition-all duration-300 font-medium border border-white/20"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >

@@ -18,7 +18,7 @@ const SettingsNavigation = ({
             className={`relative flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-3 sm:px-3 md:px-4 py-3 sm:py-2 rounded-md font-['Open_Sans'] font-medium text-xs sm:text-sm transition-all duration-200 min-w-[60px] sm:min-w-auto ${
               activeSection === section.id
                 ? 'bg-[var(--accent)] text-[var(--primary)] shadow-sm'
-                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-white/50'
+                : 'text-[var(--text)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)]/50'
             }`}
             title={section.label} // Tooltip for mobile users
           >

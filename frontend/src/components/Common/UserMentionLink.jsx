@@ -14,7 +14,7 @@ const UserPreviewTooltip = ({ user, position, onClose, onStartChat }) => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-xs"
+        className="fixed z-50 bg-[var(--bg-card)] rounded-lg shadow-xl border border-gray-200 p-4 max-w-xs"
         style={{
           left: Math.min(position.x, window.innerWidth - 320),
           top: Math.max(position.y - 10, 10),

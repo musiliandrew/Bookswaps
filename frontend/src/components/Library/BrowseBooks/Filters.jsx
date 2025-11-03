@@ -53,7 +53,7 @@ const Filters = ({ filters, onFilterChange }) => {
     onFilterChange('sort', 'title');
   };
 
-  const selectClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30";
+  const selectClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-[var(--bg-card)]/20 focus:bg-[var(--bg-card)]/30";
 
   return (
     <div className="space-y-4">

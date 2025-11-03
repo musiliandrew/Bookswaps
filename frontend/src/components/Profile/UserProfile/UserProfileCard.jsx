@@ -582,7 +582,7 @@ const UserProfileCard = ({
                       prefilledMessage: "Hey there! 👋"
                     }
                   })}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -592,7 +592,7 @@ const UserProfileCard = ({
 
                 <motion.button
                   onClick={() => setShowShareCard(true)}
-                  className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
+                  className="flex items-center gap-2 px-4 py-3 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-[var(--text)] rounded-xl backdrop-blur-sm border border-white/20"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   title="Share Profile"

@@ -99,7 +99,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-white/10 hover:bg-white/20 text-primary transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-primary transition-colors"
             >
               <XMarkIcon className="w-5 sm:w-6 h-5 sm:h-6" />
             </button>
@@ -114,7 +114,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
                 className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all ${
                   searchType === type.value
                     ? 'bg-accent text-white shadow-lg'
-                    : 'bg-white/10 text-primary hover:bg-white/20'
+                    : 'bg-[var(--bg-card)]/10 text-primary hover:bg-[var(--bg-card)]/20'
                 }`}
               >
                 <span className="sm:hidden">{type.label.split(' ')[0]}</span>
@@ -130,7 +130,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
               placeholder={`Search by ${searchTypes.find(t => t.value === searchType)?.description || 'anything'}...`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 input rounded-xl sm:rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base mobile-search-input"
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 input rounded-xl sm:rounded-2xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-[var(--bg-card)]/20 transition-all duration-300 text-sm sm:text-base mobile-search-input"
               autoFocus
             />
             <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 sm:w-6 h-5 sm:h-6 text-primary/60 mobile-search-icon" />
@@ -271,7 +271,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-3 sm:p-4 border-t border-white/10 bg-white/5">
+        <div className="p-3 sm:p-4 border-t border-white/10 bg-[var(--bg-card)]/5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
             <p className="text-xs text-primary/60 text-center sm:text-left">
               <span className="hidden sm:inline">Powered by Open Library • Millions of books available</span>
@@ -314,7 +314,7 @@ const BookSearchResult = ({ book, onSelect }) => {
   };
   return (
     <motion.div
-      className="p-3 sm:p-4 bg-white/5 rounded-lg sm:rounded-xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group"
+      className="p-3 sm:p-4 bg-[var(--bg-card)]/5 rounded-lg sm:rounded-xl border border-white/10 hover:bg-[var(--bg-card)]/10 transition-all cursor-pointer group"
       whileHover={{ scale: 1.01, y: -1 }}
       whileTap={{ scale: 0.98 }}
       onClick={onSelect}

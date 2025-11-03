@@ -5,7 +5,7 @@ import { PencilSquareIcon, BookOpenIcon, TagIcon, PhotoIcon, ExclamationTriangle
 const PostCreationForm = ({ newPost, setNewPost, handleCreatePost }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-[var(--bg-card)]/20 transition-all duration-300";
   const labelClasses = "flex items-center space-x-2 text-sm font-medium text-primary mb-2";
 
   const postTypes = [
@@ -172,7 +172,7 @@ const PostCreationForm = ({ newPost, setNewPost, handleCreatePost }) => {
           transition={{ delay: 0.5, duration: 0.6 }}
         >
           <motion.label
-            className="flex items-center p-3 bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer"
+            className="flex items-center p-3 bg-[var(--bg-card)]/10 rounded-lg border border-white/20 hover:bg-[var(--bg-card)]/20 transition-all duration-200 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

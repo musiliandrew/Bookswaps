@@ -242,7 +242,7 @@ const NotificationList = ({ className = '' }) => {
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       >
-                        <span className="block w-2 h-2 bg-white rounded-full m-0.5"></span>
+                        <span className="block w-2 h-2 bg-[var(--bg-card)] rounded-full m-0.5"></span>
                       </motion.div>
                     )}
                   </motion.button>
@@ -264,7 +264,7 @@ const NotificationList = ({ className = '' }) => {
                     {unreadCount > 0 && (
                       <span className={`px-2 py-0.5 text-xs rounded-full transition-all duration-300 ${
                         filter === 'unread'
-                          ? 'bg-white/20 text-white'
+                          ? 'bg-[var(--bg-card)]/20 text-white'
                           : 'bg-primary/10 text-primary'
                       }`}>
                         {unreadCount}
@@ -277,7 +277,7 @@ const NotificationList = ({ className = '' }) => {
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       >
-                        <span className="block w-2 h-2 bg-white rounded-full m-0.5"></span>
+                        <span className="block w-2 h-2 bg-[var(--bg-card)] rounded-full m-0.5"></span>
                       </motion.div>
                     )}
                   </motion.button>
@@ -364,7 +364,7 @@ const NotificationList = ({ className = '' }) => {
             {/* Enhanced Select all checkbox */}
             {filteredNotifications.length > 0 && (
               <motion.div
-                className="mt-4 flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/20"
+                className="mt-4 flex items-center gap-3 p-3 bg-[var(--bg-card)]/10 rounded-xl border border-white/20"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
@@ -442,8 +442,8 @@ const NotificationList = ({ className = '' }) => {
                     ref={index === filteredNotifications.length - 1 ? lastNotificationRef : null}
                     className={`group card rounded-2xl border transition-all duration-300 hover:shadow-lg mobile-notification-card ${
                       notification.is_read
-                        ? 'border-white/10 bg-white/5'
-                        : 'border-accent/30 bg-white/10 shadow-md'
+                        ? 'border-white/10 bg-[var(--bg-card)]/5'
+                        : 'border-accent/30 bg-[var(--bg-card)]/10 shadow-md'
                     } ${
                       selectedNotifications.has(notification.notification_id)
                         ? 'ring-2 ring-accent/50 scale-[1.02]'
@@ -473,7 +473,7 @@ const NotificationList = ({ className = '' }) => {
                       {/* Enhanced Notification icon */}
                       <div className={`flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl text-base sm:text-lg transition-all duration-300 ${
                         notification.is_read
-                          ? 'bg-white/10 text-primary/60'
+                          ? 'bg-[var(--bg-card)]/10 text-primary/60'
                           : 'bg-gradient-to-br from-accent/20 to-primary/20 text-accent'
                       }`}>
                         {getNotificationIcon(notification.type)}
@@ -582,7 +582,7 @@ const NotificationList = ({ className = '' }) => {
             {/* Enhanced Pagination info */}
             {pagination.next && !isLoading && (
               <motion.div
-                className="text-center mt-8 p-4 bg-white/10 rounded-xl border border-white/20"
+                className="text-center mt-8 p-4 bg-[var(--bg-card)]/10 rounded-xl border border-white/20"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}

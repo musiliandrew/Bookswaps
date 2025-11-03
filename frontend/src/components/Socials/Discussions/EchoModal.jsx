@@ -73,7 +73,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium font-open-sans transition-all min-h-[44px] ${
                   echoType === 'simple'
                     ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] text-white shadow-lg'
-                    : 'bg-white/50 text-[var(--primary)]/70 hover:bg-white/70 border border-white/30'
+                    : 'bg-[var(--bg-card)]/50 text-[var(--primary)]/70 hover:bg-[var(--bg-card)]/70 border border-white/30'
                 }`}
               >
                 📢 Simple Echo
@@ -83,7 +83,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
                 className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium font-open-sans transition-all min-h-[44px] ${
                   echoType === 'quote'
                     ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] text-white shadow-lg'
-                    : 'bg-white/50 text-[var(--primary)]/70 hover:bg-white/70 border border-white/30'
+                    : 'bg-[var(--bg-card)]/50 text-[var(--primary)]/70 hover:bg-[var(--bg-card)]/70 border border-white/30'
                 }`}
               >
                 💬 Quote Echo
@@ -116,7 +116,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
             )}
 
             {/* Original Post Preview */}
-            <div className="card border border-white/30 rounded-xl p-4 bg-white/30">
+            <div className="card border border-white/30 rounded-xl p-4 bg-[var(--bg-card)]/30">
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
                   {post.user?.profile_picture ? (

@@ -77,7 +77,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
               <h2 className="text-lg sm:text-2xl lg:text-3xl font-lora font-bold text-primary truncate pr-2">{title}</h2>
               <motion.button
                 onClick={onClose}
-                className="p-2 sm:p-3 rounded-xl bg-white/10 hover:bg-white/20 text-primary/70 hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+                className="p-2 sm:p-3 rounded-xl bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-primary/70 hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
               >

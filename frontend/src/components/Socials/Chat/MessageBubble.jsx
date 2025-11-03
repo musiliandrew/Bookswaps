@@ -42,7 +42,7 @@ const MessageBubble = ({
     if (isOwn) {
       return 'bg-gradient-to-r from-[var(--primary)] to-[var(--dark-primary)] text-white shadow-lg';
     }
-    return 'bg-white text-[var(--text)] shadow-sm border border-gray-100';
+    return 'bg-[var(--bg-card)] text-[var(--text)] shadow-sm border border-gray-100';
   };
 
   const getMessageAlignment = () => {
@@ -191,10 +191,10 @@ const MessageBubble = ({
       case 'AUDIO':
       case 'VOICE_NOTE':
         return (
-          <div className="flex items-center space-x-3 bg-white/10 rounded-full p-3 max-w-xs sm:max-w-sm md:max-w-md">
+          <div className="flex items-center space-x-3 bg-[var(--bg-card)]/10 rounded-full p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+              className="p-2 bg-[var(--bg-card)]/20 rounded-full hover:bg-[var(--bg-card)]/30 transition-colors"
             >
               {isPlaying ? (
                 <PauseIcon className="w-5 h-5" />
@@ -205,8 +205,8 @@ const MessageBubble = ({
             <div className="flex-1">
               <div className="flex items-center space-x-2">
                 <MicrophoneIcon className="w-4 h-4 opacity-60" />
-                <div className="flex-1 h-1 bg-white/20 rounded-full">
-                  <div className="h-full bg-white/60 rounded-full w-1/3"></div>
+                <div className="flex-1 h-1 bg-[var(--bg-card)]/20 rounded-full">
+                  <div className="h-full bg-[var(--bg-card)]/60 rounded-full w-1/3"></div>
                 </div>
               </div>
               <p className="text-xs opacity-60 mt-1">
@@ -218,7 +218,7 @@ const MessageBubble = ({
 
       case 'FILE':
         return (
-          <div className="flex items-center space-x-3 bg-white/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
+          <div className="flex items-center space-x-3 bg-[var(--bg-card)]/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <DocumentIcon className="w-8 h-8 opacity-60" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{message.media_filename}</p>
@@ -231,7 +231,7 @@ const MessageBubble = ({
 
       case 'BOOK_REFERENCE':
         return (
-          <div className="bg-white/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
+          <div className="bg-[var(--bg-card)]/10 rounded-lg p-3 max-w-xs sm:max-w-sm md:max-w-md">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-16 bg-[var(--accent)] rounded flex items-center justify-center">
                 <span className="text-xs font-bold text-[var(--secondary)]">📚</span>
@@ -314,8 +314,8 @@ const MessageBubble = ({
           {replyToMessage && (
             <div className={`mb-2 px-3 py-2 rounded-lg border-l-4 ${
               isOwn
-                ? 'bg-white/10 border-white/30'
-                : 'bg-gray-50 border-[var(--primary)]'
+                ? 'bg-[var(--bg-card)]/10 border-white/30'
+                : 'bg-[var(--bg-primary)] border-[var(--primary)]'
             }`}>
               <div className="flex items-center space-x-2 mb-1">
                 <ArrowUturnLeftIcon className={`w-3 h-3 ${
@@ -348,7 +348,7 @@ const MessageBubble = ({
             {/* Book reference indicator */}
             {message.book && (
               <div className={`mb-2 p-2 rounded-lg ${
-                isOwn ? 'bg-white/20' : 'bg-gray-50'
+                isOwn ? 'bg-[var(--bg-card)]/20' : 'bg-[var(--bg-primary)]'
               }`}>
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center">
@@ -380,7 +380,7 @@ const MessageBubble = ({
                   <span
                     key={index}
                     className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      isOwn ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                      isOwn ? 'bg-[var(--bg-card)]/20 text-white' : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {reaction.reaction_type} {reaction.count > 1 && reaction.count}

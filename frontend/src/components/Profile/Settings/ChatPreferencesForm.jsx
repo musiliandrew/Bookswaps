@@ -208,7 +208,7 @@ const ChatPreferencesForm = () => {
           </p>
 
           {/* Current Muted Societies */}
-          <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-3 border border-[var(--primary)]/20 rounded-lg bg-white/50 mb-4">
+          <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-3 border border-[var(--primary)]/20 rounded-lg bg-[var(--bg-card)]/50 mb-4">
             <AnimatePresence>
               {formData.mute_societies.map((society) => (
                 <motion.span

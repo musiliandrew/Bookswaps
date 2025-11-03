@@ -135,7 +135,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
             </div>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--bg-card)]/10 rounded-lg transition-colors"
             >
               <XMarkIcon className="w-5 h-5 text-primary/70" />
             </button>
@@ -153,7 +153,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g., Monthly Book Discussion"
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                   required
                 />
               </div>
@@ -167,7 +167,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe what this event is about..."
                   rows={3}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
             </div>
@@ -186,7 +186,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                     className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
                       formData.event_type === type.value
                         ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-white/20 bg-white/5 text-primary/70 hover:bg-white/10'
+                        : 'border-white/20 bg-[var(--bg-card)]/5 text-primary/70 hover:bg-[var(--bg-card)]/10'
                     }`}
                   >
                     <span className="text-lg">{type.icon}</span>
@@ -207,7 +207,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.start_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                   min={minDateTime}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                   required
                 />
               </div>
@@ -221,7 +221,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.end_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                   min={formData.start_time || minDateTime}
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                 />
               </div>
             </div>
@@ -251,7 +251,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                     value={formData.meeting_link}
                     onChange={(e) => setFormData(prev => ({ ...prev, meeting_link: e.target.value }))}
                     placeholder="https://zoom.us/j/..."
-                    className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                    className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                   />
                 </div>
               ) : (
@@ -264,7 +264,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     placeholder="e.g., Central Library, Room 201"
-                    className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                    className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                   />
                 </div>
               )}
@@ -282,7 +282,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, max_attendees: e.target.value }))}
                   placeholder="Leave empty for unlimited"
                   min="1"
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                 />
               </div>
 
@@ -295,7 +295,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.tags}
                   onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                   placeholder="e.g., fiction, mystery, beginner"
-                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-[var(--bg-card)]/10 backdrop-blur-sm text-primary"
                 />
               </div>
             </div>
@@ -305,7 +305,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-primary"
+                className="flex-1 px-4 py-3 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-xl transition-colors text-primary"
               >
                 Cancel
               </button>

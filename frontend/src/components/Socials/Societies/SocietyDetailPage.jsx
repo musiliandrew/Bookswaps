@@ -238,7 +238,7 @@ const SocietyDetailPage = () => {
                           {isAdmin && (
                             <button
                               onClick={() => navigate(`/socials/societies/${societyId}/settings`)}
-                              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-primary px-6 py-3 rounded-xl transition-colors"
+                              className="flex items-center gap-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-primary px-6 py-3 rounded-xl transition-colors"
                             >
                               <Cog6ToothIcon className="w-5 h-5" />
                               Settings
@@ -274,7 +274,7 @@ const SocietyDetailPage = () => {
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-accent to-primary text-white shadow-lg'
-                    : 'text-primary/70 hover:text-primary hover:bg-white/10'
+                    : 'text-primary/70 hover:text-primary hover:bg-[var(--bg-card)]/10'
                 }`}
               >
                 {tab.icon}
@@ -357,7 +357,7 @@ const SocietyMembers = ({ members, isAdmin }) => (
     <h3 className="text-xl font-lora font-bold text-primary mb-6">Members ({members?.length || 0})</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {members?.filter(member => member && member.user).map((member) => (
-        <div key={member.user.user_id} className="p-4 bg-white/5 rounded-xl">
+        <div key={member.user.user_id} className="p-4 bg-[var(--bg-card)]/5 rounded-xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-accent/20 to-primary/20 rounded-full flex items-center justify-center">
               <span className="text-primary font-semibold">
@@ -443,7 +443,7 @@ const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onC
             return (
               <motion.div
                 key={event.event_id}
-                className="p-6 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 cursor-pointer transition-all duration-200"
+                className="p-6 bg-[var(--bg-card)]/5 hover:bg-[var(--bg-card)]/10 rounded-xl border border-white/10 cursor-pointer transition-all duration-200"
                 whileHover={{ scale: 1.02 }}
                 onClick={() => onEventClick(event)}
               >
@@ -503,7 +503,7 @@ const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onC
                           </span>
                         ))}
                         {event.tags.length > 3 && (
-                          <span className="px-2 py-1 bg-white/10 text-primary/60 text-xs rounded-full">
+                          <span className="px-2 py-1 bg-[var(--bg-card)]/10 text-primary/60 text-xs rounded-full">
                             +{event.tags.length - 3} more
                           </span>
                         )}

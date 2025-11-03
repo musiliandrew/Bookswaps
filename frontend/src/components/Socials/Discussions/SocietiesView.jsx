@@ -301,7 +301,7 @@ const SocietiesView = () => {
             <div className="flex gap-3 mt-6">
               <motion.button
                 onClick={() => setSelectedSociety(null)}
-                className="flex-1 px-4 py-2 card border border-white/20 text-[var(--primary)] rounded-lg hover:bg-white/20 transition-all font-open-sans font-medium"
+                className="flex-1 px-4 py-2 card border border-white/20 text-[var(--primary)] rounded-lg hover:bg-[var(--bg-card)]/20 transition-all font-open-sans font-medium"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -313,7 +313,7 @@ const SocietiesView = () => {
                     handleLeaveSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
-                  className="flex-1 px-4 py-2 card border border-white/20 text-[var(--text-primary)] hover:bg-white/10 rounded-lg transition-all font-open-sans font-medium"
+                  className="flex-1 px-4 py-2 card border border-white/20 text-[var(--text-primary)] hover:bg-[var(--bg-card)]/10 rounded-lg transition-all font-open-sans font-medium"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
