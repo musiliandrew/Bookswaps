@@ -91,7 +91,7 @@ const ProfileCompletionBanner = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bookish-glass bookish-shadow rounded-lg p-4 mb-6 relative border border-[var(--primary)]/20"
+      className="card shadow-elevated rounded-lg p-4 mb-6 relative border border-[var(--primary)]/20"
     >
       {/* Dismiss button */}
       <button
@@ -157,7 +157,7 @@ const ProfileCompletionBanner = ({
             <div className="flex gap-2">
               <motion.button
                 onClick={handleCompleteProfile}
-                className="bookish-button-enhanced text-white px-3 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1 text-sm"
+                className="btn btn-primary text-white px-3 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1 text-sm"
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -251,7 +251,7 @@ const ProfileCompletionBanner = ({
               <div className="flex gap-2">
                 <motion.button
                   onClick={handleCompleteProfile}
-                  className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
+                  className="btn btn-primary text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

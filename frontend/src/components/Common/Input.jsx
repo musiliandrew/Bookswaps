@@ -27,7 +27,7 @@ const Input = ({
     required,
     onFocus: () => setIsFocused(true),
     onBlur: () => setIsFocused(false),
-    className: `bookish-input w-full px-4 py-3 rounded-xl font-['Open_Sans'] text-[var(--text)] placeholder-gray-400 border ${error ? 'border-red-500' : success ? 'border-green-500' : 'border-transparent'} ${className}`,
+    className: `input w-full px-4 py-3 rounded-xl font-['Open_Sans'] placeholder-gray-400 border ${error ? 'border-red-500' : success ? 'border-green-500' : 'border-transparent'} ${className}`,
     whileFocus: { scale: 1.02 },
     transition: { duration: 0.2 },
     'aria-invalid': !!error,

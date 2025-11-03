@@ -88,7 +88,7 @@ const MessagePinning = ({
               initial={{ opacity: 0, scale: 0.8, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: -10 }}
-              className="absolute bottom-full right-0 mb-2 z-50 bookish-glass rounded-xl border border-white/20 p-4 shadow-xl min-w-64"
+              className="absolute bottom-full right-0 mb-2 z-50 card rounded-xl border border-white/20 p-4 shadow-xl min-w-64"
             >
               <h4 className="font-semibold text-primary mb-2">
                 {message?.is_pinned ? 'Unpin Message' : 'Pin Message'}
@@ -144,7 +144,7 @@ export const PinnedMessagesSection = ({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-4 bookish-glass rounded-xl border border-yellow-500/20 bg-yellow-500/5"
+      className="mb-4 card rounded-xl border border-yellow-500/20 bg-yellow-500/5"
     >
       {/* Header */}
       <div 

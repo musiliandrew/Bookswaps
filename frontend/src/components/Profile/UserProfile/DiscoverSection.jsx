@@ -35,13 +35,13 @@ const DiscoverSection = ({
           value={searchQuery}
           onChange={onSearch}
           placeholder="Search book readers..."
-          className="bookish-input w-full pl-10 pr-4 py-2 rounded-xl text-[var(--text)] text-sm focus:outline-none mobile-search-input"
+          className="input w-full pl-10 pr-4 py-2 rounded-xl text-[var(--text)] text-sm focus:outline-none mobile-search-input"
         />
       </div>
 
       {/* Search Results */}
       {searchQuery && (
-        <div className="bookish-glass p-4 rounded-xl">
+        <div className="card p-4 rounded-xl">
           <h2 className="text-lg font-['Lora'] text-[#456A76] mb-3">
             {searchResults.length > 0
               ? `Search Results for "${searchQuery}"`
@@ -75,7 +75,7 @@ const DiscoverSection = ({
 
       {/* Recommended Readers */}
       {filteredRecommendedUsers.length > 0 && (
-        <div className="bookish-glass p-4 rounded-xl">
+        <div className="card p-4 rounded-xl">
           <h2 className="text-lg font-['Lora'] text-[#456A76] mb-3">Recommended Readers</h2>
           <UserList
             users={filteredRecommendedUsers}
@@ -97,7 +97,7 @@ const DiscoverSection = ({
 
       {/* No Recommendations */}
       {filteredRecommendedUsers.length === 0 && !isLoading && !searchQuery && (
-        <div className="bookish-glass p-4 rounded-xl text-center">
+        <div className="card p-4 rounded-xl text-center">
           <p className="text-[var(--text)]">No new recommendations available.</p>
           <p className="text-sm text-[var(--secondary)] mt-1">
             Try searching for users or check back later for new suggestions.

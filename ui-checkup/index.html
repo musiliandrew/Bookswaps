@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - UI Mockup Viewer</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding: var(--space-6);
+            min-height: 100vh;
+        }
+
+        .mockup-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin-top: var(--space-8);
+        }
+
+        .page-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--neutral-200);
+            transition: all 0.3s ease;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .page-card:hover {
+            box-shadow: var(--shadow-elevated);
+            transform: translateY(-4px);
+            border-color: var(--primary-500);
+        }
+
+        .page-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+        }
+
+        .page-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: var(--space-12) 0;
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--accent-50) 100%);
+            border-radius: var(--radius-2xl);
+            margin-bottom: var(--space-8);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: var(--space-2) var(--space-4);
+            background: var(--success-500);
+            color: white;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: var(--space-4);
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1 class="text-gradient">📚 BookSwap UI Mockup</h1>
+            <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: var(--space-2);">
+                Interactive UI Design Preview
+            </p>
+            <p style="color: var(--text-tertiary);">
+                Click any page below to view the mobile-first design mockups
+            </p>
+            <div class="status-badge">
+                ✅ All designs use the new design system
+            </div>
+        </div>
+
+        <!-- Page Selection Grid -->
+        <div class="page-grid">
+            <!-- Home Page -->
+            <a href="home.html" class="page-card">
+                <div class="page-icon">🏠</div>
+                <h2 class="page-title">Home / Landing</h2>
+                <p class="page-description">
+                    Hero section, features, login/signup CTAs
+                </p>
+            </a>
+
+            <!-- Library Page -->
+            <a href="library.html" class="page-card">
+                <div class="page-icon">📚</div>
+                <h2 class="page-title">Library</h2>
+                <p class="page-description">
+                    Browse books, My Books, Add Book modal
+                </p>
+            </a>
+
+            <!-- Profile Page -->
+            <a href="profile.html" class="page-card">
+                <div class="page-icon">👤</div>
+                <h2 class="page-title">Profile</h2>
+                <p class="page-description">
+                    User profile, stats, settings, connections
+                </p>
+            </a>
+
+            <!-- Chat/Socials Page -->
+            <a href="chat.html" class="page-card">
+                <div class="page-icon">💬</div>
+                <h2 class="page-title">Chat & Socials</h2>
+                <p class="page-description">
+                    Conversations, message bubbles, societies
+                </p>
+            </a>
+
+            <!-- Swaps Page -->
+            <a href="swaps.html" class="page-card">
+                <div class="page-icon">🔄</div>
+                <h2 class="page-title">Swaps</h2>
+                <p class="page-description">
+                    Active swaps, swap requests, QR codes
+                </p>
+            </a>
+
+            <!-- Notifications -->
+            <a href="notifications.html" class="page-card">
+                <div class="page-icon">🔔</div>
+                <h2 class="page-title">Notifications</h2>
+                <p class="page-description">
+                    Activity feed, swap updates, messages
+                </p>
+            </a>
+        </div>
+
+        <!-- Info Section -->
+        <div class="card" style="margin-top: var(--space-12); text-align: center;">
+            <h3 style="margin-bottom: var(--space-4);">About This Mockup</h3>
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-4);">
+                These are static HTML mockups with hardcoded data to preview the UI design.
+                All components use the new BookSwap design system with mobile-first responsive layouts.
+            </p>
+            <div style="display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap;">
+                <div class="badge">🎨 Design System v2.0</div>
+                <div class="badge">📱 Mobile-First</div>
+                <div class="badge">♿ WCAG AA</div>
+                <div class="badge">✨ Framer Motion Ready</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

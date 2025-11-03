@@ -6,7 +6,7 @@ import { FireIcon, CheckIcon, ChatBubbleLeftIcon, TrophyIcon } from '@heroicons/
 const TopPostsSidebar = ({ topPosts }) => {
   return (
     <motion.div
-      className="bookish-glass rounded-2xl p-6 border border-white/20 sticky top-8"
+      className="card rounded-2xl p-6 border border-white/20 sticky top-8"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6 }}

@@ -1,247 +1,470 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import debounce from 'lodash/debounce';
-import HeroSection from '../../components/Home/HeroSection';
-import LoginCTA from '../../components/Home/LoginCTA';
-import SignupCTA from '../../components/Home/SignupCTA';
-import FeatureCard from '../../components/Home/FeaturedCard';
-import Footer from '../../components/Home/Footer';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  BookOpenIcon,
+  UserGroupIcon,
+  MagnifyingGlassIcon,
+  SparklesIcon,
+  GlobeAltIcon,
+  ChartBarIcon,
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
-import AppLogo from '../../assets/icons/AppLogo.svg';
+import appLogo from '../assets/icons/AppLogo.svg';
 
 function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const bookCarouselRef = useRef(null);
-  const userCarouselRef = useRef(null);
   const [trendingBooks, setTrendingBooks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Debounced fetchBooks function
-  const fetchBooks = useMemo(
-  () => debounce(async () => {
-    if (isAuthenticated) return; // Skip fetch if authenticated
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/library/books/?page=1&limit=6');
-      setTrendingBooks(response.data.results || []);
-    } catch {
-      setError('Failed to load trending books. Showing mock data.');
-      setTrendingBooks([
-        { id: 1, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cover: 'https://covers.openlibrary.org/b/id/12364437-M.jpg' },
-        { id: 2, title: '1984', author: 'George Orwell', cover: 'https://covers.openlibrary.org/b/id/14845126-M.jpg' },
-        { id: 3, title: 'To Kill a Mockingbird', author: 'Harper Lee', cover: 'https://covers.openlibrary.org/b/id/14856323-M.jpg' },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, 1000),
-  [isAuthenticated, setIsLoading, setError, setTrendingBooks] // Include all dependencies
-);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/profile/me', { replace: true });
       return;
     }
+
+    const fetchBooks = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/library/books/?page=1&limit=6');
+        setTrendingBooks(response.data.results || []);
+      } catch {
+        // Mock data for demo
+        setTrendingBooks([
+          { book_id: 1, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cover_image_url: null },
+          { book_id: 2, title: '1984', author: 'George Orwell', cover_image_url: null },
+          { book_id: 3, title: 'To Kill a Mockingbird', author: 'Harper Lee', cover_image_url: null },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchBooks();
-    return () => fetchBooks.cancel(); // Clean up debounced function
-  }, [isAuthenticated, navigate, fetchBooks]);
+  }, [isAuthenticated, navigate]);
 
-  const mockUsers = [
-    { id: 1, username: '@BookWorm', avatar: 'https://img.freepik.com/free-vector/young-man-glasses-hoodie_1308-174658.jpg?ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 2, username: '@SciFiFan', avatar: 'https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg?ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 3, username: '@FantasyReader', avatar: 'https://img.freepik.com/free-psd/3d-rendering-hair-style-avatar-design_23-2151869121.jpg?ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 4, username: '@Andrew', avatar: 'https://img.freepik.com/premium-vector/simple-cute-black-boy-ith-beard-icon-vector_960391-438.jpg?uid=R189817629&ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 5, username: '@Musk', avatar: 'https://img.freepik.com/free-vector/young-prince-traditional-attire_1308-174397.jpg?uid=R189817629&ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 6, username: '@Marie', avatar: 'https://img.freepik.com/free-psd/3d-rendering-hair-style-avatar-design_23-2151869157.jpg?uid=R189817629&ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 7, username: '@Anne', avatar: 'https://img.freepik.com/free-vector/young-girl-with-curly-hair_1308-176128.jpg?uid=R189817629&ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
-    { id: 8, username: '@Sheldon', avatar: 'https://img.freepik.com/premium-photo/png-cartoon-portrait-glasses-white-background_53876-905385.jpg?uid=R189817629&ga=GA1.1.1441547685.1747836414&semt=ais_hybrid&w=740' },
+  const features = [
+    {
+      icon: BookOpenIcon,
+      title: 'Swap Books',
+      description: 'Exchange your favorite books with readers nearby'
+    },
+    {
+      icon: UserGroupIcon,
+      title: 'Join Communities',
+      description: 'Connect with book lovers in vibrant discussions'
+    },
+    {
+      icon: MagnifyingGlassIcon,
+      title: 'Discover Reads',
+      description: 'Find your next literary adventure effortlessly'
+    },
+    {
+      icon: ChartBarIcon,
+      title: 'Track Progress',
+      description: 'Monitor your reading goals and achievements'
+    },
+    {
+      icon: SparklesIcon,
+      title: 'Smart Matches',
+      description: 'Get AI-powered personalized recommendations'
+    },
+    {
+      icon: GlobeAltIcon,
+      title: 'Global Network',
+      description: 'Connect with readers from around the world'
+    },
   ];
 
-  const mockFeatures = [
-    { icon: '📚', title: 'Swap Books', desc: 'List and trade your books with ease.' },
-    { icon: '💬', title: 'Join Discussions', desc: 'Engage in vibrant book communities.' },
-    { icon: '🔍', title: 'Discover Reads', desc: 'Find new books to love and share.' },
-  ];
-
-  const scrollCarousel = (ref, direction) => {
-    if (ref.current) {
-      const scrollAmount = direction === 'left' ? -350 : 350;
-      ref.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  const scrollCarousel = (direction) => {
+    if (bookCarouselRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      bookCarouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="min-h-screen bookish-gradient relative overflow-hidden">
-      {/* Navbar - Large Screens */}
-      <nav className="hidden md:flex justify-between items-center px-8 py-4 w-full bg-[hsl(49,52%,88%)] shadow-lg">
-        <div className="flex items-center space-x-3">
-          <img
-            src={AppLogo}
-            alt="BookSwaps Logo"
-            className="w-10 h-10"
-            style={{ color: '#456A76' }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextElementSibling.style.display = 'block';
-            }}
-          />
-          <span 
-            className="hidden text-[#456A76] font-bold text-xl font-['Lora']"
-            style={{ display: 'none' }}
-          >
-            B
-          </span>
-          <h1 className="text-3xl font-bold font-['Lora'] text-[#456A76]">BookSwaps</h1>
-        </div>
-        
-        <div className="flex items-center space-x-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => window.location.reload()}
-              className="relative text-xl font-['Lora'] font-semibold text-[#456A76] hover:text-[#D4A017] transition-all duration-300 group"
-            >
-              Home
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#D4A017] transition-all duration-300 group-hover:w-full"></span>
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="relative text-xl font-['Lora'] font-semibold text-[#456A76] hover:text-[#D4A017] transition-all duration-300 group"
-            >
-              Library
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#D4A017] transition-all duration-300 group-hover:w-full"></span>
-            </button>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+      {/* Navbar */}
+      <nav className="top-nav">
+        <motion.div
+          className="flex items-center gap-3"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <img src={appLogo} alt="BookSwaps" className="w-10 h-10" />
+          <div>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--primary-700)' }}>
+              BookSwaps
+            </h1>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              Connect • Swap • Read
+            </p>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <LoginCTA className="px-6 py-3 text-lg font-['Lora'] font-semibold text-[#456A76] border-2 border-[#456A76] rounded-full hover:bg-[#456A76] hover:text-white transition-all duration-300 transform hover:scale-105" />
-            <SignupCTA className="px-6 py-3 text-lg font-['Lora'] font-semibold text-white bg-gradient-to-r from-[#456A76] to-[#D4A017] rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-[#D4A017]/25" />
-          </div>
-        </div>
-      </nav>
+        </motion.div>
 
-      {/* Navbar - Small Screens */}
-      <nav className="md:hidden flex justify-between items-center px-4 py-4 w-full bg-[hsl(49,52%,88%)] shadow-lg">
-        <div className="flex items-center space-x-3">
-          <img
-            src={AppLogo}
-            alt="BookSwaps Logo"
-            className="w-8 h-8"
-            style={{ color: '#456A76' }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextElementSibling.style.display = 'block';
-            }}
-          />
-          <span 
-            className="hidden text-[#456A76] font-bold text-lg font-['Lora']"
-            style={{ display: 'none' }}
+        <motion.div
+          className="flex items-center gap-3"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <button
+            onClick={() => navigate('/login')}
+            className="btn btn-ghost"
           >
-            B
-          </span>
-          <h1 className="text-xl font-bold font-['Lora'] text-[#456A76]">BookSwaps</h1>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <LoginCTA className="px-3 py-1.5 text-sm font-['Lora'] font-semibold text-[#456A76] border-2 border-[#456A76] rounded-full hover:bg-[#456A76] hover:text-white transition-all duration-300" />
-          <SignupCTA className="px-3 py-1.5 text-sm font-['Lora'] font-semibold text-white bg-gradient-to-r from-[#456A76] to-[#D4A017] rounded-full hover:shadow-md transition-all duration-300" />
-        </div>
+            Login
+          </button>
+          <button
+            onClick={() => navigate('/register')}
+            className="btn btn-accent"
+          >
+            Get Started
+          </button>
+        </motion.div>
       </nav>
 
       {/* Hero Section */}
-      <HeroSection />
+      <section className="container py-16 md:py-24">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Discover, Swap,{' '}
+              <span className="gradient-text">Connect</span>
+            </h1>
+            <p
+              className="text-lg md:text-xl mb-8"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Join a community of book lovers who share, discuss, and exchange their favorite reads.
+              Your next great adventure is just a swap away.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => navigate('/register')}
+                className="btn btn-accent btn-lg"
+              >
+                Start Swapping
+                <ArrowRightIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="btn btn-outline btn-lg"
+              >
+                Explore Library
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 mt-12">
+              <div>
+                <div className="text-3xl font-bold" style={{ color: 'var(--primary-600)' }}>
+                  10K+
+                </div>
+                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  Books Swapped
+                </div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold" style={{ color: 'var(--primary-600)' }}>
+                  5K+
+                </div>
+                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  Active Readers
+                </div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold" style={{ color: 'var(--primary-600)' }}>
+                  200+
+                </div>
+                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  Communities
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="hidden md:block"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <div className="relative">
+              <div
+                className="absolute inset-0 rounded-2xl opacity-20 blur-3xl"
+                style={{ backgroundColor: 'var(--primary-500)' }}
+              />
+              <img
+                src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800"
+                alt="Books"
+                className="relative rounded-2xl shadow-2xl"
+                style={{ objectFit: 'cover', height: '500px', width: '100%' }}
+              />
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Features Section */}
-      <section className="py-8 md:py-16 px-4">
-        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
-          Why Choose BookSwaps?
-        </h2>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {mockFeatures.map((feature, index) => (
-            <FeatureCard key={`feature-${index}-${feature.title}`} icon={feature.icon} title={feature.title} desc={feature.desc} />
-          ))}
-        </div>
-      </section>
-
-      {/* Trending Books */}
-      <section className="py-8 md:py-16 px-4 bg-[var(--secondary)]">
-        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
-          Trending Books
-        </h2>
-        {isLoading ? (
-          <div className="text-center">
-            <div className="bookish-spinner mx-auto w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : error ? (
-          <p className="text-center text-[var(--text)]">{error}</p>
-        ) : trendingBooks.length > 0 ? (
-          <div className="relative max-w-full mx-auto px-4">
-            <button
-              onClick={() => scrollCarousel(bookCarouselRef, 'left')}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bookish-button-enhanced text-[var(--secondary)] p-3 rounded-full z-10"
-              aria-label="Scroll left"
-            >
-              <ChevronLeftIcon className="h-6 w-6" />
-            </button>
-            <div ref={bookCarouselRef} className="flex overflow-x-auto space-x-4 md:space-x-6 p-2 md:p-4 scrollbar-hide">
-              {trendingBooks.map((book) => (
-                <div key={book.id} className="min-w-[250px] md:min-w-[300px] bookish-glass bookish-shadow p-4 md:p-6 rounded-xl">
-                  <img src={book.cover || '/assets/icons/books.svg'} alt={book.title} className="w-full h-32 md:h-40 object-cover mb-3 md:mb-4 rounded-lg" />
-                  <h3 className="text-lg md:text-xl font-['Lora'] text-[var(--primary)]">{book.title}</h3>
-                  <p className="text-sm md:text-base text-[var(--text)] font-['Open_Sans']">{book.author}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => scrollCarousel(bookCarouselRef, 'right')}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bookish-button-enhanced text-[var(--secondary)] p-3 rounded-full z-10"
-              aria-label="Scroll right"
-            >
-              <ChevronRightIcon className="h-6 w-6" />
-            </button>
-          </div>
-        ) : (
-          <p className="text-center text-[var(--text)]">No books available. Start swapping!</p>
-        )}
-      </section>
-
-      {/* Meet Book Lovers */}
-      <section className="py-8 md:py-16 px-4">
-        <h2 className="text-xl md:text-3xl font-['Lora'] text-[var(--primary)] text-center mb-6 md:mb-8">
-          Meet Book Lovers
-        </h2>
-        <div className="relative max-w-full mx-auto px-4">
-          <button
-            onClick={() => scrollCarousel(userCarouselRef, 'left')}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bookish-button-enhanced text-[var(--secondary)] p-3 rounded-full z-10"
-            aria-label="Scroll left"
+      <section className="py-16" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className="container">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
           >
-            <ChevronLeftIcon className="h-6 w-6" />
-          </button>
-          <div ref={userCarouselRef} className="flex overflow-x-auto space-x-4 md:space-x-6 p-2 md:p-4 scrollbar-hide">
-            {mockUsers.map((user) => (
-              <div key={user.id} className="min-w-[250px] md:min-w-[300px] bookish-glass bookish-shadow p-4 md:p-6 rounded-xl text-center">
-                <img src={user.avatar} alt={user.username} className="w-16 md:w-24 h-16 md:h-24 rounded-full mx-auto mb-3 md:mb-4" />
-                <h3 className="text-lg md:text-xl font-['Lora'] text-[var(--primary)]">{user.username}</h3>
-              </div>
+            <h2
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Why Choose BookSwaps?
+            </h2>
+            <p
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Everything you need to build a thriving reading community
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className="card card-hover p-6"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                  style={{ backgroundColor: 'var(--primary-50)' }}
+                >
+                  <feature.icon
+                    className="w-6 h-6"
+                    style={{ color: 'var(--primary-600)' }}
+                  />
+                </div>
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {feature.title}
+                </h3>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  {feature.description}
+                </p>
+              </motion.div>
             ))}
           </div>
-          <button
-            onClick={() => scrollCarousel(userCarouselRef, 'right')}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bookish-button-enhanced text-[var(--secondary)] p-3 rounded-full z-10"
-            aria-label="Scroll right"
-          >
-            <ChevronRightIcon className="h-6 w-6" />
-          </button>
         </div>
       </section>
-      <Footer />
+
+      {/* Trending Books Section */}
+      {trendingBooks.length > 0 && (
+        <section className="py-16" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+          <div className="container">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2
+                className="text-3xl md:text-4xl font-bold mb-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Trending Books
+              </h2>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Popular titles in our community
+              </p>
+            </motion.div>
+
+            <div className="relative">
+              <button
+                onClick={() => scrollCarousel('left')}
+                className="btn-icon btn-secondary absolute left-0 top-1/2 transform -translate-y-1/2 z-10 hidden md:flex items-center justify-center"
+              >
+                <ChevronLeftIcon className="w-6 h-6" />
+              </button>
+
+              <div
+                ref={bookCarouselRef}
+                className="flex gap-6 overflow-x-auto scrollbar-hide px-4 md:px-12"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                {trendingBooks.map((book) => (
+                  <motion.div
+                    key={book.book_id}
+                    className="book-card min-w-[250px]"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                  >
+                    <div
+                      className="book-card-image"
+                      style={{
+                        backgroundColor: 'var(--neutral-200)',
+                        backgroundImage: book.cover_image_url
+                          ? `url(${book.cover_image_url})`
+                          : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                    />
+                    <div className="book-card-content">
+                      <h4 className="book-card-title line-clamp-2">{book.title}</h4>
+                      <p className="book-card-author line-clamp-1">{book.author}</p>
+                    </div>
+                    <div className="book-card-footer">
+                      <button className="btn btn-sm btn-primary btn-block">
+                        View Details
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => scrollCarousel('right')}
+                className="btn-icon btn-secondary absolute right-0 top-1/2 transform -translate-y-1/2 z-10 hidden md:flex items-center justify-center"
+              >
+                <ChevronRightIcon className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CTA Section */}
+      <section className="py-20" style={{ backgroundColor: 'var(--primary-500)' }}>
+        <div className="container text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: 'var(--text-inverse)' }}
+            >
+              Ready to Start Your Journey?
+            </h2>
+            <p
+              className="text-lg mb-8 max-w-2xl mx-auto"
+              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+            >
+              Join thousands of readers who are discovering new books and making friends through BookSwaps
+            </p>
+            <button
+              onClick={() => navigate('/register')}
+              className="btn btn-lg flex items-center justify-center gap-2 mx-auto"
+              style={{
+                backgroundColor: 'var(--text-inverse)',
+                color: 'var(--primary-600)',
+                border: 'none'
+              }}
+            >
+              Get Started Free
+              <ArrowRightIcon className="w-5 h-5" />
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12" style={{ backgroundColor: 'var(--bg-primary)', borderTop: '1px solid var(--border-light)' }}>
+        <div className="container">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <img src={appLogo} alt="BookSwaps" className="w-8 h-8" />
+                <span className="font-semibold" style={{ color: 'var(--primary-700)' }}>
+                  BookSwaps
+                </span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Connect, swap, and discover your next favorite book.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Platform
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>Browse Books</a>
+                </li>
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>Communities</a>
+                </li>
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>How It Works</a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Company
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>About Us</a>
+                </li>
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>Contact</a>
+                </li>
+                <li>
+                  <a href="#" style={{ color: 'var(--text-secondary)' }}>Privacy</a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Connect
+              </h4>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+                Join our newsletter
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="input flex-1 text-sm"
+                />
+                <button className="btn btn-primary btn-sm">
+                  Subscribe
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-8" style={{ borderTop: '1px solid var(--border-light)' }}>
+            <p className="text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+              &copy; 2025 BookSwaps by QuantIQ Dev. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

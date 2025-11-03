@@ -83,7 +83,7 @@ const EnhancedCommentSection = ({
         whileHover={{ y: -2, scale: 1.01 }}
         className={`${depth > 0 ? 'ml-8 border-l-2 border-accent/20 pl-4' : ''}`}
       >
-        <div className="bookish-glass rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 bookish-shadow transition-all duration-300 overflow-hidden group relative mobile-post-card mb-4">
+        <div className="card rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 shadow-elevated transition-all duration-300 overflow-hidden group relative mobile-post-card mb-4">
           {/* Header - Same structure as posts */}
           <div className="p-2 sm:p-6 pb-2 sm:pb-4">
             <div className="flex items-start justify-between mb-2 sm:mb-4">
@@ -199,7 +199,7 @@ const EnhancedCommentSection = ({
                       value={replyText}
                       onChange={setReplyText}
                       placeholder={`Reply to ${note.user?.username || 'this comment'}... (try book@ to reference books)`}
-                      className="w-full bookish-input rounded-lg font-open-sans text-sm"
+                      className="w-full input rounded-lg font-open-sans text-sm"
                       maxLength={500}
                       minRows={2}
                       maxRows={4}
@@ -272,7 +272,7 @@ const EnhancedCommentSection = ({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="text-sm bookish-input rounded-lg px-3 py-1 font-open-sans"
+            className="text-sm input rounded-lg px-3 py-1 font-open-sans"
           >
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
@@ -284,7 +284,7 @@ const EnhancedCommentSection = ({
       {/* Comment Form */}
       <motion.form
         onSubmit={handleSubmitComment}
-        className="bookish-glass rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 bookish-shadow transition-all duration-300 overflow-hidden group relative mobile-post-card p-4"
+        className="card rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 shadow-elevated transition-all duration-300 overflow-hidden group relative mobile-post-card p-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -297,7 +297,7 @@ const EnhancedCommentSection = ({
               value={newComment}
               onChange={setNewComment}
               placeholder="Share your thoughts about this discussion... (try book@ to reference books)"
-              className="w-full bookish-input rounded-lg font-open-sans"
+              className="w-full input rounded-lg font-open-sans"
               maxLength={1000}
               minRows={3}
               maxRows={6}
@@ -310,7 +310,7 @@ const EnhancedCommentSection = ({
               <motion.button
                 type="submit"
                 disabled={isSubmittingComment || !newComment.trim()}
-                className="px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="px-4 py-2 btn btn-primary text-white rounded-lg font-open-sans disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -336,7 +336,7 @@ const EnhancedCommentSection = ({
           ))
         ) : (
           <motion.div
-            className="text-center py-12 bookish-glass rounded-xl sm:rounded-2xl border border-white/20 bookish-shadow"
+            className="text-center py-12 card rounded-xl sm:rounded-2xl border border-white/20 shadow-elevated"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >

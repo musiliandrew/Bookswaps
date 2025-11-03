@@ -12,7 +12,7 @@ const AuthGuard = ({ children }) => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  if (isLoading) return <div className="bookish-glass p-4 text-center">Loading...</div>;
+  if (isLoading) return <div className="card p-4 text-center">Loading...</div>;
 
   return !isAuthenticated ? children : null;
 };

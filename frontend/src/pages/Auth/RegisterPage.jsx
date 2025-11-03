@@ -1,28 +1,34 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  UserGroupIcon
+} from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { toast } from 'react-toastify';
-import Input from '../../components/Common/Input';
-import Button from '../../components/Common/Button';
-import ErrorMessage from '../../components/Common/ErrorMessage';
 import GoogleAuthButton from '../../components/Auth/GoogleAuthButton';
-import AuthLink from '../../components/Auth/AuthLink';
+import appLogo from '../../assets/icons/AppLogo.svg';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [userData, setUserData] = useState({
-    // Step 1: Basic info
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    // Step 2: Profile info
     birth_date: '',
     gender: '',
   });
@@ -32,7 +38,6 @@ const RegisterPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUserData(prev => ({ ...prev, [name]: value }));
-    // Clear field error when user starts typing
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -102,7 +107,6 @@ const RegisterPage = () => {
         password: userData.password,
       });
 
-      // Store tokens
       localStorage.setItem('access_token', response.data.token);
       localStorage.setItem('refresh_token', response.data.refresh);
       api.defaults.headers.Authorization = `Bearer ${response.data.token}`;
@@ -127,7 +131,7 @@ const RegisterPage = () => {
     setError(null);
 
     try {
-      const response = await api.patch(API_ENDPOINTS.PROFILE_STEP, {
+      await api.patch(API_ENDPOINTS.PROFILE_STEP, {
         birth_date: userData.birth_date,
         gender: userData.gender,
       });
@@ -146,9 +150,8 @@ const RegisterPage = () => {
   };
 
   const handleGoogleAuth = () => {
-    // Handle Google OAuth success - navigate to main app
     toast.success('Welcome to BookSwaps! 🎉');
-    navigate('/library', { replace: true });
+    navigate('/profile/me', { replace: true });
   };
 
   const genderOptions = [
@@ -167,284 +170,446 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bookish-gradient py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute inset-0 floating-elements" />
-
-      {/* Floating decorative elements */}
-      <motion.div
-        className="absolute top-20 left-10 text-[var(--primary)] opacity-10"
-        animate={{ y: [0, -15, 0], rotate: [0, 3, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+      {/* Left Side - Branding (Hidden on mobile) */}
+      <div
+        className="hidden md:flex md:w-1/2 lg:w-3/5 flex-col justify-center items-center p-12 relative overflow-hidden"
+        style={{ backgroundColor: 'var(--accent-500)' }}
       >
-        <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-      </motion.div>
-      <motion.div
-        className="absolute bottom-32 right-16 text-[var(--accent)] opacity-15"
-        animate={{ y: [0, 20, 0], rotate: [0, -5, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      >
-        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-        </svg>
-      </motion.div>
-
-      <motion.div
-        className="max-w-lg w-full bookish-glass bookish-shadow rounded-2xl p-8 relative z-10"
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-      >
-        {/* Header */}
-        <motion.div
-          className="text-center mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <div className="flex flex-row items-center justify-center mb-4">
-            <motion.img
-              src="/book.svg"
-              alt="BookSwaps Logo"
-              className="w-10 h-10 sm:w-8 sm:h-8 mr-2"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-            />
-            <motion.h2
-              className="text-3xl sm:text-3xl font-bold font-['Lora'] app-name-register"
-              style={{ color: '#456A76' }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5 }}
-            >
-              BookSwaps
-            </motion.h2>
-          </div>
-          <motion.h1
-            className="text-2xl font-bold font-['Lora'] text-gradient mb-2"
-            animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            Join BookSwap
-          </motion.h1>
-          <motion.p
-            className="text-[var(--text)] font-['Open_Sans'] text-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            Create your account in just 2 simple steps
-          </motion.p>
-        </motion.div>
-
-        {/* Progress indicator */}
-        <div className="flex items-center mb-8">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-            currentStep >= 1 ? 'bg-[var(--accent)] text-[var(--primary)]' : 'bg-gray-200 text-gray-500'
-          }`}>
-            1
-          </div>
-          <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${
-            currentStep >= 2 ? 'bg-[var(--accent)]' : 'bg-gray-200'
-          }`} />
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-            currentStep >= 2 ? 'bg-[var(--accent)] text-[var(--primary)]' : 'bg-gray-200 text-gray-500'
-          }`}>
-            2
-          </div>
-        </div>
-
-        {/* Google OAuth Section - Show only on step 1 */}
-        {currentStep === 1 && (
+        <div className="relative z-10 max-w-lg">
           <motion.div
-            className="mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            transition={{ duration: 0.6 }}
           >
-            <GoogleAuthButton
-              onSuccess={handleGoogleAuth}
-              text="Sign up with Google"
-              className="mb-4"
-            />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[var(--secondary)] text-[var(--text)]">Or continue with email</span>
-              </div>
+            <div className="flex items-center gap-3 mb-8">
+              <img src={appLogo} alt="BookSwaps" className="w-12 h-12" />
+              <h1
+                className="text-3xl font-bold"
+                style={{ color: 'var(--text-inverse)' }}
+              >
+                BookSwaps
+              </h1>
+            </div>
+
+            <h2
+              className="text-4xl lg:text-5xl font-bold mb-6"
+              style={{ color: 'var(--text-inverse)' }}
+            >
+              Join Our Growing Community of Book Lovers
+            </h2>
+
+            <p
+              className="text-lg mb-8"
+              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+            >
+              Start swapping books, making friends, and discovering your next favorite read today.
+            </p>
+
+            {/* Benefits */}
+            <div className="space-y-4">
+              {[
+                'Build your personal digital library',
+                'Connect with readers worldwide',
+                'Join book clubs and discussions',
+                'Swap books with local readers'
+              ].map((benefit, index) => (
+                <motion.div
+                  key={index}
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                >
+                  <CheckCircleIcon
+                    className="w-6 h-6 flex-shrink-0"
+                    style={{ color: 'var(--text-inverse)' }}
+                  />
+                  <span style={{ color: 'var(--text-inverse)' }}>{benefit}</span>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
-        )}
+        </div>
 
-        {/* Step Content */}
-        <AnimatePresence mode="wait">
-          {currentStep === 1 && (
-            <motion.div
-              key="step1"
-              variants={stepVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-4"
+        {/* Decorative Element */}
+        <div
+          className="absolute top-20 right-20 opacity-10"
+          style={{ color: 'var(--text-inverse)' }}
+        >
+          <UserGroupIcon className="w-64 h-64" />
+        </div>
+      </div>
+
+      {/* Right Side - Registration Form */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
+        <motion.div
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Mobile Logo */}
+          <div className="md:hidden flex items-center gap-3 mb-8">
+            <img src={appLogo} alt="BookSwaps" className="w-10 h-10" />
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: 'var(--primary-700)' }}
             >
-              <h3 className="text-lg font-['Lora'] text-[var(--primary)] mb-4">
-                Create Your Account
-              </h3>
+              BookSwaps
+            </h1>
+          </div>
 
-              <Input
-                label="Username"
-                name="username"
-                type="text"
-                value={userData.username}
-                onChange={handleInputChange}
-                placeholder="Choose a unique username"
-                error={fieldErrors.username}
-                required
-                className="bookish-input"
-              />
+          {/* Form Card */}
+          <div className="card p-8">
+            {/* Header */}
+            <div className="mb-6">
+              <h2
+                className="text-3xl font-bold mb-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Create Account
+              </h2>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Sign up in just 2 simple steps
+              </p>
+            </div>
 
-              <Input
-                label="Email"
-                name="email"
-                type="email"
-                value={userData.email}
-                onChange={handleInputChange}
-                placeholder="your.email@example.com"
-                error={fieldErrors.email}
-                required
-                className="bookish-input"
-              />
-
-              <Input
-                label="Password"
-                name="password"
-                type="password"
-                value={userData.password}
-                onChange={handleInputChange}
-                placeholder="Create a strong password"
-                error={fieldErrors.password}
-                required
-                className="bookish-input"
-              />
-
-              <Input
-                label="Confirm Password"
-                name="confirmPassword"
-                type="password"
-                value={userData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Confirm your password"
-                error={fieldErrors.confirmPassword}
-                required
-                className="bookish-input"
-              />
-
-              <ErrorMessage message={error} />
-
-              <Button
-                onClick={handleStep1Submit}
-                text={isLoading ? 'Creating Account...' : 'Continue'}
-                disabled={isLoading}
-                className="w-full bookish-button-enhanced text-white font-medium py-3 rounded-lg"
-              />
-
-              <div className="text-center mt-4">
-                <AuthLink to="/login" text="Already have an account? Sign in" />
+            {/* Progress Indicator */}
+            <div className="flex items-center mb-8">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: currentStep >= 1 ? 'var(--primary-500)' : 'var(--neutral-200)',
+                  color: currentStep >= 1 ? 'var(--text-inverse)' : 'var(--text-tertiary)'
+                }}
+              >
+                1
               </div>
-            </motion.div>
-          )}
-
-          {currentStep === 2 && (
-            <motion.div
-              key="step2"
-              variants={stepVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-4"
-            >
-              <h3 className="text-lg font-['Lora'] text-[var(--primary)] mb-4">
-                Complete Your Profile
-              </h3>
-
-              <Input
-                label="Birth Date"
-                name="birth_date"
-                type="date"
-                value={userData.birth_date}
-                onChange={handleInputChange}
-                error={fieldErrors.birth_date}
-                required
-                className="bookish-input"
+              <div
+                className="flex-1 h-1 mx-3 rounded transition-all"
+                style={{
+                  backgroundColor: currentStep >= 2 ? 'var(--primary-500)' : 'var(--neutral-200)'
+                }}
               />
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: currentStep >= 2 ? 'var(--primary-500)' : 'var(--neutral-200)',
+                  color: currentStep >= 2 ? 'var(--text-inverse)' : 'var(--text-tertiary)'
+                }}
+              >
+                2
+              </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--primary)] font-['Lora']">
-                  Gender *
-                </label>
-                <select
-                  name="gender"
-                  value={userData.gender}
-                  onChange={handleInputChange}
-                  className="w-full p-3 bookish-input rounded-lg font-['Open_Sans'] text-[var(--text)]"
-                  required
+            {/* Google OAuth - Step 1 Only */}
+            {currentStep === 1 && (
+              <div className="mb-6">
+                <GoogleAuthButton
+                  onSuccess={handleGoogleAuth}
+                  text="Sign up with Google"
+                />
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full" style={{ borderTop: '1px solid var(--border-medium)' }} />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span
+                      className="px-2"
+                      style={{
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-tertiary)'
+                      }}
+                    >
+                      Or continue with email
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step Content */}
+            <AnimatePresence mode="wait">
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  variants={stepVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="space-y-5"
                 >
-                  {genderOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.gender && (
-                  <p className="text-[var(--error)] text-sm font-['Open_Sans']">{fieldErrors.gender}</p>
-                )}
-              </div>
+                  {/* Username */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="username">
+                      Username
+                    </label>
+                    <input
+                      id="username"
+                      name="username"
+                      type="text"
+                      value={userData.username}
+                      onChange={handleInputChange}
+                      className={`input ${fieldErrors.username ? 'input-error' : ''}`}
+                      placeholder="Choose a unique username"
+                      autoComplete="username"
+                      required
+                    />
+                    {fieldErrors.username && (
+                      <p className="error-text">{fieldErrors.username}</p>
+                    )}
+                  </div>
 
-              <ErrorMessage message={error} />
+                  {/* Email */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="email">
+                      Email Address
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={userData.email}
+                      onChange={handleInputChange}
+                      className={`input ${fieldErrors.email ? 'input-error' : ''}`}
+                      placeholder="your.email@example.com"
+                      autoComplete="email"
+                      required
+                    />
+                    {fieldErrors.email && (
+                      <p className="error-text">{fieldErrors.email}</p>
+                    )}
+                  </div>
 
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => setCurrentStep(1)}
-                  text="Back"
-                  className="flex-1 bg-gray-200 text-[var(--primary)] font-medium py-3 rounded-lg hover:bg-gray-300 transition-colors"
-                />
-                <Button
-                  onClick={handleStep2Submit}
-                  text={isLoading ? 'Completing...' : 'Complete Registration'}
-                  disabled={isLoading}
-                  className="flex-1 bookish-button-enhanced text-white font-medium py-3 rounded-lg"
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+                  {/* Password */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="password">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={userData.password}
+                        onChange={handleInputChange}
+                        className={`input ${fieldErrors.password ? 'input-error' : ''}`}
+                        placeholder="Create a strong password (min 8 characters)"
+                        autoComplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {showPassword ? (
+                          <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                          <EyeIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    {fieldErrors.password && (
+                      <p className="error-text">{fieldErrors.password}</p>
+                    )}
+                  </div>
 
-      {/* Responsive styles */}
-      <style>
-        {`
-          @media (max-width: 640px) {
-            /* Keep app name prominent on mobile */
-            .app-name-register {
-              font-size: 2rem !important;
-            }
-            /* Make other text smaller but not the app name */
-            .text-3xl:not(.app-name-register) {
-              font-size: 1.5rem !important;
-            }
-            .text-2xl {
-              font-size: 1.25rem !important;
-            }
-            .text-lg {
-              font-size: 1rem !important;
-            }
-          }
-        `}
-      </style>
+                  {/* Confirm Password */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="confirmPassword">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={userData.confirmPassword}
+                        onChange={handleInputChange}
+                        className={`input ${fieldErrors.confirmPassword ? 'input-error' : ''}`}
+                        placeholder="Confirm your password"
+                        autoComplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                          <EyeIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    {fieldErrors.confirmPassword && (
+                      <p className="error-text">{fieldErrors.confirmPassword}</p>
+                    )}
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div
+                      className="p-3 rounded-lg text-sm"
+                      style={{
+                        backgroundColor: 'var(--error-50)',
+                        color: 'var(--error-600)',
+                        border: '1px solid var(--error-200)'
+                      }}
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Continue Button */}
+                  <button
+                    onClick={handleStep1Submit}
+                    disabled={isLoading}
+                    className="btn btn-primary btn-lg btn-block"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="spinner" style={{ borderTopColor: 'var(--text-inverse)' }} />
+                        <span>Creating Account...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Continue</span>
+                        <ArrowRightIcon className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+
+                  {/* Sign In Link */}
+                  <p className="text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Already have an account?{' '}
+                    <Link
+                      to="/login"
+                      className="font-medium"
+                      style={{ color: 'var(--primary-600)' }}
+                    >
+                      Sign in
+                    </Link>
+                  </p>
+                </motion.div>
+              )}
+
+              {currentStep === 2 && (
+                <motion.div
+                  key="step2"
+                  variants={stepVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="space-y-5"
+                >
+                  <div className="mb-4">
+                    <h3
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      Complete Your Profile
+                    </h3>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Just a few more details to personalize your experience
+                    </p>
+                  </div>
+
+                  {/* Birth Date */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="birth_date">
+                      Birth Date
+                    </label>
+                    <input
+                      id="birth_date"
+                      name="birth_date"
+                      type="date"
+                      value={userData.birth_date}
+                      onChange={handleInputChange}
+                      className={`input ${fieldErrors.birth_date ? 'input-error' : ''}`}
+                      required
+                    />
+                    {fieldErrors.birth_date && (
+                      <p className="error-text">{fieldErrors.birth_date}</p>
+                    )}
+                  </div>
+
+                  {/* Gender */}
+                  <div className="form-group">
+                    <label className="label" htmlFor="gender">
+                      Gender
+                    </label>
+                    <select
+                      id="gender"
+                      name="gender"
+                      value={userData.gender}
+                      onChange={handleInputChange}
+                      className={`input select ${fieldErrors.gender ? 'input-error' : ''}`}
+                      required
+                    >
+                      {genderOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.gender && (
+                      <p className="error-text">{fieldErrors.gender}</p>
+                    )}
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div
+                      className="p-3 rounded-lg text-sm"
+                      style={{
+                        backgroundColor: 'var(--error-50)',
+                        color: 'var(--error-600)',
+                        border: '1px solid var(--error-200)'
+                      }}
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setCurrentStep(1)}
+                      className="btn btn-secondary flex-1"
+                    >
+                      <ArrowLeftIcon className="w-5 h-5" />
+                      <span>Back</span>
+                    </button>
+                    <button
+                      onClick={handleStep2Submit}
+                      disabled={isLoading}
+                      className="btn btn-primary flex-1"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="spinner" style={{ borderTopColor: 'var(--text-inverse)' }} />
+                          <span>Completing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Complete</span>
+                          <CheckCircleIcon className="w-5 h-5" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

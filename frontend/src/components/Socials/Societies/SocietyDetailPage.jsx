@@ -118,7 +118,7 @@ const SocietyDetailPage = () => {
 
   if (isLoading && !society) {
     return (
-      <div className="min-h-screen bookish-gradient flex items-center justify-center">
+      <div className="min-h-screen bg-gradient flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent border-t-transparent mx-auto mb-4"></div>
           <p className="text-primary">Loading society...</p>
@@ -129,12 +129,12 @@ const SocietyDetailPage = () => {
 
   if (error || !society) {
     return (
-      <div className="min-h-screen bookish-gradient flex items-center justify-center">
+      <div className="min-h-screen bg-gradient flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-primary mb-4">Society Not Found</h2>
           <button
             onClick={() => navigate('/socials')}
-            className="bookish-button-enhanced text-white px-6 py-3 rounded-xl"
+            className="btn btn-primary text-white px-6 py-3 rounded-xl"
           >
             Back to Socials
           </button>
@@ -144,7 +144,7 @@ const SocietyDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bookish-gradient font-open-sans text-text">
+    <div className="min-h-screen bg-gradient font-open-sans text-text">
       {/* Header */}
       <div className="relative">
         {/* Background Pattern */}
@@ -165,7 +165,7 @@ const SocietyDetailPage = () => {
             </button>
 
             {/* Society Header */}
-            <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+            <div className="card rounded-2xl border border-white/20 p-8">
               <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                 {/* Society Icon */}
                 <div className="flex-shrink-0">
@@ -220,7 +220,7 @@ const SocietyDetailPage = () => {
                         <button
                           onClick={handleJoinSociety}
                           disabled={isLoading}
-                          className="flex items-center gap-2 bookish-button-enhanced text-white px-6 py-3 rounded-xl disabled:opacity-50"
+                          className="flex items-center gap-2 btn btn-primary text-white px-6 py-3 rounded-xl disabled:opacity-50"
                         >
                           <UserPlusIcon className="w-5 h-5" />
                           Join Society
@@ -265,7 +265,7 @@ const SocietyDetailPage = () => {
 
       {/* Navigation Tabs */}
       <div className="max-w-6xl mx-auto px-4 mb-8">
-        <div className="bookish-glass rounded-2xl border border-white/20 p-2">
+        <div className="card rounded-2xl border border-white/20 p-2">
           <div className="flex gap-1">
             {tabs.map((tab) => (
               <button
@@ -338,7 +338,7 @@ const SocietyDetailPage = () => {
 
 // Placeholder components for tab content
 const SocietyOverview = ({ society }) => (
-  <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+  <div className="card rounded-2xl border border-white/20 p-8">
     <h3 className="text-xl font-lora font-bold text-primary mb-4">About This Society</h3>
     <div className="text-primary/70 leading-relaxed">
       <SmartTextRenderer
@@ -353,7 +353,7 @@ const SocietyOverview = ({ society }) => (
 );
 
 const SocietyMembers = ({ members, isAdmin }) => (
-  <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+  <div className="card rounded-2xl border border-white/20 p-8">
     <h3 className="text-xl font-lora font-bold text-primary mb-6">Members ({members?.length || 0})</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {members?.filter(member => member && member.user).map((member) => (
@@ -401,13 +401,13 @@ const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onC
   };
 
   return (
-    <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+    <div className="card rounded-2xl border border-white/20 p-8">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-lora font-bold text-primary">Events</h3>
         {(isMember || isAdmin) && (
           <button
             onClick={onCreateEvent}
-            className="flex items-center gap-2 bookish-button-enhanced text-white px-4 py-2 rounded-xl"
+            className="flex items-center gap-2 btn btn-primary text-white px-4 py-2 rounded-xl"
           >
             <PlusIcon className="w-4 h-4" />
             Create Event
@@ -428,7 +428,7 @@ const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onC
           {(isMember || isAdmin) && (
             <button
               onClick={onCreateEvent}
-              className="bookish-button-enhanced text-white px-6 py-3 rounded-xl"
+              className="btn btn-primary text-white px-6 py-3 rounded-xl"
             >
               Create First Event
             </button>
@@ -521,7 +521,7 @@ const SocietyEvents = ({ events, societyId, isMember, isAdmin, onEventClick, onC
 };
 
 const SocietyDiscussions = ({ societyId, isMember }) => (
-  <div className="bookish-glass rounded-2xl border border-white/20 p-8">
+  <div className="card rounded-2xl border border-white/20 p-8">
     <h3 className="text-xl font-lora font-bold text-primary mb-6">Society Discussions</h3>
     <p className="text-primary/70 text-center py-8">
       Society-specific discussions coming soon!

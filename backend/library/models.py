@@ -18,27 +18,62 @@ def validate_cover_image_url(value):
     """Sanitize cover image URL (HTTPS, valid domains)."""
     if not value:
         return
-    if not value.startswith(('https://', 'http://')):
-        raise ValidationError("Cover image URL must use HTTP or HTTPS.")
+    if not value.startswith(('https://', 'http://', '/media/', '/static/')):
+        raise ValidationError("Cover image URL must use HTTP/HTTPS or be a local path.")
 
     from django.conf import settings
+    import re
+    
+    # Allow local paths
+    if value.startswith(('/media/', '/static/')):
+        return value
+    
+    # Allow localhost for development
+    if 'localhost' in value or '127.0.0.1' in value:
+        return value
+    
+    # Allow domain-based URLs (production)
+    if hasattr(settings, 'ALLOWED_HOSTS') and settings.ALLOWED_HOSTS:
+        for host in settings.ALLOWED_HOSTS:
+            if host != '*' and host in value:
+                return value
+    
     allowed_domains = [
         'openlibrary.org',
         'covers.openlibrary.org',
+        'books.google.com',
+        'images.amazon.com',
         'bookswap-bucket.s3.amazonaws.com',  # Legacy AWS S3
+        'bookswaps.co.ke',  # Production domain
     ]
 
-    # Add MinIO domain if it exists (for MinIO storage)
+    # Add MinIO domain if it exists
     if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
-        minio_domain = settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')
+        # Extract domain from MinIO endpoint
+        minio_url = settings.AWS_S3_ENDPOINT_URL
+        minio_domain = re.sub(r'https?://', '', minio_url).split('/')[0]
         allowed_domains.append(minio_domain)
+        
+        # Also allow localhost:9000 for MinIO in development
+        if 'minio' in minio_domain:
+            allowed_domains.extend(['localhost:9000', '127.0.0.1:9000'])
 
-    # For local storage, allow local media URLs
-    if value.startswith('/media/') or 'bookswaps.co.ke/media/' in value:
+    # Check if URL contains any allowed domain
+    if any(domain in value for domain in allowed_domains):
         return value
-
-    if not any(domain in value for domain in allowed_domains):
-        raise ValidationError(f"Cover image URL must be from an allowed domain: {', '.join(allowed_domains)}")
+    
+    # If validation fails, log the attempt but don't raise error in development
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Image URL validation failed for: {value}")
+    logger.warning(f"Allowed domains: {allowed_domains}")
+    
+    # In development, be more lenient
+    if hasattr(settings, 'DEBUG') and settings.DEBUG:
+        logger.warning("Allowing URL in DEBUG mode")
+        return value
+    
+    raise ValidationError(f"Cover image URL must be from an allowed domain: {', '.join(allowed_domains)}")
     return value
 
 class Book(models.Model):

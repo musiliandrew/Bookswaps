@@ -20,7 +20,7 @@ const UserBadge = ({ className = '' }) => {
       >
         <motion.button
           onClick={handleClick}
-          className="bookish-button-enhanced p-2 rounded-full bg-[var(--accent)] text-white"
+          className="btn btn-primary p-2 rounded-full bg-[var(--accent)] text-white"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           aria-label="Go to profile"

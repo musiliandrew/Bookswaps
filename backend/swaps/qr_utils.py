@@ -1,11 +1,13 @@
 """
 QR Code generation and verification utilities for swap system
 """
+import os
 import qrcode
 import json
 import base64
 import hashlib
 import secrets
+import logging
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -13,6 +15,8 @@ from django.core.files.storage import default_storage
 from cryptography.fernet import Fernet
 from io import BytesIO
 import uuid
+
+logger = logging.getLogger(__name__)
 
 
 class QRCodeManager:
@@ -75,9 +79,28 @@ class QRCodeManager:
         # Generate unique filename
         filename = f"qr_codes/{swap_id}_{user_id}_{uuid.uuid4().hex[:8]}.png"
         
-        # Save to storage (S3 or local)
-        file_path = default_storage.save(filename, ContentFile(img_buffer.getvalue()))
-        qr_code_url = default_storage.url(file_path)
+        # Save to storage (MinIO or local)
+        try:
+            file_path = default_storage.save(filename, ContentFile(img_buffer.getvalue()))
+            qr_code_url = default_storage.url(file_path)
+            
+            # Fix URL for external access if using MinIO
+            if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and 'minio:9000' in str(qr_code_url):
+                qr_code_url = qr_code_url.replace('minio:9000', 'localhost:9000')
+            
+        except Exception as e:
+            logger.error(f"Failed to save QR code to storage: {e}")
+            # Fallback to temporary local storage
+            import tempfile
+            import uuid as uuid_lib
+            temp_filename = f"temp_qr_{uuid_lib.uuid4().hex[:8]}.png"
+            temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+            
+            with open(temp_path, 'wb') as f:
+                f.write(img_buffer.getvalue())
+            
+            qr_code_url = f"/tmp/{temp_filename}"
+            logger.warning(f"QR code saved to temporary location: {qr_code_url}")
         
         return {
             'qr_code_url': qr_code_url,

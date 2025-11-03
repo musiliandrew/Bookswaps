@@ -111,7 +111,7 @@ const EnhancedPostFeed = ({
     <div className="max-w-4xl mx-auto">
       {/* Enhanced Controls Section */}
       <motion.div
-        className="bookish-glass rounded-2xl border border-white/20 p-6 mb-8 mobile-discussion-container"
+        className="card rounded-2xl border border-white/20 p-6 mb-8 mobile-discussion-container"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -135,7 +135,7 @@ const EnhancedPostFeed = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search discussions..."
-            className="bookish-input w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-primary placeholder-primary/50 font-open-sans mobile-form-input mobile-search-input"
+            className="input w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-primary placeholder-primary/50 font-open-sans mobile-form-input mobile-search-input"
           />
         </div>
 
@@ -152,7 +152,7 @@ const EnhancedPostFeed = ({
 
           {/* Desktop: Tab-style Filter */}
           <div className="hidden sm:flex sm:items-center sm:justify-between">
-            <div className="flex justify-around gap-2 p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl">
+            <div className="flex justify-around gap-2 p-2 card rounded-2xl border border-white/20 backdrop-blur-xl">
               {filterOptions.map((option, index) => (
                 <motion.button
                   key={option.value}
@@ -211,7 +211,7 @@ const EnhancedPostFeed = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bookish-glass border border-white/20 rounded-xl px-4 py-3 text-sm font-medium text-primary bg-transparent backdrop-blur-xl appearance-none cursor-pointer min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="card border border-white/20 rounded-xl px-4 py-3 text-sm font-medium text-primary bg-transparent backdrop-blur-xl appearance-none cursor-pointer min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent/50"
               >
                 {sortOptions.map((option) => (
                   <option key={option.value} value={option.value} className="bg-white text-primary">
@@ -230,7 +230,7 @@ const EnhancedPostFeed = ({
           // Loading skeleton
           <div className="space-y-6">
             {[...Array(3)].map((_, index) => (
-              <div key={index} className="bookish-glass rounded-2xl border border-white/20 p-6">
+              <div key={index} className="card rounded-2xl border border-white/20 p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 loading-skeleton rounded-full"></div>
                   <div className="space-y-2">
@@ -292,7 +292,7 @@ const EnhancedPostFeed = ({
         ) : (
           // Empty state
           <motion.div
-            className="bookish-glass rounded-2xl border border-white/20 text-center py-16"
+            className="card rounded-2xl border border-white/20 text-center py-16"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}

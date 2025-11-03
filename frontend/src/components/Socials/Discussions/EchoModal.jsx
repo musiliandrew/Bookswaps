@@ -100,7 +100,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="What do you think about this discussion? Share your perspective..."
-                  className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans resize-none focus:ring-2 focus:ring-accent/50 transition-all"
+                  className="w-full px-4 py-3 input rounded-xl font-open-sans resize-none focus:ring-2 focus:ring-accent/50 transition-all"
                   rows={3}
                   maxLength={280}
                 />
@@ -116,7 +116,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
             )}
 
             {/* Original Post Preview */}
-            <div className="bookish-glass border border-white/30 rounded-xl p-4 bg-white/30">
+            <div className="card border border-white/30 rounded-xl p-4 bg-white/30">
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
                   {post.user?.profile_picture ? (
@@ -169,7 +169,7 @@ const EchoModal = ({ isOpen, onClose, onEcho, post, isLoading }) => {
             <motion.button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="px-4 py-2 bookish-button-enhanced text-white text-xs sm:text-sm font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 font-open-sans min-h-[44px]"
+              className="px-4 py-2 btn btn-primary text-white text-xs sm:text-sm font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 font-open-sans min-h-[44px]"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >

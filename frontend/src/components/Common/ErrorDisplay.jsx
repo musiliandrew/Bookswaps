@@ -1,7 +1,7 @@
 import React from 'react';
 
 const ErrorDisplay = ({ message, onRetry }) => (
-  <div className="flex flex-col justify-center items-center h-screen bg-bookish-gradient text-center p-4">
+  <div className="flex flex-col justify-center items-center h-screen bg-bg-gradient text-center p-4">
     <div className="max-w-md">
       <div className="mb-6">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
@@ -27,7 +27,7 @@ const ErrorDisplay = ({ message, onRetry }) => (
       {onRetry && (
         <button
           onClick={onRetry}
-          className="bookish-button-enhanced px-6 py-3 rounded-xl text-[var(--secondary)] font-medium hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+          className="btn btn-primary px-6 py-3 rounded-xl text-[var(--secondary)] font-medium hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
         >
           Try Again
         </button>

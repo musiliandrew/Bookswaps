@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - Library</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding: var(--space-6) var(--space-4);
+            padding-bottom: 100px;
+        }
+
+        .library-header {
+            margin-bottom: var(--space-8);
+        }
+
+        .library-tabs {
+            display: flex;
+            gap: var(--space-2);
+            padding: var(--space-1);
+            background: var(--neutral-100);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-6);
+        }
+
+        .library-tab {
+            flex: 1;
+            padding: var(--space-3) var(--space-4);
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-lg);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+        }
+
+        .library-tab.active {
+            background: white;
+            color: var(--primary-600);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Book Grid */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: var(--space-6);
+        }
+
+        .book-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .book-cover {
+            width: 100%;
+            aspect-ratio: 2/3;
+            background: linear-gradient(135deg, var(--primary-300), var(--accent-300));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            position: relative;
+        }
+
+        .book-badge {
+            position: absolute;
+            top: var(--space-2);
+            right: var(--space-2);
+            background: var(--success-500);
+            color: white;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .book-info {
+            padding: var(--space-3);
+        }
+
+        .book-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: var(--space-1);
+            color: var(--text-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-author {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-2);
+        }
+
+        .book-genre {
+            font-size: 0.75rem;
+            color: var(--primary-600);
+            background: var(--primary-50);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            display: inline-block;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 100px;
+            right: var(--space-6);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-600), var(--accent-600));
+            color: white;
+            border: none;
+            box-shadow: var(--shadow-xl);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex;
+            gap: var(--space-3);
+            margin-bottom: var(--space-6);
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+        }
+
+        .search-input {
+            width: 100%;
+            padding-left: 48px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: var(--space-4);
+            left: var(--space-4);
+            z-index: 1000;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16) var(--space-4);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+        }
+
+        @media (max-width: 640px) {
+            .books-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-4);
+            }
+
+            .library-tab span {
+                display: none;
+            }
+
+            .fab {
+                bottom: 88px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="btn btn-secondary back-btn">
+        ← Back
+    </a>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="library-header">
+            <h1 style="font-size: clamp(2rem, 5vw, 2.5rem); margin-bottom: var(--space-2);">
+                📚 My Library
+            </h1>
+            <p style="color: var(--text-secondary);">
+                Manage your book collection and discover new reads
+            </p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="library-tabs">
+            <button class="library-tab active">
+                <span>📖</span>
+                <span>My Books</span>
+            </button>
+            <button class="library-tab">
+                <span>🔍</span>
+                <span>Browse</span>
+            </button>
+            <button class="library-tab">
+                <span>🔖</span>
+                <span>Saved</span>
+            </button>
+            <button class="library-tab">
+                <span>❤️</span>
+                <span>Favorites</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                </svg>
+                <input
+                    type="text"
+                    class="input search-input"
+                    placeholder="Search your library..."
+                >
+            </div>
+            <button class="btn btn-secondary btn-icon">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Books Grid -->
+        <div class="books-grid">
+            <!-- Book 1 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #1e3a8a, #3730a3);">
+                    <span class="book-badge">Available</span>
+                    📖
+                </div>
+                <div class="book-info">
+                    <div class="book-title">1984</div>
+                    <div class="book-author">by George Orwell</div>
+                    <span class="book-genre">Dystopian</span>
+                </div>
+            </div>
+
+            <!-- Book 2 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #065f46, #064e3b);">
+                    <span class="book-badge" style="background: var(--warning-500);">Swap Pending</span>
+                    📕
+                </div>
+                <div class="book-info">
+                    <div class="book-title">The Great Gatsby</div>
+                    <div class="book-author">by F. Scott Fitzgerald</div>
+                    <span class="book-genre">Classic</span>
+                </div>
+            </div>
+
+            <!-- Book 3 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #7c2d12, #991b1b);">
+                    <span class="book-badge">Available</span>
+                    📘
+                </div>
+                <div class="book-info">
+                    <div class="book-title">To Kill a Mockingbird</div>
+                    <div class="book-author">by Harper Lee</div>
+                    <span class="book-genre">Fiction</span>
+                </div>
+            </div>
+
+            <!-- Book 4 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #713f12, #78350f);">
+                    <span class="book-badge">Available</span>
+                    📗
+                </div>
+                <div class="book-info">
+                    <div class="book-title">Pride and Prejudice</div>
+                    <div class="book-author">by Jane Austen</div>
+                    <span class="book-genre">Romance</span>
+                </div>
+            </div>
+
+            <!-- Book 5 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #831843, #9f1239);">
+                    <span class="book-badge">Available</span>
+                    📙
+                </div>
+                <div class="book-info">
+                    <div class="book-title">The Catcher in the Rye</div>
+                    <div class="book-author">by J.D. Salinger</div>
+                    <span class="book-genre">Classic</span>
+                </div>
+            </div>
+
+            <!-- Book 6 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #1e40af, #1e3a8a);">
+                    <span class="book-badge">Available</span>
+                    📔
+                </div>
+                <div class="book-info">
+                    <div class="book-title">The Handmaid's Tale</div>
+                    <div class="book-author">by Margaret Atwood</div>
+                    <span class="book-genre">Dystopian</span>
+                </div>
+            </div>
+
+            <!-- Book 7 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #581c87, #6b21a8);">
+                    <span class="book-badge">Available</span>
+                    📖
+                </div>
+                <div class="book-info">
+                    <div class="book-title">Harry Potter and the Philosopher's Stone</div>
+                    <div class="book-author">by J.K. Rowling</div>
+                    <span class="book-genre">Fantasy</span>
+                </div>
+            </div>
+
+            <!-- Book 8 -->
+            <div class="book-card">
+                <div class="book-cover" style="background: linear-gradient(135deg, #0c4a6e, #075985);">
+                    <span class="book-badge">Available</span>
+                    📕
+                </div>
+                <div class="book-info">
+                    <div class="book-title">The Hobbit</div>
+                    <div class="book-author">by J.R.R. Tolkien</div>
+                    <span class="book-genre">Fantasy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" title="Add New Book">
+        +
+    </button>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav hidden-desktop">
+        <a href="home.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="library.html" class="bottom-nav-item active">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+            <span>Library</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+            <span>Profile</span>
+        </a>
+        <a href="chat.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+            </svg>
+            <span>Chat</span>
+        </a>
+    </nav>
+</body>
+</html>

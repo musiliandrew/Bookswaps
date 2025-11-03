@@ -151,9 +151,9 @@ function App() {
         draggable
         pauseOnHover={false}
         theme="light"
-        toastClassName="bookish-toast"
-        bodyClassName="bookish-toast-body"
-        progressClassName="bookish-toast-progress"
+        toastClassName="toast-notification"
+        bodyClassName="toast-body"
+        progressClassName="toast-progress"
         limit={3}
       />
       </div>

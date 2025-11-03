@@ -17,7 +17,7 @@ const LoadingState = ({
   };
 
   const containerClasses = fullScreen 
-    ? "flex justify-center items-center h-screen bg-bookish-gradient"
+    ? "flex justify-center items-center h-screen bg-bg-gradient"
     : `flex justify-center items-center ${className}`;
 
   return (
@@ -27,7 +27,7 @@ const LoadingState = ({
         animate={{ scale: 1, opacity: 1 }}
         className="text-center"
       >
-        <div className={`bookish-spinner ${sizeClasses[size]} border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4`}></div>
+        <div className={`${sizeClasses[size]} border-4 rounded-full animate-spin mx-auto mb-4`} style={{ borderColor: 'var(--accent-500)', borderTopColor: 'transparent' }}></div>
         <p className="text-[var(--text)] font-['Open_Sans']">{message}</p>
       </motion.div>
     </div>

@@ -16,7 +16,7 @@ const Button = ({
       disabled={disabled || isLoading}
       onClick={onClick}
       className={clsx(
-        'bookish-button-enhanced relative overflow-hidden w-full px-4 py-3 rounded-xl',
+        'btn btn-primary relative overflow-hidden w-full px-4 py-3 rounded-xl',
         'font-["Lora"] font-semibold text-white',
         disabled || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md',
         className

@@ -181,7 +181,7 @@ const SocietyList = ({ societies, isSocietiesLoading, listSocieties, societiesPa
             <p className="text-[var(--text)] font-open-sans mb-4">Join book societies to start chatting with fellow readers!</p>
             <button
               onClick={() => window.location.href = '/socials/discussions/societies'}
-              className="bookish-button-enhanced text-white px-6 py-2 rounded-lg"
+              className="btn btn-primary text-white px-6 py-2 rounded-lg"
             >
               Browse Societies
             </button>

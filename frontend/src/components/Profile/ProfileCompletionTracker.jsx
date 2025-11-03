@@ -241,7 +241,7 @@ const ProfileCompletionTracker = ({
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bookish-glass bookish-shadow rounded-lg p-6 mb-6 border border-[var(--primary)]/20"
+          className="card shadow-elevated rounded-lg p-6 mb-6 border border-[var(--primary)]/20"
         >
           <div className="flex items-start gap-4">
             {/* Progress Circle */}
@@ -351,7 +351,7 @@ const ProfileCompletionTracker = ({
               <div className="flex gap-2">
                 <motion.button
                   onClick={() => navigate('/profile/me?tab=settings')}
-                  className="bookish-button-enhanced text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
+                  className="btn btn-primary text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] flex-1"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -389,7 +389,7 @@ const ProfileCompletionTracker = ({
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="bookish-glass bookish-shadow rounded-lg p-6 border border-[var(--primary)]/20">
+            <div className="card shadow-elevated rounded-lg p-6 border border-[var(--primary)]/20">
               {/* Guide Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>

@@ -26,7 +26,7 @@ const NotificationBadge = ({ className = '' }) => {
       >
         <motion.button
           onClick={toggleDropdown}
-          className={`bookish-button-enhanced p-2 rounded-full bg-[var(--accent)] text-white ${
+          className={`btn btn-primary p-2 rounded-full bg-[var(--accent)] text-white ${
             unreadCount > 0 ? 'animate-pulse-glow' : ''
           }`}
           whileHover={{ scale: 1.1 }}
@@ -42,7 +42,7 @@ const NotificationBadge = ({ className = '' }) => {
         </motion.button>
         {showDropdown && (
           <motion.div
-            className="absolute right-0 mt-2 w-64 bookish-glass p-4 rounded-xl shadow-lg z-50"
+            className="absolute right-0 mt-2 w-64 card p-4 rounded-xl shadow-lg z-50"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

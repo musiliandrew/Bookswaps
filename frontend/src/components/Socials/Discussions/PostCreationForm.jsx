@@ -5,7 +5,7 @@ import { PencilSquareIcon, BookOpenIcon, TagIcon, PhotoIcon, ExclamationTriangle
 const PostCreationForm = ({ newPost, setNewPost, handleCreatePost }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const inputClasses = "w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
   const labelClasses = "flex items-center space-x-2 text-sm font-medium text-primary mb-2";
 
   const postTypes = [
@@ -16,7 +16,7 @@ const PostCreationForm = ({ newPost, setNewPost, handleCreatePost }) => {
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl p-6 border border-white/20 mb-8"
+      className="card rounded-2xl p-6 border border-white/20 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -190,7 +190,7 @@ const PostCreationForm = ({ newPost, setNewPost, handleCreatePost }) => {
 
           <motion.button
             type="submit"
-            className="bookish-button-enhanced px-8 py-3 rounded-xl text-white font-semibold shadow-lg"
+            className="btn btn-primary px-8 py-3 rounded-xl text-white font-semibold shadow-lg"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >

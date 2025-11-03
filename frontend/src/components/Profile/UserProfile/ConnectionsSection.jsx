@@ -32,7 +32,7 @@ const ConnectionsSection = ({
   ];
 
   return (
-    <div className="bookish-glass p-4 rounded-xl">
+    <div className="card p-4 rounded-xl">
       <nav className="flex gap-2 mb-4 border-b border-[var(--primary)]/20">
         {lists.map((list) => (
           <button

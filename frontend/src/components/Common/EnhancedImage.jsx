@@ -6,6 +6,9 @@ import {
   BookOpenIcon,
   ExclamationTriangleIcon 
 } from '@heroicons/react/24/outline';
+import bookPlaceholder from '../../assets/book-placeholder.svg';
+import profilePlaceholder from '../../assets/profile-placeholder.svg';
+import qrPlaceholder from '../../assets/qr-placeholder.svg';
 
 const EnhancedImage = ({
   src,
@@ -31,12 +34,29 @@ const EnhancedImage = ({
   // Reset state when src changes
   useEffect(() => {
     if (src !== currentSrc) {
-      setCurrentSrc(src);
+      setCurrentSrc(fixMinioUrl(src));
       setIsLoading(true);
       setHasError(false);
       setRetryCount(0);
     }
   }, [src, currentSrc]);
+
+  // Fix MinIO URLs for external access
+  const fixMinioUrl = (url) => {
+    if (!url) return url;
+    
+    // Convert internal Docker MinIO URLs to external localhost URLs
+    if (url.includes('minio:9000')) {
+      return url.replace('minio:9000', 'localhost:9000');
+    }
+    
+    // Ensure proper protocol
+    if (url.startsWith('//')) {
+      return `http:${url}`;
+    }
+    
+    return url;
+  };
 
   // Generate fallback URLs for different image types
   const generateFallbackUrls = (originalSrc) => {
@@ -59,6 +79,12 @@ const EnhancedImage = ({
       fallbacks.push(fallbackSrc);
     }
     
+    // Add SVG placeholders as final fallback
+    const placeholderSrc = getPlaceholderSrc();
+    if (placeholderSrc) {
+      fallbacks.push(placeholderSrc);
+    }
+    
     return fallbacks;
   };
 
@@ -75,7 +101,7 @@ const EnhancedImage = ({
     const fallbacks = generateFallbackUrls(currentSrc);
     
     if (retryCount < maxRetries && fallbacks.length > retryCount) {
-      const nextSrc = fallbacks[retryCount];
+      const nextSrc = fixMinioUrl(fallbacks[retryCount]);
       setCurrentSrc(nextSrc);
       setRetryCount(prev => prev + 1);
       setIsLoading(true);
@@ -98,6 +124,18 @@ const EnhancedImage = ({
       case 'book':
       default:
         return <BookOpenIcon className={iconClass} />;
+    }
+  };
+
+  const getPlaceholderSrc = () => {
+    switch (placeholder) {
+      case 'user':
+        return profilePlaceholder;
+      case 'qr':
+        return qrPlaceholder;
+      case 'book':
+      default:
+        return bookPlaceholder;
     }
   };
 
@@ -146,7 +184,7 @@ const EnhancedImage = ({
                 onClick={() => {
                   setHasError(false);
                   setIsLoading(true);
-                  setCurrentSrc(src);
+                  setCurrentSrc(fixMinioUrl(src));
                   setRetryCount(0);
                 }}
                 className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-white/20 transition-colors"

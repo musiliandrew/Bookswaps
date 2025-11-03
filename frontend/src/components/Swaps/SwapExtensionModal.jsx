@@ -76,7 +76,7 @@ const SwapExtensionModal = ({
         onClick={onClose}
       >
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 p-6 w-full max-w-md"
+          className="card rounded-2xl border border-white/20 p-6 w-full max-w-md"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -146,7 +146,7 @@ const SwapExtensionModal = ({
                 <select
                   value={formData.days}
                   onChange={(e) => setFormData(prev => ({ ...prev, days: parseInt(e.target.value) }))}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                 >
                   <option value={3}>3 days</option>
                   <option value={7}>1 week</option>
@@ -164,7 +164,7 @@ const SwapExtensionModal = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   placeholder="Please explain why you need more time..."
                   rows={4}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
 
@@ -190,7 +190,7 @@ const SwapExtensionModal = ({
                 <button
                   onClick={handleRequestExtension}
                   disabled={isLoading || !formData.reason.trim()}
-                  className="flex-1 bookish-button-enhanced text-white py-3 rounded-xl disabled:opacity-50"
+                  className="flex-1 btn btn-primary text-white py-3 rounded-xl disabled:opacity-50"
                 >
                   {isLoading ? 'Sending...' : 'Request Extension'}
                 </button>
@@ -231,7 +231,7 @@ const SwapExtensionModal = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   placeholder="Add any notes about your decision..."
                   rows={3}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
 
@@ -247,7 +247,7 @@ const SwapExtensionModal = ({
                 <button
                   onClick={() => handleRespondToExtension('approved')}
                   disabled={isLoading}
-                  className="flex-1 flex items-center justify-center gap-2 bookish-button-enhanced text-white py-3 rounded-xl disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 btn btn-primary text-white py-3 rounded-xl disabled:opacity-50"
                 >
                   <CheckCircleIcon className="w-5 h-5" />
                   {isLoading ? 'Processing...' : 'Approve'}

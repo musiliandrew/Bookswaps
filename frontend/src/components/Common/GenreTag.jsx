@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 const GenreTag = ({ genre, onRemove }) => (
   <motion.span
-    className="genre-tag text-white px-3 py-2 rounded-full text-sm flex items-center font-['Open_Sans'] transition-all duration-300 bookish-glass"
+    className="genre-tag text-white px-3 py-2 rounded-full text-sm flex items-center font-['Open_Sans'] transition-all duration-300 card"
     initial={{ scale: 0, rotate: -10 }}
     animate={{ scale: 1, rotate: 0 }}
     exit={{ scale: 0, rotate: 10 }}

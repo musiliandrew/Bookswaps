@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - Swaps</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding: var(--space-6) var(--space-4);
+            padding-bottom: 100px;
+        }
+
+        .swap-card {
+            background: white;
+            border-radius: var(--radius-2xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-4);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary-500);
+        }
+
+        .swap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: var(--space-4);
+        }
+
+        .swap-books {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+
+        .book-mini {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            flex: 1;
+            padding: var(--space-3);
+            background: var(--neutral-50);
+            border-radius: var(--radius-lg);
+        }
+
+        .book-cover-mini {
+            width: 48px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .swap-arrow {
+            font-size: 1.5rem;
+            color: var(--primary-500);
+        }
+
+        .status-badge {
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: var(--warning-500);
+            color: white;
+        }
+
+        .status-active {
+            background: var(--success-500);
+            color: white;
+        }
+
+        .status-completed {
+            background: var(--neutral-200);
+            color: var(--text-primary);
+        }
+
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border: 2px solid var(--neutral-200);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            margin: 0 auto var(--space-4);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: var(--space-4);
+            left: var(--space-4);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="btn btn-secondary back-btn">
+        ← Back
+    </a>
+
+    <div class="container" style="max-width: 900px;">
+        <!-- Header -->
+        <div style="margin-bottom: var(--space-8);">
+            <h1 style="font-size: clamp(2rem, 5vw, 2.5rem); margin-bottom: var(--space-2);">
+                🔄 Active Swaps
+            </h1>
+            <p style="color: var(--text-secondary);">
+                Track your book exchanges and meetups
+            </p>
+        </div>
+
+        <!-- Active Swap -->
+        <div class="swap-card">
+            <div class="swap-header">
+                <div>
+                    <h3 style="font-size: 1.125rem; margin-bottom: var(--space-1);">Swap with Jane Doe</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Initiated 2 days ago</p>
+                </div>
+                <span class="status-badge status-active">✓ Confirmed</span>
+            </div>
+
+            <div class="swap-books">
+                <div class="book-mini">
+                    <div class="book-cover-mini">📖</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">1984</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">You're giving</div>
+                    </div>
+                </div>
+                <div class="swap-arrow">→</div>
+                <div class="book-mini">
+                    <div class="book-cover-mini">📕</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">The Handmaid's Tale</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">You're receiving</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: var(--neutral-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                <div style="font-weight: 600; margin-bottom: var(--space-2);">📍 Meetup Details</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--space-1);">
+                    <strong>Location:</strong> Central Library, Main Entrance
+                </div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                    <strong>Time:</strong> Today at 4:00 PM
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <div class="qr-code">
+                    🔲
+                </div>
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--space-4);">
+                    Scan QR code to confirm swap completion
+                </p>
+                <div style="display: flex; gap: var(--space-3);">
+                    <button class="btn btn-primary" style="flex: 1;">
+                        ✓ Complete Swap
+                    </button>
+                    <button class="btn btn-secondary">
+                        💬 Message
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Swap -->
+        <div class="swap-card" style="border-left-color: var(--warning-500);">
+            <div class="swap-header">
+                <div>
+                    <h3 style="font-size: 1.125rem; margin-bottom: var(--space-1);">Swap with Mike Smith</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Pending approval</p>
+                </div>
+                <span class="status-badge status-pending">⏳ Pending</span>
+            </div>
+
+            <div class="swap-books">
+                <div class="book-mini">
+                    <div class="book-cover-mini">📘</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">The Great Gatsby</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">You're offering</div>
+                    </div>
+                </div>
+                <div class="swap-arrow">→</div>
+                <div class="book-mini">
+                    <div class="book-cover-mini">📗</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">To Kill a Mockingbird</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Requesting</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: var(--space-3);">
+                <button class="btn btn-secondary" style="flex: 1;">
+                    Cancel Request
+                </button>
+                <button class="btn btn-secondary">
+                    💬 Message
+                </button>
+            </div>
+        </div>
+
+        <!-- Completed Swap -->
+        <div class="swap-card" style="border-left-color: var(--neutral-300);">
+            <div class="swap-header">
+                <div>
+                    <h3 style="font-size: 1.125rem; margin-bottom: var(--space-1);">Swap with Alice Brown</h3>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Completed 5 days ago</p>
+                </div>
+                <span class="status-badge status-completed">✓ Completed</span>
+            </div>
+
+            <div class="swap-books">
+                <div class="book-mini">
+                    <div class="book-cover-mini">📙</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">Pride and Prejudice</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">You gave</div>
+                    </div>
+                </div>
+                <div class="swap-arrow">→</div>
+                <div class="book-mini">
+                    <div class="book-cover-mini">📔</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">Jane Eyre</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">You received</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%;">
+                ⭐ Leave Rating & Review
+            </button>
+        </div>
+    </div>
+</body>
+</html>

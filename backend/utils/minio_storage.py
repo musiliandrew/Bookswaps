@@ -152,12 +152,20 @@ class MinIOStorage:
                 ExtraArgs=extra_args
             )
 
-            # Return the public URL - use localhost for external access
+            # Return the public URL - determine the correct endpoint for external access
             endpoint_url = settings.AWS_S3_ENDPOINT_URL
-            # Replace internal Docker service name with localhost for external access
-            if 'minio:9000' in endpoint_url:
+            
+            # For production, use the configured domain
+            if hasattr(settings, 'MINIO_PUBLIC_ENDPOINT') and settings.MINIO_PUBLIC_ENDPOINT:
+                public_endpoint = settings.MINIO_PUBLIC_ENDPOINT
+            elif 'minio:9000' in endpoint_url:
+                # For Docker development, use localhost
                 public_endpoint = endpoint_url.replace('minio:9000', 'localhost:9000')
+            elif 'localhost' in endpoint_url:
+                # Already using localhost
+                public_endpoint = endpoint_url
             else:
+                # Use the configured endpoint as-is (production)
                 public_endpoint = endpoint_url
 
             url = f"{public_endpoint}/{self.bucket_name}/{key}"

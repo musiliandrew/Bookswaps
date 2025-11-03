@@ -146,7 +146,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
         onClick={onClose}
       >
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          className="card rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -191,7 +191,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
           <div className="flex gap-3 mb-6">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 px-4 py-2 bookish-button-enhanced text-white rounded-xl"
+              className="flex items-center gap-2 px-4 py-2 btn btn-primary text-white rounded-xl"
             >
               <PlusIcon className="w-4 h-4" />
               Add Location
@@ -228,7 +228,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.name}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., Central Library"
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                     />
                   </div>
                   
@@ -241,7 +241,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.city}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, city: e.target.value }))}
                       placeholder="City name"
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                     />
                   </div>
                   
@@ -275,7 +275,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                         value={newLocation.latitude}
                         onChange={(e) => setNewLocation(prev => ({ ...prev, latitude: e.target.value }))}
                         placeholder="Latitude"
-                        className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                        className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                         required
                       />
                       <input
@@ -284,7 +284,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                         value={newLocation.longitude}
                         onChange={(e) => setNewLocation(prev => ({ ...prev, longitude: e.target.value }))}
                         placeholder="Longitude"
-                        className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                        className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                         required
                       />
                     </div>
@@ -297,7 +297,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                     <select
                       value={newLocation.type}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                     >
                       <option value="library">Library</option>
                       <option value="cafe">Cafe</option>
@@ -321,7 +321,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                       value={newLocation.rating || ''}
                       onChange={(e) => setNewLocation(prev => ({ ...prev, rating: e.target.value ? parseFloat(e.target.value) : null }))}
                       placeholder="4.5"
-                      className="w-full px-3 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+                      className="w-full px-3 py-2 input rounded-lg border-0 bg-white/10 text-primary"
                     />
                   </div>
                 </div>
@@ -336,7 +336,7 @@ const LocationManager = ({ isOpen, onClose, onLocationSelect, selectedLocation }
                   <button
                     onClick={handleAddLocation}
                     disabled={isLoading}
-                    className="flex-1 bookish-button-enhanced text-white py-2 rounded-lg disabled:opacity-50"
+                    className="flex-1 btn btn-primary text-white py-2 rounded-lg disabled:opacity-50"
                   >
                     {isLoading ? 'Adding...' : 'Add Location'}
                   </button>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - Profile</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding: var(--space-6) var(--space-4);
+            padding-bottom: 100px;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-600), var(--accent-600));
+            color: white;
+            padding: var(--space-8);
+            border-radius: var(--radius-2xl);
+            text-align: center;
+            margin-bottom: var(--space-6);
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 auto var(--space-4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .profile-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: var(--space-2);
+        }
+
+        .profile-bio {
+            opacity: 0.9;
+            margin-bottom: var(--space-4);
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-8);
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: var(--radius-2xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-4);
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .connection-list {
+            display: grid;
+            gap: var(--space-3);
+        }
+
+        .connection-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            border-radius: var(--radius-lg);
+            background: var(--neutral-50);
+        }
+
+        .connection-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-400), var(--accent-400));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: var(--space-4);
+        }
+
+        .badge-item {
+            text-align: center;
+            padding: var(--space-4);
+            background: var(--neutral-50);
+            border-radius: var(--radius-xl);
+        }
+
+        .badge-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .badge-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: var(--space-4);
+            left: var(--space-4);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="btn btn-secondary back-btn">
+        ← Back
+    </a>
+
+    <div class="container" style="max-width: 800px;">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                👤
+            </div>
+            <h1 class="profile-name">John Reader</h1>
+            <p class="profile-bio">
+                📚 Avid reader | 🔄 Book swapper | ☕ Coffee enthusiast
+            </p>
+            <div class="profile-stats">
+                <div class="stat">
+                    <div class="stat-number">127</div>
+                    <div class="stat-label">Books</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">43</div>
+                    <div class="stat-label">Swaps</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">89</div>
+                    <div class="stat-label">Followers</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>📊</span>
+                Recent Activity
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <div style="display: flex; gap: var(--space-3); padding: var(--space-3); background: var(--neutral-50); border-radius: var(--radius-lg);">
+                    <span style="font-size: 1.5rem;">📖</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: var(--space-1);">Added "Dune" to library</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">2 hours ago</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: var(--space-3); padding: var(--space-3); background: var(--neutral-50); border-radius: var(--radius-lg);">
+                    <span style="font-size: 1.5rem;">🔄</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: var(--space-1);">Completed swap with Sarah</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">5 hours ago</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: var(--space-3); padding: var(--space-3); background: var(--neutral-50); border-radius: var(--radius-lg);">
+                    <span style="font-size: 1.5rem;">👥</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: var(--space-1);">Joined "Sci-Fi Society"</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">1 day ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connections -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>👥</span>
+                Connections
+            </h2>
+            <div class="connection-list">
+                <div class="connection-item">
+                    <div class="connection-avatar">JD</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Jane Doe</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">12 mutual books</div>
+                    </div>
+                    <button class="btn btn-secondary btn-icon">💬</button>
+                </div>
+                <div class="connection-item">
+                    <div class="connection-avatar">MS</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Mike Smith</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">8 mutual books</div>
+                    </div>
+                    <button class="btn btn-secondary btn-icon">💬</button>
+                </div>
+                <div class="connection-item">
+                    <div class="connection-avatar">AB</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Alice Brown</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">15 mutual books</div>
+                    </div>
+                    <button class="btn btn-secondary btn-icon">💬</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>🏆</span>
+                Achievements
+            </h2>
+            <div class="badge-grid">
+                <div class="badge-item">
+                    <div class="badge-icon">🥇</div>
+                    <div class="badge-name">First Swap</div>
+                </div>
+                <div class="badge-item">
+                    <div class="badge-icon">📚</div>
+                    <div class="badge-name">100 Books</div>
+                </div>
+                <div class="badge-item">
+                    <div class="badge-icon">⭐</div>
+                    <div class="badge-name">Verified</div>
+                </div>
+                <div class="badge-item">
+                    <div class="badge-icon">💬</div>
+                    <div class="badge-name">Social Butterfly</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <button class="btn btn-secondary" style="width: 100%;">
+            ⚙️ Edit Profile & Settings
+        </button>
+    </div>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav hidden-desktop">
+        <a href="home.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="library.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+            <span>Library</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item active">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+            <span>Profile</span>
+        </a>
+        <a href="chat.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+            </svg>
+            <span>Chat</span>
+        </a>
+    </nav>
+</body>
+</html>

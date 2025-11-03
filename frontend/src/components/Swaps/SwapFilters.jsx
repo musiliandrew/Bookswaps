@@ -27,7 +27,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.6 }}
-      className="bookish-glass p-6 rounded-2xl border border-white/20"
+      className="card p-6 rounded-2xl border border-white/20"
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">
@@ -53,7 +53,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
+              className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -82,7 +82,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
             <select
               value={filters.type}
               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
+              className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30"
             >
               {typeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -102,7 +102,7 @@ const SwapFilters = ({ filters, setFilters, onRefresh }) => {
         <div className="flex flex-col justify-end gap-3">
           <motion.button
             onClick={onRefresh}
-            className="flex items-center justify-center gap-2 px-4 py-3 bookish-button-enhanced text-white rounded-xl font-medium shadow-lg"
+            className="flex items-center justify-center gap-2 px-4 py-3 btn btn-primary text-white rounded-xl font-medium shadow-lg"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >

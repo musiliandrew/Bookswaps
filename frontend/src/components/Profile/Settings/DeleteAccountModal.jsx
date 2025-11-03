@@ -66,7 +66,7 @@ const DeleteAccountModal = ({ isOpen, onClose }) => {
         onClick={handleBackdropClick}
       >
         <motion.div
-          className="bookish-glass p-6 rounded-xl max-w-md w-full border border-[var(--secondary)]/20"
+          className="card p-6 rounded-xl max-w-md w-full border border-[var(--secondary)]/20"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -145,7 +145,7 @@ const DeleteAccountModal = ({ isOpen, onClose }) => {
                   type="text"
                   value={confirmation}
                   onChange={(e) => setConfirmation(e.target.value)}
-                  className="bookish-input w-full p-3 rounded-lg text-center font-mono border border-[var(--secondary)]/30 focus:border-red-500 transition-colors"
+                  className="input w-full p-3 rounded-lg text-center font-mono border border-[var(--secondary)]/30 focus:border-red-500 transition-colors"
                   placeholder="Type DELETE here"
                   disabled={isDeleting}
                   autoFocus

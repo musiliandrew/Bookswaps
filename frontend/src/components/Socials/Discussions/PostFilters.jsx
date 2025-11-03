@@ -24,12 +24,12 @@ const PostFilters = ({ postFilters, setPostFilters }) => {
     setPostFilters({ type: '', book_id: '', tag: '' });
   };
 
-  const selectClasses = "w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30";
-  const inputClasses = "w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const selectClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary appearance-none cursor-pointer transition-all duration-300 hover:bg-white/20 focus:bg-white/30";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl p-6 border border-white/20 mb-8"
+      className="card rounded-2xl p-6 border border-white/20 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}

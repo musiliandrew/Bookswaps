@@ -61,7 +61,7 @@ const AcceptSwapModal = ({
         onClick={onClose}
       >
         <motion.div
-          className="bookish-glass bookish-shadow rounded-2xl p-6 w-full max-w-md"
+          className="card shadow-elevated rounded-2xl p-6 w-full max-w-md"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}

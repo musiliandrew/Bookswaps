@@ -229,7 +229,7 @@ const EnhancedPostDetail = () => {
 
         {/* Post Content with Comments in Same Container */}
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 hover:border-white/30 bookish-shadow overflow-hidden"
+          className="card rounded-2xl border border-white/20 hover:border-white/30 shadow-elevated overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}

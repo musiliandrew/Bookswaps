@@ -73,14 +73,25 @@ export const getOpenLibraryImageUrl = (originalUrl, options = {}) => {
 };
 
 /**
- * Get MinIO/S3 image URL with optimization parameters
+ * Get MinIO/S3 image URL with optimization parameters and URL fixes
  */
 export const getMinioImageUrl = (originalUrl, options = {}) => {
   const { width, height, quality } = options;
 
-  // For now, return original URL
-  // In the future, you could add image processing parameters
-  return originalUrl;
+  if (!originalUrl) return originalUrl;
+  
+  // Fix internal Docker URLs for external access
+  let fixedUrl = originalUrl;
+  if (originalUrl.includes('minio:9000')) {
+    fixedUrl = originalUrl.replace('minio:9000', 'localhost:9000');
+  }
+  
+  // Ensure proper protocol
+  if (fixedUrl.startsWith('//')) {
+    fixedUrl = `http:${fixedUrl}`;
+  }
+  
+  return fixedUrl;
 };
 
 /**
@@ -115,9 +126,10 @@ export const getLocalMediaUrl = (originalUrl) => {
 export const generateImageFallbacks = (originalUrl) => {
   if (!originalUrl) return [];
 
-  // Skip broken MinIO URLs entirely - return empty array to trigger placeholder
-  if (originalUrl.includes('minio:9000') || (originalUrl.includes('minio') && originalUrl.includes('9000'))) {
-    return [];
+  // Fix MinIO URLs instead of skipping them
+  let processedUrl = originalUrl;
+  if (originalUrl.includes('minio:9000')) {
+    processedUrl = originalUrl.replace('minio:9000', 'localhost:9000');
   }
 
   const fallbacks = [];

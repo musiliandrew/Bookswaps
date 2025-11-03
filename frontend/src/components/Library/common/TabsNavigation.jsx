@@ -10,7 +10,7 @@ const TabsNavigation = ({ activeTab, setActiveTab, tabs, isSmallScreen }) => {
     <div className="mb-6 sm:mb-8">
       <div className="relative">
         {/* Mobile-Optimized Tab Container with smart distribution */}
-        <div className={`flex ${shouldDistribute ? 'justify-around' : 'justify-center'} ${isSmallScreen ? 'gap-2' : 'gap-1'} p-1 sm:p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl`}>
+        <div className={`flex ${shouldDistribute ? 'justify-around' : 'justify-center'} ${isSmallScreen ? 'gap-2' : 'gap-1'} p-1 sm:p-2 rounded-2xl border backdrop-blur-xl`} style={{ backgroundColor: 'var(--neutral-100)', borderColor: 'var(--neutral-200)' }}>
           {tabs.map((tab, index) => (
             <motion.button
               key={tab.id}

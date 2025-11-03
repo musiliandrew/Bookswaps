@@ -10,7 +10,7 @@ const ProfileNavigation = ({
 }) => {
   return (
     <div className={`mb-6 ${className}`}>
-      <div className="flex justify-center gap-3 sm:gap-2 p-1 bookish-glass rounded-lg">
+      <div className="flex justify-center gap-3 sm:gap-2 p-1 rounded-lg" style={{ backgroundColor: 'var(--neutral-100)' }}>
         {sections.map((section) => (
           <button
             key={section.id}

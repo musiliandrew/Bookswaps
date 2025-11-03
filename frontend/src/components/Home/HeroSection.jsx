@@ -4,25 +4,25 @@ const heroImages = [
   {
     src: 'https://plus.unsplash.com/premium_photo-1681488394409-5614ef55488c?q=80&w=1664&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Modern library with bookshelves',
-    heading: 'Discover a World of Books',
-    subheading: 'Swap, share, and explore with BookSwaps.',
-    ctaText: 'Browse Now',
+    heading: '📚 Discover a World of Books',
+    subheading: 'Swap, share, and explore with fellow readers ✨',
+    ctaText: '🚀 Browse Now',
     ctaLink: '/login',
   },
   {
     src: 'https://images.unsplash.com/photo-1533327325824-76bc4e62d560?q=80&w=1469&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Cozy reading nook',
-    heading: 'Start Your Reading Journey',
-    subheading: 'Join a community of book lovers today.',
-    ctaText: 'Sign Up',
+    heading: '🌟 Start Your Reading Journey',
+    subheading: 'Join a vibrant community of book lovers 📖💫',
+    ctaText: '✨ Sign Up',
     ctaLink: '/register',
   },
   {
     src: 'https://images.unsplash.com/photo-1549503017-48c5ddd5a729?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Warm library reading room',
-    heading: 'Connect Through Stories',
-    subheading: 'Engage in discussions and swaps.',
-    ctaText: 'Learn More',
+    heading: '💬 Connect Through Stories',
+    subheading: 'Engage in passionate discussions and swaps 🤝📚',
+    ctaText: '🎯 Learn More',
     ctaLink: '/login',
   },
 ];
@@ -99,7 +99,7 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-opacity-40 backdrop-blur-sm" />
 
         {/* Content Container */}
-        <div className="relative z-10 text-center bookish-glass bookish-shadow p-4 md:p-8 rounded-2xl max-w-xs md:max-w-3xl mx-4">
+        <div className="relative z-10 text-center card shadow-elevated p-4 md:p-8 rounded-2xl max-w-xs md:max-w-3xl mx-4">
           <h1
             className="text-2xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 transition-opacity duration-500"
             style={{
@@ -122,7 +122,7 @@ const HeroSection = () => {
           
           <a
             href={heroImages[currentImage].ctaLink}
-            className="inline-block bookish-button-enhanced text-white px-4 md:px-8 py-2 md:py-4 rounded-xl font-semibold text-sm md:text-lg transition-all duration-300"
+            className="inline-block btn btn-primary text-white px-4 md:px-8 py-2 md:py-4 rounded-xl font-semibold text-sm md:text-lg transition-all duration-300"
             style={{
               fontFamily: 'Lora, serif',
               boxShadow: '0 4px 15px rgba(69, 106, 118, 0.3)'

@@ -21,5 +21,5 @@ COPY . /app/
 
 EXPOSE 8000
 
-# Run Django development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Wait for database and run migrations, then start server
+CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

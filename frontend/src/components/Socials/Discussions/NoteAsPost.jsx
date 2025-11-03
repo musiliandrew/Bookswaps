@@ -46,7 +46,7 @@ const NoteAsPost = ({
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow group relative mobile-post-card"
+      className="card rounded-2xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden shadow-elevated group relative mobile-post-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, scale: 1.01 }}

@@ -7,7 +7,7 @@ const DuplicateBookModal = ({ isOpen, onClose, duplicateInfo, onViewExisting, on
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-md">
-      <div className="bookish-glass p-6 rounded-2xl border border-[var(--accent)] bg-opacity-95">
+      <div className="card p-6 rounded-2xl border border-[var(--accent)] bg-opacity-95">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -50,7 +50,7 @@ const DuplicateBookModal = ({ isOpen, onClose, duplicateInfo, onViewExisting, on
         <div className="flex flex-col space-y-3">
           <motion.button
             onClick={() => onViewExisting(duplicateInfo.id)}
-            className="w-full bookish-button-enhanced bg-blue-600 text-white py-3 rounded-xl font-semibold"
+            className="w-full btn btn-primary bg-blue-600 text-white py-3 rounded-xl font-semibold"
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -59,7 +59,7 @@ const DuplicateBookModal = ({ isOpen, onClose, duplicateInfo, onViewExisting, on
           
           <motion.button
             onClick={onAddAnyway}
-            className="w-full bookish-button-enhanced bg-green-600 text-white py-3 rounded-xl font-semibold"
+            className="w-full btn btn-primary bg-green-600 text-white py-3 rounded-xl font-semibold"
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >

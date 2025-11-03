@@ -38,7 +38,7 @@ const NotificationsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
+    <div className="min-h-screen bg-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
       {/* Floating Background Elements */}
       <div className="floating-elements fixed inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
@@ -47,7 +47,7 @@ const NotificationsPage = () => {
       </div>
 
       {/* Enhanced Bottom Navigation */}
-      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
+      <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg card rounded-2xl p-3 flex justify-around items-center z-50 shadow-elevated border border-white/20">
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}

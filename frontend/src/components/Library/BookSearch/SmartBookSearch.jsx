@@ -79,7 +79,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        className="w-full max-w-sm sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] bookish-glass rounded-xl sm:rounded-2xl border border-white/20 overflow-hidden"
+        className="w-full max-w-sm sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] card rounded-xl sm:rounded-2xl border border-white/20 overflow-hidden"
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -130,7 +130,7 @@ const SmartBookSearch = ({ onBookSelect, onManualAdd, isOpen, onClose }) => {
               placeholder={`Search by ${searchTypes.find(t => t.value === searchType)?.description || 'anything'}...`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 bookish-input rounded-xl sm:rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base mobile-search-input"
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-14 pr-10 sm:pr-12 input rounded-xl sm:rounded-2xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base mobile-search-input"
               autoFocus
             />
             <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-5 sm:w-6 h-5 sm:h-6 text-primary/60 mobile-search-icon" />

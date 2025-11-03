@@ -129,7 +129,7 @@ const SocietiesPage = () => {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bookish-button-enhanced text-white px-6 py-3 rounded-xl"
+          className="flex items-center gap-2 btn btn-primary text-white px-6 py-3 rounded-xl"
         >
           <PlusIcon className="w-5 h-5" />
           Create Society
@@ -147,7 +147,7 @@ const SocietiesPage = () => {
 
       {/* Filters */}
       <motion.div
-        className="bookish-glass rounded-2xl border border-white/20 p-6"
+        className="card rounded-2xl border border-white/20 p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
@@ -160,14 +160,14 @@ const SocietiesPage = () => {
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               placeholder="Search societies..."
-              className="w-full pl-10 pr-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary mobile-search-input"
+              className="w-full pl-10 pr-4 py-2 input rounded-lg border-0 bg-white/10 text-primary mobile-search-input"
             />
           </div>
 
           <select
             value={filters.visibility}
             onChange={(e) => setFilters(prev => ({ ...prev, visibility: e.target.value }))}
-            className="px-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+            className="px-4 py-2 input rounded-lg border-0 bg-white/10 text-primary"
           >
             <option value="">All Visibility</option>
             <option value="public">Public</option>
@@ -177,7 +177,7 @@ const SocietiesPage = () => {
           <select
             value={filters.focus_type}
             onChange={(e) => setFilters(prev => ({ ...prev, focus_type: e.target.value }))}
-            className="px-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary"
+            className="px-4 py-2 input rounded-lg border-0 bg-white/10 text-primary"
           >
             <option value="">All Types</option>
             <option value="Genre">Genre-based</option>
@@ -209,7 +209,7 @@ const SocietiesPage = () => {
             <p className="text-red-400 mb-4">Failed to load societies</p>
             <button
               onClick={() => loadSocieties()}
-              className="bookish-button-enhanced text-white px-4 py-2 rounded-lg"
+              className="btn btn-primary text-white px-4 py-2 rounded-lg"
             >
               Try Again
             </button>
@@ -227,7 +227,7 @@ const SocietiesPage = () => {
             {activeTab !== 'my_societies' && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bookish-button-enhanced text-white px-6 py-3 rounded-xl"
+                className="btn btn-primary text-white px-6 py-3 rounded-xl"
               >
                 Create the First Society
               </button>
@@ -282,7 +282,7 @@ const SocietyCard = ({ society, index, onJoin, onLeave, onClick, currentUserId }
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl border border-white/20 p-6 cursor-pointer hover:shadow-lg transition-all duration-300"
+      className="card rounded-2xl border border-white/20 p-6 cursor-pointer hover:shadow-lg transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4 }}
@@ -366,7 +366,7 @@ const SocietyCard = ({ society, index, onJoin, onLeave, onClick, currentUserId }
         ) : (
           <button
             onClick={() => onJoin(society.society_id)}
-            className="w-full flex items-center justify-center gap-1 bookish-button-enhanced text-white py-2 rounded-lg text-sm"
+            className="w-full flex items-center justify-center gap-1 btn btn-primary text-white py-2 rounded-lg text-sm"
           >
             <PlusIcon className="w-4 h-4" />
             Join Society

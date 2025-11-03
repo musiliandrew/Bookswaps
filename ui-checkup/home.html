@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - Home</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding-bottom: 80px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--accent-50) 100%);
+            padding: var(--space-12) var(--space-4);
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            margin-bottom: var(--space-6);
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: clamp(1.125rem, 2vw, 1.5rem);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Features Section */
+        .features {
+            padding: var(--space-16) var(--space-4);
+            background: var(--bg-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
+            border: 2px solid var(--neutral-200);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary-500);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .feature-card h3 {
+            margin-bottom: var(--space-3);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        /* Back Button */
+        .back-btn {
+            position: fixed;
+            top: var(--space-4);
+            left: var(--space-4);
+            z-index: var(--z-fixed);
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="btn btn-secondary back-btn">
+        ← Back to Menu
+    </a>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="text-gradient">
+                📚 Welcome to BookSwap
+            </h1>
+            <p>
+                Trade books with fellow readers. Build your library. Join a community of book lovers.
+            </p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" style="font-size: 1.125rem; padding: var(--space-4) var(--space-8);">
+                    Get Started Free
+                </button>
+                <button class="btn btn-secondary" style="font-size: 1.125rem; padding: var(--space-4) var(--space-8);">
+                    Learn More
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div style="display: flex; gap: var(--space-8); justify-content: center; margin-top: var(--space-12); flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-600);">10,000+</div>
+                    <div style="color: var(--text-tertiary);">Books Swapped</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-600);">5,000+</div>
+                    <div style="color: var(--text-tertiary);">Active Users</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-600);">200+</div>
+                    <div style="color: var(--text-tertiary);">Societies</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div style="text-align: center; margin-bottom: var(--space-12);">
+            <h2 style="font-size: 2.5rem; margin-bottom: var(--space-4);">
+                Everything you need to <span class="text-gradient">swap books</span>
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 1.125rem;">
+                Join thousands of readers sharing their favorite books
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Build Your Library</h3>
+                <p>
+                    Add books to your personal library. Track what you own, what you're reading, and what you want to trade.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Easy Swaps</h3>
+                <p>
+                    Request swaps with other users. Use QR codes for easy meetups and confirmations.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>Chat & Connect</h3>
+                <p>
+                    Message other readers, discuss books, and coordinate swaps all in one place.
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Join Societies</h3>
+                <p>
+                    Find communities based on your favorite genres. Attend book clubs and events.
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Smart Search</h3>
+                <p>
+                    Search millions of books from Open Library. Auto-fill book details with ease.
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Mobile First</h3>
+                <p>
+                    Designed for mobile with responsive layouts that work perfectly on any device.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section style="padding: var(--space-16) var(--space-4); background: linear-gradient(135deg, var(--primary-600) 0%, var(--accent-600) 100%); text-align: center; color: white;">
+        <h2 style="font-size: 2.5rem; margin-bottom: var(--space-4); color: white;">
+            Ready to start swapping?
+        </h2>
+        <p style="font-size: 1.125rem; margin-bottom: var(--space-8); opacity: 0.9;">
+            Join our community of book lovers today. It's completely free!
+        </p>
+        <button class="btn" style="background: white; color: var(--primary-600); font-size: 1.125rem; padding: var(--space-4) var(--space-8);">
+            Create Free Account →
+        </button>
+    </section>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav hidden-desktop">
+        <a href="home.html" class="bottom-nav-item active">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="library.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+            <span>Library</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+            <span>Profile</span>
+        </a>
+        <a href="chat.html" class="bottom-nav-item">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+            </svg>
+            <span>Chat</span>
+        </a>
+    </nav>
+</body>
+</html>

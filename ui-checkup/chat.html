@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSwap - Chat</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .chat-sidebar {
+            width: 100%;
+            max-width: 350px;
+            background: #FEF3C7;
+            border-right: 1px solid var(--neutral-200);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--accent-600) 100%);
+            color: white;
+            padding: var(--space-4);
+        }
+
+        .chat-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-3);
+            color: white;
+        }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-full);
+            padding: var(--space-2) var(--space-4);
+            color: white;
+            width: 100%;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Tabs */
+        .chat-tabs {
+            display: flex;
+            background: var(--neutral-100);
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        .chat-tab {
+            flex: 1;
+            padding: var(--space-3);
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .chat-tab.active {
+            color: var(--primary-600);
+            background: white;
+            border-bottom-color: var(--accent-500);
+        }
+
+        /* Conversation List */
+        .conversations {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--neutral-100);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .conversation-item:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .conversation-item.active {
+            background: rgba(168, 85, 247, 0.1);
+            border-right: 4px solid var(--accent-500);
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-500), var(--accent-500));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: var(--space-3);
+            position: relative;
+        }
+
+        .online-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #10B981;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        .conversation-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .conversation-preview {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conversation-time {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        .unread-badge {
+            background: var(--accent-500);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #FEF3C7;
+        }
+
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: var(--space-8);
+        }
+
+        .chat-empty-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+        }
+
+        /* Messages Area */
+        .messages-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4);
+            background: white;
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-4);
+            background: rgba(254, 243, 199, 0.3);
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            margin-bottom: var(--space-4);
+            gap: var(--space-2);
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-2xl);
+            position: relative;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+            color: white;
+            border-bottom-right-radius: var(--radius-sm);
+        }
+
+        .message:not(.own) .message-bubble {
+            background: white;
+            color: var(--text-primary);
+            border: 1px solid var(--neutral-200);
+            border-bottom-left-radius: var(--radius-sm);
+        }
+
+        .message-sender {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+            color: var(--primary-600);
+        }
+
+        .message.own .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .message-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            margin-top: var(--space-1);
+            opacity: 0.7;
+        }
+
+        .message-status {
+            display: inline-flex;
+            margin-left: var(--space-2);
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: var(--space-4);
+            background: white;
+            border-top: 1px solid var(--neutral-200);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: var(--space-2);
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--neutral-300);
+            border-radius: var(--radius-full);
+            resize: none;
+            font-family: 'Inter', sans-serif;
+            max-height: 120px;
+        }
+
+        .send-button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-600), var(--accent-600));
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Back Button (Mobile) */
+        .back-btn-fixed {
+            position: fixed;
+            top: var(--space-4);
+            left: var(--space-4);
+            z-index: 1000;
+            background: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Responsive */
+        @media (max-width: 767px) {
+            .chat-sidebar {
+                max-width: 100%;
+            }
+
+            .chat-main {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="btn btn-secondary back-btn-fixed">
+        ←
+    </a>
+
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <aside class="chat-sidebar">
+            <!-- Header -->
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <span style="font-size: 1.5rem;">📚</span>
+                        <h1>Chat</h1>
+                    </div>
+                    <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
+                        +
+                    </button>
+                </div>
+                <input type="text" class="search-input" placeholder="Search conversations...">
+            </div>
+
+            <!-- Tabs -->
+            <div class="chat-tabs">
+                <button class="chat-tab active">💬 Chats</button>
+                <button class="chat-tab">👥 Groups</button>
+            </div>
+
+            <!-- Conversations -->
+            <div class="conversations">
+                <!-- Conversation 1 -->
+                <div class="conversation-item active">
+                    <div class="avatar">
+                        JD
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="conversation-content">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="conversation-name">Jane Doe</div>
+                            <div class="conversation-time">2m</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="conversation-preview">Hey! Is "1984" still available?</div>
+                            <div class="unread-badge">2</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation 2 -->
+                <div class="conversation-item">
+                    <div class="avatar">
+                        MS
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="conversation-content">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="conversation-name">Mike Smith</div>
+                            <div class="conversation-time">1h</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="conversation-preview">Thanks for the book! ✓✓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation 3 -->
+                <div class="conversation-item">
+                    <div class="avatar">AB</div>
+                    <div class="conversation-content">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="conversation-name">Alice Brown</div>
+                            <div class="conversation-time">3h</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="conversation-preview">📚 Shared "The Great Gatsby"</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation 4 -->
+                <div class="conversation-item">
+                    <div class="avatar">RC</div>
+                    <div class="conversation-content">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="conversation-name">Robert Chen</div>
+                            <div class="conversation-time">Yesterday</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="conversation-preview">When can we meet for the swap?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation 5 -->
+                <div class="conversation-item">
+                    <div class="avatar">LM</div>
+                    <div class="conversation-content">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="conversation-name">Lisa Martinez</div>
+                            <div class="conversation-time">2 days ago</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="conversation-preview">You: Perfect! See you then 👍</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <!-- Chat Header -->
+            <div class="messages-header">
+                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="avatar" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                        JD
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">Jane Doe</div>
+                        <div style="font-size: 0.75rem; color: var(--text-tertiary);">Active now</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-icon btn-secondary">📞</button>
+                    <button class="btn btn-icon btn-secondary">📹</button>
+                    <button class="btn btn-icon btn-secondary">ℹ️</button>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages-area">
+                <!-- Received Message -->
+                <div class="message">
+                    <div class="avatar" style="width: 32px; height: 32px; font-size: 0.75rem;">JD</div>
+                    <div>
+                        <div class="message-sender">Jane Doe</div>
+                        <div class="message-bubble">
+                            <div class="message-text">Hey! I saw you have "1984" by George Orwell in your library.</div>
+                            <div class="message-time">2:30 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Own Message -->
+                <div class="message own">
+                    <div>
+                        <div class="message-sender">You</div>
+                        <div class="message-bubble">
+                            <div class="message-text">Yes! Are you interested in swapping?</div>
+                            <div class="message-time">
+                                2:31 PM
+                                <span class="message-status">✓✓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Received Message -->
+                <div class="message">
+                    <div class="avatar" style="width: 32px; height: 32px; font-size: 0.75rem;">JD</div>
+                    <div>
+                        <div class="message-sender">Jane Doe</div>
+                        <div class="message-bubble">
+                            <div class="message-text">Definitely! I have "The Handmaid's Tale" if you're interested.</div>
+                            <div class="message-time">2:32 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Own Message with Book -->
+                <div class="message own">
+                    <div>
+                        <div class="message-sender">You</div>
+                        <div class="message-bubble">
+                            <div style="background: rgba(255,255,255,0.2); padding: var(--space-3); border-radius: var(--radius-lg); margin-bottom: var(--space-2);">
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    <div style="width: 32px; height: 48px; background: rgba(255,255,255,0.3); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">
+                                        📚
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 0.875rem;">1984</div>
+                                        <div style="font-size: 0.75rem; opacity: 0.8;">by George Orwell</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="message-text">Perfect! This book is in good condition.</div>
+                            <div class="message-time">
+                                2:35 PM
+                                <span class="message-status">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <button class="btn btn-icon btn-secondary">📚</button>
+                    <button class="btn btn-icon btn-secondary">📎</button>
+                    <textarea
+                        class="chat-input"
+                        placeholder="Type a message..."
+                        rows="1"
+                    ></textarea>
+                    <button class="send-button">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

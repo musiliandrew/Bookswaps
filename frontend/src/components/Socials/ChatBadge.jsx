@@ -43,7 +43,7 @@ const ChatBadge = ({ className = '' }) => {
       >
         <motion.button
           onClick={handleClick}
-          className={`bookish-button-enhanced p-2 rounded-full text-white transition-all duration-200 ${
+          className={`btn btn-primary p-2 rounded-full text-white transition-all duration-200 ${
             isActive 
               ? 'bg-blue-500 ring-2 ring-white ring-opacity-60 shadow-lg' 
               : 'bg-blue-400 opacity-70 hover:opacity-100 hover:shadow-md'

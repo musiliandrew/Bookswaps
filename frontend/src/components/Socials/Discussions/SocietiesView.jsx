@@ -67,7 +67,7 @@ const SocietiesView = () => {
         <p className="text-red-500 mb-4">{error}</p>
         <motion.button
           onClick={() => listSocieties({}, 1)}
-          className="flex items-center gap-2 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-medium transition-all"
+          className="flex items-center gap-2 px-4 py-2 btn btn-primary text-white rounded-lg font-open-sans font-medium transition-all"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -92,7 +92,7 @@ const SocietiesView = () => {
         </div>
         <motion.button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center gap-2 px-6 py-3 bookish-button-enhanced text-white rounded-xl font-open-sans font-semibold transition-all"
+          className="flex items-center gap-2 px-6 py-3 btn btn-primary text-white rounded-xl font-open-sans font-semibold transition-all"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -147,7 +147,7 @@ const SocietiesView = () => {
             </p>
             <motion.button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-6 py-3 bookish-button-enhanced text-white rounded-xl font-open-sans font-semibold transition-all"
+              className="flex items-center gap-2 px-6 py-3 btn btn-primary text-white rounded-xl font-open-sans font-semibold transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -201,7 +201,7 @@ const SocietiesView = () => {
                       <>
                         <motion.button
                           onClick={() => handleSocietySelect(society)}
-                          className="flex-1 flex items-center justify-center gap-1 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-semibold transition-all"
+                          className="flex-1 flex items-center justify-center gap-1 px-4 py-2 btn btn-primary text-white rounded-lg font-open-sans font-semibold transition-all"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
@@ -228,7 +228,7 @@ const SocietiesView = () => {
                     ) : (
                       <motion.button
                         onClick={() => handleJoinSociety(society.id || society.society_id)}
-                        className="w-full flex items-center justify-center gap-1 bookish-button-enhanced text-white px-4 py-2 rounded-lg font-open-sans font-semibold transition-all"
+                        className="w-full flex items-center justify-center gap-1 btn btn-primary text-white px-4 py-2 rounded-lg font-open-sans font-semibold transition-all"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -301,7 +301,7 @@ const SocietiesView = () => {
             <div className="flex gap-3 mt-6">
               <motion.button
                 onClick={() => setSelectedSociety(null)}
-                className="flex-1 px-4 py-2 bookish-glass border border-white/20 text-[var(--primary)] rounded-lg hover:bg-white/20 transition-all font-open-sans font-medium"
+                className="flex-1 px-4 py-2 card border border-white/20 text-[var(--primary)] rounded-lg hover:bg-white/20 transition-all font-open-sans font-medium"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -313,7 +313,7 @@ const SocietiesView = () => {
                     handleLeaveSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
-                  className="flex-1 px-4 py-2 bookish-glass border border-white/20 text-[var(--text-primary)] hover:bg-white/10 rounded-lg transition-all font-open-sans font-medium"
+                  className="flex-1 px-4 py-2 card border border-white/20 text-[var(--text-primary)] hover:bg-white/10 rounded-lg transition-all font-open-sans font-medium"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -325,7 +325,7 @@ const SocietiesView = () => {
                     handleJoinSociety(selectedSociety.id || selectedSociety.society_id);
                     setSelectedSociety(null);
                   }}
-                  className="flex-1 px-4 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans font-semibold transition-all"
+                  className="flex-1 px-4 py-2 btn btn-primary text-white rounded-lg font-open-sans font-semibold transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

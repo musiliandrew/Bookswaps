@@ -20,7 +20,7 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
   const [showSmartSearch, setShowSmartSearch] = useState(false);
   const [addMode, setAddMode] = useState('search'); // 'search' or 'manual'
 
-  const inputClasses = "w-full px-3 sm:px-4 py-2.5 sm:py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300 text-sm sm:text-base";
+  const inputClasses = "w-full px-3 sm:px-4 py-2.5 sm:py-3 input rounded-xl border-0 backdrop-blur-sm placeholder-primary/60 transition-all duration-300 text-sm sm:text-base";
   const labelClasses = "flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm font-medium text-primary mb-1.5 sm:mb-2";
 
   const handleBookSelect = (selectedBook) => {
@@ -369,7 +369,7 @@ const AddBookModal = ({ isOpen, onClose, newBook, setNewBook, onAddBook }) => {
               {/* Action Button */}
               <motion.button
                 onClick={onAddBook}
-                className="w-full bookish-button-enhanced text-white py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg min-h-[44px]"
+                className="w-full btn btn-primary text-white py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg min-h-[44px]"
                 whileHover={{ scale: 1.01, y: -1 }}
                 whileTap={{ scale: 0.99 }}
                 initial={{ opacity: 0, y: 20 }}

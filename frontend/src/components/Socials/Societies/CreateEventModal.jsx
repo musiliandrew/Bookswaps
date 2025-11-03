@@ -112,7 +112,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
         onClick={handleClose}
       >
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          className="card rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -153,7 +153,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g., Monthly Book Discussion"
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                   required
                 />
               </div>
@@ -167,7 +167,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe what this event is about..."
                   rows={3}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary resize-none"
                 />
               </div>
             </div>
@@ -207,7 +207,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.start_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                   min={minDateTime}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                   required
                 />
               </div>
@@ -221,7 +221,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.end_time}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                   min={formData.start_time || minDateTime}
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                 />
               </div>
             </div>
@@ -251,7 +251,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                     value={formData.meeting_link}
                     onChange={(e) => setFormData(prev => ({ ...prev, meeting_link: e.target.value }))}
                     placeholder="https://zoom.us/j/..."
-                    className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                    className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                   />
                 </div>
               ) : (
@@ -264,7 +264,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     placeholder="e.g., Central Library, Room 201"
-                    className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                    className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                   />
                 </div>
               )}
@@ -282,7 +282,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, max_attendees: e.target.value }))}
                   placeholder="Leave empty for unlimited"
                   min="1"
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                 />
               </div>
 
@@ -295,7 +295,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
                   value={formData.tags}
                   onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                   placeholder="e.g., fiction, mystery, beginner"
-                  className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
+                  className="w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary"
                 />
               </div>
             </div>
@@ -312,7 +312,7 @@ const CreateEventModal = ({ isOpen, onClose, societyId, onSuccess }) => {
               <button
                 type="submit"
                 disabled={isLoading || !formData.title.trim() || !formData.start_time}
-                className="flex-1 bookish-button-enhanced text-white py-3 rounded-xl disabled:opacity-50"
+                className="flex-1 btn btn-primary text-white py-3 rounded-xl disabled:opacity-50"
               >
                 {isLoading ? 'Creating...' : 'Create Event'}
               </button>

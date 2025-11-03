@@ -25,7 +25,7 @@ const SearchBar = ({ searchQuery, onSearch }) => {
           onChange={(e) => onSearch(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className={`w-full px-6 py-4 pl-14 pr-12 bookish-input rounded-2xl border-0 bg-white/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 mobile-search-input ${
+          className={`w-full px-6 py-4 pl-14 pr-12 input rounded-2xl border-0 bg-white/20 backdrop-blur-sm text-primary placeholder-primary/60 transition-all duration-300 mobile-search-input ${
             isFocused ? 'bg-white/30 shadow-lg' : 'bg-white/10'
           }`}
         />
@@ -71,7 +71,7 @@ const SearchBar = ({ searchQuery, onSearch }) => {
       {/* Search Suggestions/Tips */}
       {isFocused && !searchQuery && (
         <motion.div
-          className="absolute top-full left-0 right-0 mt-2 p-4 bookish-glass rounded-xl border border-white/20 z-10"
+          className="absolute top-full left-0 right-0 mt-2 p-4 card rounded-xl border border-white/20 z-10"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}

@@ -199,7 +199,7 @@ const QRCodeModal = ({ isOpen, onClose, swap, currentUserId }) => {
                   {canVerify && (
                     <button
                       onClick={() => setShowVerification(true)}
-                      className="w-full mt-3 sm:mt-4 bookish-button-enhanced text-white py-3 rounded-xl min-h-[44px] flex items-center justify-center"
+                      className="w-full mt-3 sm:mt-4 btn btn-primary text-white py-3 rounded-xl min-h-[44px] flex items-center justify-center"
                     >
                       <CheckCircleIcon className="w-5 h-5 inline mr-2" />
                       Verify Presence
@@ -235,7 +235,7 @@ const QRCodeModal = ({ isOpen, onClose, swap, currentUserId }) => {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
                   placeholder="Enter QR code data"
-                  className="w-full px-3 sm:px-4 py-3 bookish-input rounded-xl border-0 bg-[var(--primary)]/10 backdrop-blur-sm text-[var(--primary)] text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-3 input rounded-xl border-0 bg-[var(--primary)]/10 backdrop-blur-sm text-[var(--primary)] text-sm sm:text-base"
                 />
               </div>
 
@@ -249,7 +249,7 @@ const QRCodeModal = ({ isOpen, onClose, swap, currentUserId }) => {
                 <button
                   onClick={handleVerifyQR}
                   disabled={isVerifying || !verificationCode.trim()}
-                  className="flex-1 bookish-button-enhanced text-white py-3 rounded-xl disabled:opacity-50 min-h-[44px] flex items-center justify-center"
+                  className="flex-1 btn btn-primary text-white py-3 rounded-xl disabled:opacity-50 min-h-[44px] flex items-center justify-center"
                 >
                   {isVerifying ? (
                     <>

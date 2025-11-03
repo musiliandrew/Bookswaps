@@ -70,7 +70,7 @@ const ProfileCompletionGuide = ({
 
   return (
     <motion.div
-      className={`bookish-glass bookish-shadow rounded-lg p-6 ${className}`}
+      className={`card shadow-elevated rounded-lg p-6 ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

@@ -324,7 +324,7 @@ const ShareableProfileCard = ({ user, stats, onClose, isInline = false }) => {
   // Inline mode (for slide-down)
   if (isInline) {
     return (
-      <div className="bookish-glass rounded-2xl border-2 border-[var(--primary)]/30 overflow-hidden">
+      <div className="card rounded-2xl border-2 border-[var(--primary)]/30 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--accent)]/5">
           <div className="flex items-center gap-3">

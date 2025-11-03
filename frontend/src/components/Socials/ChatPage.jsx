@@ -527,7 +527,7 @@ const ChatPage = () => {
       )}
 
       {/* Desktop Layout */}
-      <div className={`${isMobile && (selectedConversation || selectedSociety) ? 'hidden' : 'min-h-[calc(100vh-12rem)]'} bookish-gradient flex rounded-xl overflow-hidden bookish-shadow`}>
+      <div className={`${isMobile && (selectedConversation || selectedSociety) ? 'hidden' : 'min-h-[calc(100vh-12rem)]'} bg-gradient flex rounded-xl overflow-hidden shadow-elevated`}>
         {/* Conversations Sidebar - Small column for conversations/groups list */}
         <div className={`${
           isMobile && (selectedConversation || selectedSociety) ? 'hidden' : 'flex'
@@ -665,7 +665,7 @@ const ChatPage = () => {
                     return (
                       <motion.div
                         key={userId}
-                        className="flex items-center justify-between p-3 bg-[#FEF3C7]/30 rounded-lg bookish-glass"
+                        className="flex items-center justify-between p-3 bg-[#FEF3C7]/30 rounded-lg card"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >

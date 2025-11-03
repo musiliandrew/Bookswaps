@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
+import {
+  UserIcon,
+  Cog6ToothIcon,
+  ChatBubbleLeftRightIcon,
+  TrashIcon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
+import {
+  UserIcon as UserSolidIcon,
+  Cog6ToothIcon as CogSolidIcon,
+  ChatBubbleLeftRightIcon as ChatSolidIcon,
+  TrashIcon as TrashSolidIcon
+} from '@heroicons/react/24/solid';
 
 // Context and hooks
 import { useAuth } from '../../contexts/AuthContext';
 
 // Components
-import SettingsHeader from './Settings/SettingsHeader';
-import SettingsNavigation from './Settings/SettingsNavigation';
 import DeleteAccountSection from './Settings/DeleteAccountSection';
 import ProfileForm from './Settings/ProfileForm';
 import AccountSettingsForm from './Settings/AccountSettingsForm';
@@ -24,35 +36,37 @@ const ProfileSettings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [localProfile, setLocalProfile] = useState(profile);
 
-  // Removed excessive profile refresh - AuthContext handles profile data properly
-
-  // Enhanced sections with completion status
+  // Calculate profile completion
   const profileCompletion = calculateProfileCompletion(localProfile);
 
   const sections = [
     {
       id: 'profile',
       label: 'Profile',
-      icon: '👤',
+      icon: UserIcon,
+      iconSolid: UserSolidIcon,
       status: profileCompletion.missing_fields.length > 0 ? 'incomplete' : 'complete',
       count: profileCompletion.missing_fields.length
     },
     {
       id: 'account',
       label: 'Account',
-      icon: '⚙️',
+      icon: Cog6ToothIcon,
+      iconSolid: CogSolidIcon,
       status: 'normal'
     },
     {
       id: 'chat',
       label: 'Chat',
-      icon: '💬',
+      icon: ChatBubbleLeftRightIcon,
+      iconSolid: ChatSolidIcon,
       status: 'normal'
     },
     {
       id: 'delete',
       label: 'Delete',
-      icon: '🗑️',
+      icon: TrashIcon,
+      iconSolid: TrashSolidIcon,
       status: 'danger'
     },
   ];
@@ -68,7 +82,7 @@ const ProfileSettings = () => {
     setLocalProfile(profile);
   }, [profile]);
 
-  // Listen for profile updates from other components
+  // Listen for profile updates
   useEffect(() => {
     const handleProfileUpdate = (event) => {
       const updatedProfile = event.detail.profile;
@@ -95,8 +109,6 @@ const ProfileSettings = () => {
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
-    // Add some visual feedback
-    toast.info(`Switched to ${sections.find(s => s.id === sectionId)?.label} settings`);
   };
 
   if (authLoading || !profile) {
@@ -114,46 +126,150 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="min-h-screen font-['Open_Sans'] text-[var(--text)]">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <SettingsHeader profile={localProfile} />
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Header */}
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--primary-600)' }}>
+          Settings
+        </h1>
+        <p className="text-sm md:text-base mb-4" style={{ color: 'var(--neutral-600)' }}>
+          Manage your profile and account preferences
+        </p>
 
-        <main className="max-w-4xl mx-auto">
-              <SettingsNavigation
-                sections={sections}
-                activeSection={activeSection}
-                onSectionChange={handleSectionChange}
-              />
-
-              {/* Content Section */}
-              <div className="bookish-glass rounded-lg p-6">
-            {activeSection === 'profile' && <ProfileForm />}
-            {activeSection === 'account' && <AccountSettingsForm />}
-            {activeSection === 'chat' && <ChatPreferencesForm />}
-            {activeSection === 'delete' && (
-              <DeleteAccountSection onDeleteAccount={handleDeleteAccount} />
-            )}
-
-              {/* Simple Logout Button */}
-              {activeSection !== 'delete' && (
-                <div className="mt-6 pt-4 border-t border-[var(--primary)]/20">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-4 py-2 rounded-lg font-medium font-['Open_Sans'] transition-colors"
-                  >
-                    🚪 Log Out
-                  </button>
-                </div>
-              )}
+        {/* Profile Completion Badge */}
+        {profileCompletion.missing_fields.length > 0 && (
+          <motion.div
+            className="p-4 rounded-lg"
+            style={{ backgroundColor: 'var(--warning-50)', borderLeft: '4px solid var(--warning-500)' }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                   style={{ backgroundColor: 'var(--warning-100)' }}>
+                <span className="text-lg font-bold" style={{ color: 'var(--warning-700)' }}>
+                  {profileCompletion.percentage}%
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--warning-800)' }}>
+                  Complete Your Profile
+                </h3>
+                <p className="text-xs" style={{ color: 'var(--warning-700)' }}>
+                  {profileCompletion.missing_fields.length} field{profileCompletion.missing_fields.length !== 1 ? 's' : ''} remaining
+                </p>
+              </div>
             </div>
-        </main>
+          </motion.div>
+        )}
+      </motion.div>
 
-        {/* Delete Account Modal */}
-        <DeleteAccountModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-        />
-      </div>
+      {/* Settings Navigation */}
+      <motion.nav
+        className="mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {sections.map((section) => {
+            const isActive = activeSection === section.id;
+            const Icon = isActive ? section.iconSolid : section.icon;
+
+            return (
+              <motion.button
+                key={section.id}
+                onClick={() => handleSectionChange(section.id)}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl text-sm font-medium transition-all ${
+                  section.status === 'danger' ? 'hover:bg-danger-50' : 'hover:bg-neutral-50'
+                }`}
+                style={{
+                  backgroundColor: isActive
+                    ? section.status === 'danger'
+                      ? 'var(--danger-50)'
+                      : 'var(--primary-50)'
+                    : 'white',
+                  border: `2px solid ${
+                    isActive
+                      ? section.status === 'danger'
+                        ? 'var(--danger-500)'
+                        : 'var(--primary-500)'
+                      : 'var(--neutral-200)'
+                  }`,
+                  color: isActive
+                    ? section.status === 'danger'
+                      ? 'var(--danger-700)'
+                      : 'var(--primary-700)'
+                    : 'var(--neutral-600)'
+                }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Icon className="w-6 h-6" />
+                <span>{section.label}</span>
+                {section.status === 'incomplete' && section.count > 0 && (
+                  <motion.span
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ backgroundColor: 'var(--warning-500)' }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 500 }}
+                  >
+                    {section.count}
+                  </motion.span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.nav>
+
+      {/* Content Section */}
+      <motion.div
+        className="card p-6 md:p-8 mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        {activeSection === 'profile' && <ProfileForm />}
+        {activeSection === 'account' && <AccountSettingsForm />}
+        {activeSection === 'chat' && <ChatPreferencesForm />}
+        {activeSection === 'delete' && (
+          <DeleteAccountSection onDeleteAccount={handleDeleteAccount} />
+        )}
+
+        {/* Logout Button (not shown on delete section) */}
+        {activeSection !== 'delete' && (
+          <motion.div
+            className="mt-6 pt-6"
+            style={{ borderTop: '1px solid var(--neutral-200)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <button
+              onClick={handleLogout}
+              className="btn btn-outline w-full flex items-center justify-center gap-2"
+              style={{ borderColor: 'var(--danger-500)', color: 'var(--danger-600)' }}
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              <span>Log Out</span>
+            </button>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 };

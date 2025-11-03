@@ -185,7 +185,7 @@ const NotificationList = ({ className = '' }) => {
         </motion.div>
 
         <motion.div
-          className={`bookish-glass rounded-2xl border border-white/20 ${className}`}
+          className={`card rounded-2xl border border-white/20 ${className}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -219,7 +219,7 @@ const NotificationList = ({ className = '' }) => {
 
               <div className="flex items-center gap-3">
                 {/* Enhanced Filter buttons - Library Style Navigation */}
-                <div className="flex justify-around gap-2 p-1 sm:p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl">
+                <div className="flex justify-around gap-2 p-1 sm:p-2 card rounded-2xl border border-white/20 backdrop-blur-xl">
                   <motion.button
                     onClick={() => setFilter('all')}
                     className="relative flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-300 font-medium min-w-[80px] sm:min-w-auto"
@@ -287,7 +287,7 @@ const NotificationList = ({ className = '' }) => {
                 {unreadCount > 0 && (
                   <motion.button
                     onClick={handleMarkAllRead}
-                    className="flex items-center gap-2 px-4 py-2 bookish-button-enhanced text-white text-sm rounded-xl font-medium shadow-lg"
+                    className="flex items-center gap-2 px-4 py-2 btn btn-primary text-white text-sm rounded-xl font-medium shadow-lg"
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     disabled={isLoading}
@@ -405,7 +405,7 @@ const NotificationList = ({ className = '' }) => {
                 <p className="text-xl font-semibold text-red-600 mb-4">{error}</p>
                 <motion.button
                   onClick={handleRetry}
-                  className="bookish-button-enhanced px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
+                  className="btn btn-primary px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -440,7 +440,7 @@ const NotificationList = ({ className = '' }) => {
                   <motion.div
                     key={notification.notification_id}
                     ref={index === filteredNotifications.length - 1 ? lastNotificationRef : null}
-                    className={`group bookish-glass rounded-2xl border transition-all duration-300 hover:shadow-lg mobile-notification-card ${
+                    className={`group card rounded-2xl border transition-all duration-300 hover:shadow-lg mobile-notification-card ${
                       notification.is_read
                         ? 'border-white/10 bg-white/5'
                         : 'border-accent/30 bg-white/10 shadow-md'

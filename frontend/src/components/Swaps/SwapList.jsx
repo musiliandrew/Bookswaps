@@ -317,7 +317,7 @@ const SwapList = ({
               </button>
               <button
                 onClick={() => handleConfirmSwap(selectedSwap)}
-                className="flex-1 px-4 py-3 bookish-button-enhanced text-white rounded-xl min-h-[44px] flex items-center justify-center"
+                className="flex-1 px-4 py-3 btn btn-primary text-white rounded-xl min-h-[44px] flex items-center justify-center"
               >
                 Confirm
               </button>

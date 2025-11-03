@@ -120,9 +120,9 @@ const EnhancedDiscussionsPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen font-open-sans text-text bookish-gradient flex items-center justify-center">
+      <div className="min-h-screen font-open-sans text-text bg-gradient flex items-center justify-center">
         <motion.div
-          className="text-center bookish-glass rounded-2xl p-8 border border-white/20"
+          className="text-center card rounded-2xl p-8 border border-white/20"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -134,7 +134,7 @@ const EnhancedDiscussionsPage = () => {
           <p className="text-primary/70 mb-6">{error}</p>
           <button
             onClick={() => listPosts(filters, 1)}
-            className="bookish-button-enhanced text-white px-6 py-3 rounded-xl font-medium transition-all duration-300"
+            className="btn btn-primary text-white px-6 py-3 rounded-xl font-medium transition-all duration-300"
           >
             Try Again
           </button>
@@ -144,7 +144,7 @@ const EnhancedDiscussionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen font-open-sans text-text bookish-gradient relative">
+    <div className="min-h-screen font-open-sans text-text bg-gradient relative">
       {/* Floating Elements Background */}
       <div className="floating-elements absolute inset-0 pointer-events-none" />
 

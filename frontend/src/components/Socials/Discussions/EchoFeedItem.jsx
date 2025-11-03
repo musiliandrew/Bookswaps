@@ -24,7 +24,7 @@ const EchoFeedItem = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bookish-glass rounded-2xl border border-white/20 overflow-hidden bookish-shadow"
+      className="card rounded-2xl border border-white/20 overflow-hidden shadow-elevated"
     >
       {/* Echo Attribution Header */}
       <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border-b border-white/20">

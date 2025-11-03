@@ -5,12 +5,12 @@ import { ChatBubbleOvalLeftEllipsisIcon, UserIcon, BookOpenIcon, PaperAirplaneIc
 const ChatCreationForm = ({ newChat, setNewChat, handleStartChat }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const inputClasses = "w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
+  const inputClasses = "w-full px-4 py-3 input rounded-xl border-0 bg-white/10 backdrop-blur-sm text-primary placeholder-primary/60 focus:bg-white/20 transition-all duration-300";
   const labelClasses = "flex items-center space-x-2 text-sm font-medium text-primary mb-2";
 
   return (
     <motion.div
-      className="bookish-glass rounded-2xl p-6 border border-white/20 mb-8"
+      className="card rounded-2xl p-6 border border-white/20 mb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -96,7 +96,7 @@ const ChatCreationForm = ({ newChat, setNewChat, handleStartChat }) => {
         >
           <motion.button
             onClick={handleStartChat}
-            className="bookish-button-enhanced px-8 py-3 rounded-xl text-white font-semibold shadow-lg flex items-center space-x-2"
+            className="btn btn-primary px-8 py-3 rounded-xl text-white font-semibold shadow-lg flex items-center space-x-2"
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             disabled={!newChat.recipient_id}

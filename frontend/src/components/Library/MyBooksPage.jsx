@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLibrary } from '../../hooks/useLibrary';
 import { toast } from 'react-toastify';
-import Pagination from '../Common/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSwipeable } from 'react-swipeable';
+import { PlusIcon, BookOpenIcon, BookmarkIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { BookOpenIcon as BookOpenSolidIcon, BookmarkIcon as BookmarkSolidIcon, HeartIcon as HeartSolidIcon, ClockIcon as ClockSolidIcon } from '@heroicons/react/24/solid';
+import Pagination from '../Common/Pagination';
 import BookCard from '../Library/common/BookCard';
-import TabsNavigation from '../Library/common/TabsNavigation';
 import AddBookModal from '../Library/MyBooks/AddBookModal';
 import DuplicateBookModal from '../Common/DuplicateBookModal';
-import { PlusIcon, BookOpenIcon, BookmarkIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const MyBooksPage = () => {
   const {
@@ -31,7 +30,7 @@ const MyBooksPage = () => {
     error,
     pagination,
   } = useLibrary();
-  
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [duplicateBookInfo, setDuplicateBookInfo] = useState(null);
@@ -49,7 +48,6 @@ const MyBooksPage = () => {
     cover_image: null,
   });
   const [activeTab, setActiveTab] = useState('library');
-  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     if (activeTab === 'library') getUserLibrary();
@@ -57,27 +55,6 @@ const MyBooksPage = () => {
     else if (activeTab === 'favorites') getFavorites();
     else if (activeTab === 'history') getBookHistory();
   }, [activeTab, getUserLibrary, getBookmarks, getFavorites, getBookHistory]);
-
-  useEffect(() => {
-    const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (activeTab === 'library') setActiveTab('bookmarks');
-      else if (activeTab === 'bookmarks') setActiveTab('favorites');
-      else if (activeTab === 'favorites') setActiveTab('history');
-    },
-    onSwipedRight: () => {
-      if (activeTab === 'history') setActiveTab('favorites');
-      else if (activeTab === 'favorites') setActiveTab('bookmarks');
-      else if (activeTab === 'bookmarks') setActiveTab('library');
-    },
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true,
-  });
 
   const resetBookForm = () => {
     setNewBook({
@@ -103,7 +80,6 @@ const MyBooksPage = () => {
         resetBookForm();
       }
     } catch (error) {
-      // Handle duplicate book error
       if (error.type === 'DUPLICATE_BOOK') {
         setDuplicateBookInfo(error.existingBook);
         setIsDuplicateModalOpen(true);
@@ -115,13 +91,10 @@ const MyBooksPage = () => {
 
   const handleViewExistingBook = () => {
     setIsDuplicateModalOpen(false);
-    // Navigate to book details or implement view logic
-    // Removed toast - feature not implemented yet
   };
 
   const handleAddAnyway = async () => {
     try {
-      // Remove ISBN to avoid duplicate constraint
       const bookWithoutISBN = { ...newBook, isbn: '' };
       const result = await addBook(bookWithoutISBN);
       if (result) {
@@ -138,20 +111,16 @@ const MyBooksPage = () => {
   const handleUpdateAvailability = async (bookId, data) => {
     try {
       await updateAvailability(bookId, data);
-      // Removed success toast - user can see availability change
     } catch {
-      // Removed error toast - user can see availability didn't change
+      // Error handled by hook
     }
   };
 
   const handleRemoveBook = async (bookId) => {
-    if (window.confirm('Are you sure you want to remove this book?')) {
-      try {
-        await removeBook(bookId);
-        // Removed success toast - user can see book is gone
-      } catch {
-        // Removed error toast - user can see book is still there
-      }
+    try {
+      await removeBook(bookId);
+    } catch {
+      // Error handled by hook
     }
   };
 
@@ -162,394 +131,264 @@ const MyBooksPage = () => {
       } else {
         await bookmarkBook(bookId);
       }
-      // Success messages are now handled in the useLibrary hook
     } catch (error) {
-      // Error messages are now handled in the useLibrary hook
       console.error('Bookmark operation failed:', error);
     }
   };
 
   const handleFavorite = async (bookId, isFavorited) => {
     try {
-      if (isFavorited) await unfavoriteBook(bookId);
-      else await favoriteBook(bookId);
-      // Removed success toast - user can see favorite status change
-    } catch {
-      // Removed error toast - user can see favorite didn't change
+      if (isFavorited) {
+        await unfavoriteBook(bookId);
+      } else {
+        await favoriteBook(bookId);
+      }
+    } catch (error) {
+      console.error('Favorite operation failed:', error);
     }
   };
 
   const tabs = [
-    { id: 'library', label: 'My Books', icon: <BookOpenIcon className="w-4 h-4" /> },
-    { id: 'bookmarks', label: 'Bookmarked', icon: <BookmarkIcon className="w-4 h-4" /> },
-    { id: 'favorites', label: 'Favorites', icon: <HeartIcon className="w-4 h-4" /> },
-    { id: 'history', label: 'History', icon: <ClockIcon className="w-4 h-4" /> },
+    {
+      id: 'library',
+      label: 'My Books',
+      icon: BookOpenIcon,
+      iconSolid: BookOpenSolidIcon,
+    },
+    {
+      id: 'bookmarks',
+      label: 'Bookmarks',
+      icon: BookmarkIcon,
+      iconSolid: BookmarkSolidIcon,
+    },
+    {
+      id: 'favorites',
+      label: 'Favorites',
+      icon: HeartIcon,
+      iconSolid: HeartSolidIcon,
+    },
+    {
+      id: 'history',
+      label: 'History',
+      icon: ClockIcon,
+      iconSolid: ClockSolidIcon,
+    },
   ];
 
-  return (
-    <div className="min-h-screen font-open-sans text-text" {...handlers}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Header Section */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-lora font-bold text-gradient mb-3 sm:mb-4 relative">
-            📚 My Library
-            <motion.div
-              className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 w-6 sm:w-8 h-6 sm:h-8 bg-accent rounded-full opacity-20"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-          </h1>
-          <motion.p
-            className="font-open-sans text-primary/80 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed px-4 sm:px-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Curate your personal collection, discover new favorites, and track your reading journey
-          </motion.p>
-        </motion.div>
+  const getCurrentBooks = () => {
+    switch (activeTab) {
+      case 'library':
+        return userLibrary;
+      case 'bookmarks':
+        return bookmarks;
+      case 'favorites':
+        return favorites;
+      case 'history':
+        return history;
+      default:
+        return [];
+    }
+  };
 
-        {/* Enhanced Navigation and Add Button */}
+  const currentBooks = getCurrentBooks();
+
+  return (
+    <div className="w-full max-w-7xl mx-auto">
+      {/* Page Header */}
+      <motion.div
+        className="mb-8 flex items-center justify-between"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--primary-600)' }}>
+            My Library
+          </h1>
+          <p className="text-sm md:text-base" style={{ color: 'var(--neutral-600)' }}>
+            Manage your personal book collection
+          </p>
+        </div>
+        <motion.button
+          onClick={() => setIsAddModalOpen(true)}
+          className="btn btn-primary flex items-center gap-2"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span className="hidden sm:inline">Add Book</span>
+        </motion.button>
+      </motion.div>
+
+      {/* Tab Navigation */}
+      <motion.nav
+        className="mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div className="flex gap-2 p-1 rounded-xl overflow-x-auto" style={{ backgroundColor: 'var(--neutral-100)' }}>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = isActive ? tab.iconSolid : tab.icon;
+
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all whitespace-nowrap`}
+                style={{
+                  backgroundColor: isActive ? 'white' : 'transparent',
+                  color: isActive ? 'var(--primary-600)' : 'var(--neutral-600)',
+                  boxShadow: isActive ? 'var(--shadow-sm)' : 'none'
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{tab.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.nav>
+
+      {/* Content Area */}
+      <AnimatePresence mode="wait">
         <motion.div
-          className="flex flex-col md:flex-row justify-between items-center mb-6 sm:mb-8 gap-3 sm:gap-4 px-4 sm:px-0"
+          key={activeTab}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
         >
-          <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} isSmallScreen={isSmallScreen} />
-
-          <motion.button
-            className="bookish-button-enhanced flex items-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
-            onClick={() => setIsAddModalOpen(true)}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 90, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5 mr-1.5 sm:mr-2" />
-            </motion.div>
-            <span className="hidden sm:inline">Add New Book</span>
-            <span className="sm:hidden">Add Book</span>
-          </motion.button>
-        </motion.div>
-
-        {/* Enhanced Content Area */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: ['library', 'bookmarks'].includes(activeTab) ? 100 : -100, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: ['library', 'bookmarks'].includes(activeTab) ? -100 : 100, scale: 0.95 }}
-            transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
-          >
-            {/* Enhanced Loading State */}
-            {isLoading && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <motion.div
-                  className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full mb-4"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-                <p className="text-lg font-medium text-primary">Loading your library...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="spinner-lg"></div>
+            </div>
+          ) : currentBooks?.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold" style={{ color: 'var(--neutral-900)' }}>
+                  {tabs.find(t => t.id === activeTab)?.label}
+                </h2>
+                <span className="text-sm px-3 py-1 rounded-full"
+                      style={{ backgroundColor: 'var(--primary-100)', color: 'var(--primary-700)' }}>
+                  {currentBooks.length} {currentBooks.length === 1 ? 'book' : 'books'}
+                </span>
               </div>
-            )}
 
-            {/* Enhanced Error State */}
-            {error && (
-              <motion.div
-                className="text-center py-20"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="text-6xl mb-4">😔</div>
-                <p className="text-xl font-semibold text-red-600 mb-2">Oops! Something went wrong</p>
-                <p className="text-primary/70">{error}</p>
-              </motion.div>
-            )}
-
-            {/* Library Tab - Mobile Full Width, Desktop Grid */}
-            {activeTab === 'library' && !isLoading && !error && (
-              <motion.div
-                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                {userLibrary?.map((entry, index) => (
-                  <motion.div
-                    key={entry.library_id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.4 }}
-                  >
-                    <BookCard
-                      book={entry}
-                      onUpdateAvailability={handleUpdateAvailability}
-                      onRemove={handleRemoveBook}
-                      onBookmark={handleBookmark}
-                      onFavorite={handleFavorite}
-                      isBookmarked={bookmarks?.some((b) => b.book_id === entry.book_id) || false}
-                      isFavorited={favorites?.some((f) => f.book_id === entry.book_id) || false}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-
-            {/* Enhanced Empty State for Library */}
-            {activeTab === 'library' && !isLoading && !error && (!userLibrary || userLibrary.length === 0) && (
-              <motion.div
-                className="text-center py-12 sm:py-20 px-4"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="text-6xl sm:text-8xl mb-4 sm:mb-6">📚</div>
-                <h3 className="text-xl sm:text-2xl font-lora font-bold text-primary mb-3 sm:mb-4">Your Library is Empty</h3>
-                <p className="text-sm sm:text-base text-primary/70 mb-6 sm:mb-8 max-w-md mx-auto">
-                  Start building your personal collection by adding your first book!
-                </p>
-                <motion.button
-                  className="bookish-button-enhanced px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-white font-semibold text-sm sm:text-base"
-                  onClick={() => setIsAddModalOpen(true)}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <PlusIcon className="w-4 sm:w-5 h-4 sm:h-5 mr-1.5 sm:mr-2 inline" />
-                  <span className="hidden sm:inline">Add Your First Book</span>
-                  <span className="sm:hidden">Add First Book</span>
-                </motion.button>
-              </motion.div>
-            )}
-
-            {/* Bookmarks Tab - Mobile Full Width, Desktop Grid */}
-            {activeTab === 'bookmarks' && !isLoading && !error && (
-              <motion.div
-                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                {bookmarks?.map((book, index) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                {currentBooks.map((book, index) => (
                   <motion.div
                     key={book.book_id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.4 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
                   >
                     <BookCard
                       book={book}
+                      onUpdateAvailability={activeTab === 'library' ? handleUpdateAvailability : null}
+                      onRemove={activeTab === 'library' ? handleRemoveBook : null}
                       onBookmark={handleBookmark}
                       onFavorite={handleFavorite}
-                      isBookmarked={true}
-                      isFavorited={favorites?.some((f) => f.book_id === book.book_id) || false}
+                      isBookmarked={activeTab === 'bookmarks'}
+                      isFavorited={activeTab === 'favorites'}
                     />
                   </motion.div>
                 ))}
-              </motion.div>
-            )}
+              </div>
 
-            {/* Enhanced Empty State for Bookmarks */}
-            {activeTab === 'bookmarks' && !isLoading && !error && (!bookmarks || bookmarks.length === 0) && (
-              <motion.div
-                className="text-center py-20"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="text-8xl mb-6">🔖</div>
-                <h3 className="text-2xl font-lora font-bold text-primary mb-4">No Bookmarks Yet</h3>
-                <p className="text-primary/70 max-w-md mx-auto">
-                  Bookmark interesting books you'd like to read or remember for later!
-                </p>
-              </motion.div>
-            )}
-
-            {/* Favorites Tab - Mobile Full Width, Desktop Grid */}
-            {activeTab === 'favorites' && !isLoading && !error && (
-              <motion.div
-                className="flex flex-col space-y-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 lg:gap-8 sm:space-y-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                {favorites?.map((book, index) => (
-                  <motion.div
-                    key={book.book_id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.4 }}
-                  >
-                    <BookCard
-                      book={book}
-                      onBookmark={handleBookmark}
-                      onFavorite={handleFavorite}
-                      isBookmarked={bookmarks?.some((b) => b.book_id === book.book_id) || false}
-                      isFavorited={true}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-
-            {/* Enhanced Empty State for Favorites */}
-            {activeTab === 'favorites' && !isLoading && !error && (!favorites || favorites.length === 0) && (
-              <motion.div
-                className="text-center py-20"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="text-8xl mb-6">❤️</div>
-                <h3 className="text-2xl font-lora font-bold text-primary mb-4">No Favorites Yet</h3>
-                <p className="text-primary/70 max-w-md mx-auto">
-                  Mark books as favorites to keep track of your most beloved reads!
-                </p>
-              </motion.div>
-            )}
-
-            {/* Enhanced History Tab */}
-            {activeTab === 'history' && !isLoading && !error && (
-              <motion.div
-                className="bookish-glass rounded-2xl p-8 border border-white/20"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                <motion.h2
-                  className="text-xl sm:text-2xl md:text-3xl font-lora font-bold text-primary mb-6 sm:mb-8 flex items-center"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                >
-                  <ClockIcon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mr-2 sm:mr-3" />
-                  Reading History
-                </motion.h2>
-
-                <div className="space-y-6">
-                  {history?.map((item, index) => {
-                    if (!item?.book) {
-                      return (
-                        <motion.div
-                          key={item?.history_id || Math.random()}
-                          className="p-3 sm:p-4 bg-white/10 rounded-xl border border-white/20"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1, duration: 0.4 }}
-                        >
-                          <p className="text-xs sm:text-sm text-primary/60 mb-2">📚 Book information unavailable</p>
-                          <p className="text-xs sm:text-sm text-primary/80">
-                            {item?.status || 'Unknown status'} on {item?.start_date ? new Date(item.start_date).toLocaleDateString() : 'Unknown date'}
-                          </p>
-                          {item?.notes && <p className="text-xs sm:text-sm italic text-primary/70 mt-2">{item.notes}</p>}
-                        </motion.div>
-                      );
-                    }
-
-                    const getStatusIcon = (status) => {
-                      switch (status?.toLowerCase()) {
-                        case 'added': return '➕';
-                        case 'swapped': return '🔄';
-                        case 'borrowed': return '📖';
-                        case 'returned': return '↩️';
-                        case 'removed': return '➖';
-                        default: return '📚';
-                      }
-                    };
-
-                    return (
-                      <motion.div
-                        key={item.history_id}
-                        className="p-4 sm:p-5 md:p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1, duration: 0.4 }}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                      >
-                        <div className="flex items-start space-x-3 sm:space-x-4">
-                          <div className="text-lg sm:text-xl md:text-2xl">{getStatusIcon(item.status)}</div>
-                          <div className="flex-1">
-                            <h3 className="font-lora font-bold text-sm sm:text-base md:text-lg text-primary mb-1">
-                              {item.book.title || 'Unknown Title'}
-                            </h3>
-                            <p className="text-xs sm:text-sm md:text-base text-primary/70 mb-2">by {item.book.author || 'Unknown Author'}</p>
-                            <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-primary/60">
-                              <span className="bg-accent/20 text-accent px-2 py-1 rounded-full font-medium">
-                                {item.status || 'Unknown status'}
-                              </span>
-                              <span>
-                                {item.start_date ? new Date(item.start_date).toLocaleDateString() : 'Unknown date'}
-                              </span>
-                            </div>
-                            {item.notes && (
-                              <p className="text-sm italic text-primary/70 mt-3 p-3 bg-white/10 rounded-lg">
-                                "{item.notes}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+              {/* Pagination */}
+              {pagination && pagination.pages > 1 && (
+                <div className="mt-8">
+                  <Pagination
+                    pagination={pagination}
+                    onPageChange={(page) => {
+                      if (activeTab === 'library') getUserLibrary({ page });
+                      else if (activeTab === 'bookmarks') getBookmarks({ page });
+                      else if (activeTab === 'favorites') getFavorites({ page });
+                      else if (activeTab === 'history') getBookHistory({ page });
+                    }}
+                  />
                 </div>
+              )}
+            </>
+          ) : (
+            <div className="card p-12 text-center">
+              {activeTab === 'library' && (
+                <>
+                  <BookOpenIcon className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--neutral-400)' }} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--neutral-700)' }}>
+                    No Books Yet
+                  </h3>
+                  <p className="text-sm mb-4" style={{ color: 'var(--neutral-500)' }}>
+                    Start building your library by adding your first book
+                  </p>
+                  <button onClick={() => setIsAddModalOpen(true)} className="btn btn-primary">
+                    <PlusIcon className="w-5 h-5 mr-2" />
+                    Add Your First Book
+                  </button>
+                </>
+              )}
+              {activeTab === 'bookmarks' && (
+                <>
+                  <BookmarkIcon className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--neutral-400)' }} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--neutral-700)' }}>
+                    No Bookmarks
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
+                    Bookmark books you're interested in to find them easily later
+                  </p>
+                </>
+              )}
+              {activeTab === 'favorites' && (
+                <>
+                  <HeartIcon className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--neutral-400)' }} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--neutral-700)' }}>
+                    No Favorites
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
+                    Mark books as favorites to keep track of your most loved reads
+                  </p>
+                </>
+              )}
+              {activeTab === 'history' && (
+                <>
+                  <ClockIcon className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--neutral-400)' }} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--neutral-700)' }}>
+                    No History
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
+                    Your book activity history will appear here
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
-                {/* Enhanced Empty State for History */}
-                {(!history || history.length === 0) && (
-                  <motion.div
-                    className="text-center py-12 sm:py-16"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <div className="text-5xl sm:text-6xl md:text-8xl mb-4 sm:mb-6">📖</div>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-lora font-bold text-primary mb-3 sm:mb-4">No History Yet</h3>
-                    <p className="text-sm sm:text-base text-primary/70 max-w-md mx-auto px-4 sm:px-0">
-                      Your reading journey will appear here as you add, swap, and interact with books!
-                    </p>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+      {/* Add Book Modal */}
+      <AddBookModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          resetBookForm();
+        }}
+        newBook={newBook}
+        setNewBook={setNewBook}
+        onAddBook={handleAddBook}
+      />
 
-        <Pagination
-          pagination={pagination?.[activeTab]}
-          onPageChange={(page) => {
-            if (activeTab === 'library') getUserLibrary(page);
-            else if (activeTab === 'bookmarks') getBookmarks(page);
-            else if (activeTab === 'favorites') getFavorites(page);
-            else if (activeTab === 'history') getBookHistory(page);
-          }}
-        />
-
-        <AddBookModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          newBook={newBook}
-          setNewBook={setNewBook}
-          onAddBook={handleAddBook}
-        />
-
-        <DuplicateBookModal
-          isOpen={isDuplicateModalOpen}
-          onClose={() => {
-            setIsDuplicateModalOpen(false);
-            setDuplicateBookInfo(null);
-          }}
-          duplicateInfo={duplicateBookInfo}
-          onViewExisting={handleViewExistingBook}
-          onAddAnyway={handleAddAnyway}
-        />
-      </div>
+      {/* Duplicate Book Modal */}
+      <DuplicateBookModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => setIsDuplicateModalOpen(false)}
+        duplicateBook={duplicateBookInfo}
+        onViewExisting={handleViewExistingBook}
+        onAddAnyway={handleAddAnyway}
+      />
     </div>
   );
 };

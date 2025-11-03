@@ -333,7 +333,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                           type="text"
                           value={postData.debate_question}
                           onChange={(e) => setPostData({ ...postData, debate_question: e.target.value })}
-                          className="w-full px-3 sm:px-4 py-2 sm:py-3 bookish-input rounded-xl font-open-sans text-sm sm:text-base mobile-form-input"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 input rounded-xl font-open-sans text-sm sm:text-base mobile-form-input"
                           placeholder="e.g., Did the protagonist make the right choice?"
                           maxLength={200}
                         />
@@ -352,7 +352,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                         type="text"
                         value={postData.title}
                         onChange={(e) => setPostData({ ...postData, title: e.target.value })}
-                        className="w-full px-3 py-2.5 bookish-input rounded-xl font-open-sans text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="What's your post about?"
                         maxLength={200}
                       />
@@ -369,7 +369,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <textarea
                         value={postData.content}
                         onChange={(e) => setPostData({ ...postData, content: e.target.value })}
-                        className="w-full px-3 py-2.5 bookish-input rounded-xl font-open-sans resize-none text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        className="w-full px-3 py-2.5 input rounded-xl font-open-sans resize-none text-sm bg-white/80 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                         placeholder="Share your thoughts, insights, or questions..."
                         rows={3}
                         maxLength={maxChars}
@@ -408,7 +408,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                           value={bookSearch}
                           onChange={(e) => handleBookSearch(e.target.value)}
                           onFocus={() => setShowBookSearch(true)}
-                          className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans pr-10"
+                          className="w-full px-4 py-3 input rounded-xl font-open-sans pr-10"
                           placeholder={
                             postData.type === 'Article'
                               ? "Search for a book to link your discussion (optional)..."
@@ -503,7 +503,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                                 ...postData,
                                 book_context: { ...postData.book_context, chapter: e.target.value }
                               })}
-                              className="w-full px-3 py-2 bookish-input rounded-lg text-sm font-open-sans"
+                              className="w-full px-3 py-2 input rounded-lg text-sm font-open-sans"
                               placeholder="e.g., Chapter 3, Part II"
                             />
                           </div>
@@ -520,7 +520,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                                 ...postData,
                                 book_context: { ...postData.book_context, page_range: e.target.value }
                               })}
-                              className="w-full px-3 py-2 bookish-input rounded-lg text-sm font-open-sans"
+                              className="w-full px-3 py-2 input rounded-lg text-sm font-open-sans"
                               placeholder="e.g., 45-52, p.123"
                             />
                           </div>
@@ -537,7 +537,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                               ...postData,
                               book_context: { ...postData.book_context, quote: e.target.value }
                             })}
-                            className="w-full px-3 py-2 bookish-input rounded-lg text-sm font-open-sans resize-none"
+                            className="w-full px-3 py-2 input rounded-lg text-sm font-open-sans resize-none"
                             placeholder="Paste a specific quote or passage you want to discuss..."
                             rows={3}
                             maxLength={500}
@@ -559,7 +559,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                         type="text"
                         value={postData.media_urls}
                         onChange={(e) => setPostData({ ...postData, media_urls: e.target.value })}
-                        className="w-full px-4 py-3 bookish-input rounded-xl font-open-sans"
+                        className="w-full px-4 py-3 input rounded-xl font-open-sans"
                         placeholder="https://example.com/image.jpg (comma-separated)"
                       />
                     </div>
@@ -673,7 +673,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <motion.button
                         type="button"
                         onClick={nextStep}
-                        className="px-4 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans text-sm min-h-[44px]"
+                        className="px-4 py-2 btn btn-primary text-white rounded-xl font-open-sans text-sm min-h-[44px]"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                       >
@@ -688,7 +688,7 @@ const PostCreationModal = ({ isOpen, onClose, onCreatePost, isLoading, initialPo
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        className="px-4 py-2 bookish-button-enhanced text-white rounded-xl font-open-sans disabled:opacity-50 text-sm min-h-[44px]"
+                        className="px-4 py-2 btn btn-primary text-white rounded-xl font-open-sans disabled:opacity-50 text-sm min-h-[44px]"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                       >

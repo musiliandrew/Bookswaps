@@ -99,7 +99,7 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
         onClick={onClose}
       >
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 w-full max-w-6xl max-h-[90vh] overflow-hidden"
+          className="card rounded-2xl border w-full max-w-6xl max-h-[90vh] overflow-hidden"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -138,14 +138,14 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                   placeholder="Search books..."
-                  className="w-full pl-10 pr-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary text-sm mobile-search-input"
+                  className="w-full pl-10 pr-4 py-2 input rounded-lg border-0 text-primary text-sm mobile-search-input"
                 />
               </div>
 
               <select
                 value={filters.genre}
                 onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
-                className="px-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary text-sm"
+                className="px-4 py-2 input rounded-lg border-0 text-primary text-sm"
               >
                 <option value="">All Genres</option>
                 <option value="Fiction">Fiction</option>
@@ -159,7 +159,7 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
               <select
                 value={filters.sort}
                 onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value }))}
-                className="px-4 py-2 bookish-input rounded-lg border-0 bg-white/10 text-primary text-sm"
+                className="px-4 py-2 input rounded-lg border-0 text-primary text-sm"
               >
                 <option value="title">Sort by Title</option>
                 <option value="author">Sort by Author</option>
@@ -191,7 +191,7 @@ const UserLibraryViewer = ({ userId, username, isOpen, onClose }) => {
                 <p className="text-red-400 mb-4">Failed to load library</p>
                 <button
                   onClick={() => loadUserBooks()}
-                  className="bookish-button-enhanced text-white px-4 py-2 rounded-lg"
+                  className="btn btn-primary text-white px-4 py-2 rounded-lg"
                 >
                   Try Again
                 </button>
@@ -284,7 +284,7 @@ const SwapRequestModal = ({ book, onClose, onSwapRequest }) => {
       onClick={onClose}
     >
       <motion.div
-        className="bookish-glass rounded-2xl border border-white/20 p-6 w-full max-w-md"
+        className="card rounded-2xl border p-6 w-full max-w-md"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
@@ -297,7 +297,7 @@ const SwapRequestModal = ({ book, onClose, onSwapRequest }) => {
         <select
           value={selectedMyBook}
           onChange={(e) => setSelectedMyBook(e.target.value)}
-          className="w-full px-4 py-3 bookish-input rounded-xl border-0 bg-white/10 text-primary mb-4"
+          className="w-full px-4 py-3 input rounded-xl border-0 text-primary mb-4"
         >
           <option value="">Select your book</option>
           {availableBooks.map((myBook) => (
@@ -317,7 +317,7 @@ const SwapRequestModal = ({ book, onClose, onSwapRequest }) => {
           <button
             onClick={() => onSwapRequest(selectedMyBook)}
             disabled={!selectedMyBook}
-            className="flex-1 bookish-button-enhanced text-white py-2 rounded-lg disabled:opacity-50"
+            className="flex-1 btn btn-primary text-white py-2 rounded-lg disabled:opacity-50"
           >
             Send Request
           </button>

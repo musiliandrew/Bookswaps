@@ -173,7 +173,7 @@ const SwapsPage = () => {
         </p>
         <motion.button
           onClick={() => getSwaps(filters, 1)}
-          className="bookish-button-enhanced px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
+          className="btn btn-primary px-6 py-3 text-white rounded-xl font-semibold shadow-lg"
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -192,7 +192,7 @@ const SwapsPage = () => {
     >
       {/* Enhanced Header */}
       <motion.div
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 p-4 sm:p-6 bookish-glass rounded-2xl border border-white/20"
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 p-4 sm:p-6 card rounded-2xl border border-white/20"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6 }}
@@ -214,7 +214,7 @@ const SwapsPage = () => {
           className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold shadow-lg transition-all duration-300 text-sm sm:text-base mobile-swap-button ${
             showCreateForm
               ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700'
-              : 'bookish-button-enhanced text-white'
+              : 'btn btn-primary text-white'
           }`}
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
@@ -261,7 +261,7 @@ const SwapsPage = () => {
             animate={{ opacity: 1, height: 'auto', y: 0 }}
             exit={{ opacity: 0, height: 0, y: -20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bookish-glass p-4 sm:p-6 lg:p-8 rounded-2xl border border-white/20"
+            className="card p-4 sm:p-6 lg:p-8 rounded-2xl border border-white/20"
           >
             <div className="flex items-center space-x-3 mb-4 sm:mb-6">
               <div className="p-2 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl">

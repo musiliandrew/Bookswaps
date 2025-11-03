@@ -6,17 +6,19 @@ const Pagination = ({ type, currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(type, currentPage - 1)}
         disabled={currentPage === 1}
-        className="bookish-button-enhanced px-4 py-2 rounded-xl text-[var(--secondary)] disabled:opacity-50"
+        className="btn btn-secondary px-4 py-2 rounded-xl disabled:opacity-50"
+        style={{ color: 'var(--neutral-600)' }}
       >
         Previous
       </button>
-      <span className="text-[var(--text)] font-['Open_Sans']">
+      <span className="font-['Open_Sans']" style={{ color: 'var(--neutral-700)' }}>
         Page {currentPage} of {totalPages}
       </span>
       <button
         onClick={() => onPageChange(type, currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="bookish-button-enhanced px-4 py-2 rounded-xl text-[var(--secondary)] disabled:opacity-50"
+        className="btn btn-secondary px-4 py-2 rounded-xl disabled:opacity-50"
+        style={{ color: 'var(--neutral-600)' }}
       >
         Next
       </button>

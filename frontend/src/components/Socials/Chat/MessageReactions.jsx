@@ -173,7 +173,7 @@ const MessageReactions = ({ messageId, reactions = [], onReactionAdd, onReaction
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                className="absolute bottom-full left-0 mb-2 z-20 bookish-glass rounded-xl border border-white/20 p-2 shadow-xl"
+                className="absolute bottom-full left-0 mb-2 z-20 card rounded-xl border border-white/20 p-2 shadow-xl"
               >
                 <div className="flex gap-1">
                   {reactionTypes.map((reaction) => {

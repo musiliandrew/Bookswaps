@@ -63,7 +63,7 @@ const CommentItem = ({
       className={`${depth > 0 ? 'ml-3 sm:ml-4 border-l-2 border-[var(--accent)]/20 pl-2 sm:pl-3' : ''}`}
     >
       {/* Note styled exactly like a post - App themed */}
-      <div className="bookish-glass rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden bookish-shadow mobile-post-card">
+      <div className="card rounded-xl border border-white/20 hover:border-white/30 transition-all duration-300 overflow-hidden shadow-elevated mobile-post-card">
         {/* Post-style header with gradient background */}
         <div className="bg-gradient-to-r from-[var(--primary)]/5 to-[var(--accent)]/5 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10">
           <div className="flex items-center justify-between">
@@ -392,7 +392,7 @@ const CommentsSection = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="mt-6 bookish-glass rounded-xl p-4 sm:p-6 border border-white/20 bookish-shadow"
+      className="mt-6 card rounded-xl p-4 sm:p-6 border border-white/20 shadow-elevated"
     >
       {/* Notes header - Mobile optimized */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">

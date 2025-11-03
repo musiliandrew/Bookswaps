@@ -93,7 +93,7 @@ const UserList = ({
         return (
           <motion.div
             key={user.user_id}
-            className="flex items-center justify-between p-2 sm:p-3 bg-[var(--background)]/50 rounded-lg bookish-glass"
+            className="flex items-center justify-between p-2 sm:p-3 rounded-lg card"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

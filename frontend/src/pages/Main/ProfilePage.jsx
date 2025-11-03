@@ -5,10 +5,9 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileSection from '../../components/Profile/ProfileSection';
 import ProfileSettings from '../../components/Profile/ProfileSettings';
-
-
 import { calculateProfileCompletion } from '../../utils/profileCompletion';
-import { UserIcon, Cog6ToothIcon, SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { UserIcon as UserSolidIcon, Cog6ToothIcon as CogSolidIcon } from '@heroicons/react/24/solid';
 import ErrorBoundary from '../../components/Common/ErrorBoundary';
 
 const ProfilePage = () => {
@@ -23,7 +22,6 @@ const ProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('my-profile');
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
-
 
   // Calculate profile completion details
   const completionDetails = useMemo(() => {
@@ -40,29 +38,27 @@ const ProfilePage = () => {
     }
   }, [searchParams]);
 
-  // Memoize the profile fetching logic
+  // Fetch profile if not loaded
   useEffect(() => {
     if (isAuthenticated && !profile && !authLoading) {
       getProfile();
     }
   }, [isAuthenticated, authLoading, getProfile, profile]);
 
-  // Handle screen resize with cleanup
+  // Handle screen resize
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Helper function to change tab and update URL (moved before usage)
+  // Change tab and update URL
   const changeTab = useCallback((tabId) => {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId });
-
-    // Removed excessive profile refresh - profile data is already managed properly
   }, [setSearchParams]);
 
-  // Memoize swipe handlers to prevent unnecessary re-renders
+  // Swipe handlers for mobile
   const handleSwipeLeft = useCallback(() => {
     if (activeTab === 'my-profile') {
       changeTab('settings');
@@ -86,64 +82,42 @@ const ProfilePage = () => {
     {
       id: 'my-profile',
       label: 'My Profile',
-      icon: <UserIcon className="w-5 h-5" />,
+      icon: UserIcon,
+      iconSolid: UserSolidIcon,
       description: 'Your reading journey'
     },
     {
       id: 'settings',
       label: 'Settings',
-      icon: <Cog6ToothIcon className="w-5 h-5" />,
+      icon: Cog6ToothIcon,
+      iconSolid: CogSolidIcon,
       description: 'Customize your experience'
     },
   ];
 
-  // Memoize retry handler
+  // Retry handler
   const handleRetry = useCallback(() => {
     getProfile();
   }, [getProfile]);
 
-  // Profile completion handlers
-  const handleShowCompletionGuide = useCallback(() => {
-    // Navigate to settings tab instead of showing modal
-    changeTab('settings');
-  }, [changeTab]);
-
-  // Enhanced Loading state
+  // Loading state
   if (authLoading || !profile) {
     return (
-      <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden">
-        {/* Flying Books Background */}
-        <div className="floating-elements fixed inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
-          <div className="absolute bottom-40 left-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
-
-          {/* Flying Books */}
-          <div className="absolute top-1/4 left-1/4 text-6xl opacity-20 animate-bounce" style={{ animationDelay: '0s' }}>📚</div>
-          <div className="absolute top-1/3 right-1/3 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '1s' }}>📖</div>
-          <div className="absolute bottom-1/3 left-1/2 text-5xl opacity-10 animate-bounce" style={{ animationDelay: '2s' }}>📕</div>
-          <div className="absolute top-1/2 right-1/4 text-3xl opacity-20 animate-bounce" style={{ animationDelay: '3s' }}>📘</div>
-          <div className="absolute bottom-1/4 right-1/2 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
-        </div>
-
-        <div className="flex flex-col justify-center items-center h-screen relative z-10">
-          <motion.div
-            className="flex flex-col items-center space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <motion.div
-              className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
-            <div className="text-center">
-              <h2 className="text-2xl font-lora font-bold text-primary mb-2">Loading Your Profile</h2>
-              <p className="text-primary/70">Preparing your reading journey...</p>
-            </div>
-          </motion.div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--neutral-50)' }}>
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="spinner-lg mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--primary-600)' }}>
+            Loading Your Profile
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--neutral-600)' }}>
+            Preparing your reading journey...
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -151,16 +125,22 @@ const ProfilePage = () => {
   // Error state
   if (authError) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-bookish-gradient text-center p-4">
-        <div className="max-w-md">
-          <p className="mb-6 text-[var(--text)] text-lg">
-            {authError || 'Failed to load profile data.'}
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--neutral-50)' }}>
+        <div className="card max-w-md w-full text-center p-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+               style={{ backgroundColor: 'var(--danger-100)' }}>
+            <svg className="w-8 h-8" style={{ color: 'var(--danger-600)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--neutral-900)' }}>
+            Failed to Load Profile
+          </h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--neutral-600)' }}>
+            {authError || 'Unable to retrieve your profile data.'}
           </p>
-          <button
-            onClick={handleRetry}
-            className="bookish-button-enhanced px-6 py-3 rounded-xl text-[var(--secondary)] font-medium hover:scale-105 transition-transform duration-200"
-          >
-            Retry
+          <button onClick={handleRetry} className="btn btn-primary btn-lg">
+            Try Again
           </button>
         </div>
       </div>
@@ -169,105 +149,84 @@ const ProfilePage = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bookish-gradient font-open-sans text-text relative overflow-hidden" {...handlers}>
-        {/* Flying Books Background */}
-        <div className="floating-elements fixed inset-0 pointer-events-none">
-          <div className="absolute top-20 right-10 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute top-40 left-20 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-lg animate-pulse delay-1000"></div>
-          <div className="absolute bottom-40 right-20 w-40 h-40 bg-gradient-to-br from-accent/5 to-primary/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
+      <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--neutral-50)' }} {...handlers}>
+        {/* Bottom Navigation - Mobile & Desktop */}
+        <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg z-50">
+          <div className="card p-2 flex gap-2" style={{
+            boxShadow: 'var(--shadow-xl)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = isActive ? tab.iconSolid : tab.icon;
 
-          {/* Flying Books */}
-          <div className="absolute top-1/4 left-1/4 text-6xl opacity-20 animate-bounce" style={{ animationDelay: '0s' }}>📚</div>
-          <div className="absolute top-1/3 right-1/3 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '1s' }}>📖</div>
-          <div className="absolute bottom-1/3 left-1/2 text-5xl opacity-10 animate-bounce" style={{ animationDelay: '2s' }}>📕</div>
-          <div className="absolute top-1/2 right-1/4 text-3xl opacity-20 animate-bounce" style={{ animationDelay: '3s' }}>📘</div>
-          <div className="absolute bottom-1/4 right-1/2 text-4xl opacity-15 animate-bounce" style={{ animationDelay: '4s' }}>📗</div>
-        </div>
-
-        {/* Floating Bottom Navigation */}
-        <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[95%] max-w-lg bookish-glass rounded-2xl p-3 flex justify-around items-center z-50 bookish-shadow border border-white/20">
-          {tabs.map((tab) => (
-            <motion.button
-              key={tab.id}
-              onClick={() => changeTab(tab.id)}
-              className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300`}
-              style={{
-                color: activeTab === tab.id ? 'white' : 'var(--primary)',
-                background: activeTab === tab.id
-                  ? 'linear-gradient(135deg, var(--primary), var(--accent))'
-                  : 'transparent',
-                boxShadow: activeTab === tab.id ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
-                opacity: activeTab === tab.id ? 1 : 0.7
-              }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className={`transition-all duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`}>
-                {tab.icon}
-              </div>
-              {!isSmallScreen && (
-                <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
-                  activeTab === tab.id ? 'text-white' : 'text-primary/70'
-                }`}>
-                  {tab.label}
-                </span>
-              )}
-              {activeTab === tab.id && (
-                <motion.div
-                  className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => changeTab(tab.id)}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg transition-all ${
+                    isActive ? '' : 'hover:bg-neutral-100'
+                  }`}
+                  style={{
+                    backgroundColor: isActive ? 'var(--primary-500)' : 'transparent',
+                    color: isActive ? 'white' : 'var(--neutral-600)'
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <SparklesIcon className="w-2 h-2 text-white m-0.5" />
-                </motion.div>
-              )}
-            </motion.button>
-          ))}
+                  <Icon className={isSmallScreen ? 'w-6 h-6' : 'w-5 h-5'} />
+                  {!isSmallScreen && (
+                    <span className="text-xs font-medium">
+                      {tab.label}
+                    </span>
+                  )}
+                  {isActive && (
+                    <motion.div
+                      className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                      style={{ backgroundColor: 'var(--accent-400)' }}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500 }}
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
         </nav>
 
         {/* Main Content */}
-        <div className="pt-20 pb-32">
-          <div className={`max-w-4xl mx-auto ${isSmallScreen ? 'px-3' : 'px-4'}`}>
-
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{
-                  opacity: 0,
-                  x: activeTab === 'my-profile' ? 100 : -100,
-                  scale: 0.95
-                }}
-                animate={{
-                  opacity: 1,
-                  x: 0,
-                  scale: 1
-                }}
-                exit={{
-                  opacity: 0,
-                  x: activeTab === 'my-profile' ? -100 : 100,
-                  scale: 0.95
-                }}
-                transition={{
-                  duration: 0.4,
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30
-                }}
-                className="w-full"
-              >
-                {activeTab === 'my-profile' ? (
-                  <ProfileSection />
-                ) : (
-                  <ProfileSettings />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+        <div className="container py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{
+                opacity: 0,
+                x: activeTab === 'my-profile' ? -20 : 20,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              exit={{
+                opacity: 0,
+                x: activeTab === 'my-profile' ? 20 : -20,
+              }}
+              transition={{
+                duration: 0.3,
+                ease: "easeInOut"
+              }}
+              className="w-full"
+            >
+              {activeTab === 'my-profile' ? (
+                <ProfileSection />
+              ) : (
+                <ProfileSettings />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-
-
       </div>
     </ErrorBoundary>
   );

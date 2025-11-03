@@ -227,7 +227,7 @@ const EnhancedMediaUpload = ({
         onClick={handleClose}
       >
         <motion.div
-          className="bookish-glass rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          className="card rounded-2xl border border-white/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -381,7 +381,7 @@ const EnhancedMediaUpload = ({
             <button
               onClick={handleUpload}
               disabled={files.length === 0 || isLoading}
-              className="flex-1 bookish-button-enhanced text-white py-3 rounded-xl disabled:opacity-50"
+              className="flex-1 btn btn-primary text-white py-3 rounded-xl disabled:opacity-50"
             >
               {isLoading ? 'Uploading...' : `Upload ${files.length} file(s)`}
             </button>

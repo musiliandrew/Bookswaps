@@ -22,7 +22,7 @@ const NavigationTabs = ({ activeTab, setActiveTab }) => {
     <div className="mb-8">
       <div className="relative">
         {/* Enhanced Tab Container */}
-        <div className="flex gap-1 p-2 bookish-glass rounded-2xl border border-white/20 backdrop-blur-xl">
+        <div className="flex gap-1 p-2 card rounded-2xl border border-white/20 backdrop-blur-xl">
           {tabs.map((tab, index) => (
             <motion.button
               key={tab.id}

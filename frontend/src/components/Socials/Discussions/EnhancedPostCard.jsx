@@ -126,7 +126,7 @@ const EnhancedPostCard = ({
       className={`${
         isEmbedded
           ? 'bg-white/30 rounded-xl border border-white/10 hover:border-white/20'
-          : 'bookish-glass rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 bookish-shadow'
+          : 'card rounded-xl sm:rounded-2xl border border-white/20 hover:border-white/30 shadow-elevated'
       } transition-all duration-300 overflow-hidden group relative mobile-post-card ${!isEmbedded ? 'cursor-pointer' : ''}
       mx-2 sm:mx-0 max-w-sm sm:max-w-none`}
       initial={{ opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ const EnhancedPostCard = ({
       {/* Enhanced Hover Tooltip for Book References */}
       {post.book && (
         <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
-          <div className="bg-white/95 backdrop-blur-md border border-white/30 rounded-xl shadow-xl p-5 min-w-72 bookish-glass">
+          <div className="bg-white/95 backdrop-blur-md border border-white/30 rounded-xl shadow-xl p-5 min-w-72 card">
             <div className="space-y-3">
               {/* Book Title with Link */}
               <div className="border-b border-white/20 pb-3">
@@ -311,7 +311,7 @@ const EnhancedPostCard = ({
                   e.stopPropagation();
                   setShowSpoiler(true);
                 }}
-                className="px-6 py-2 bookish-button-enhanced text-white rounded-lg font-open-sans"
+                className="px-6 py-2 btn btn-primary text-white rounded-lg font-open-sans"
               >
                 Show Content Anyway
               </button>

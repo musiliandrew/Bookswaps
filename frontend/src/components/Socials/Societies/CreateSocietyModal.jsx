@@ -281,7 +281,7 @@ const CreateSocietyModal = ({ isOpen, onClose, onSuccess }) => {
                 <button
                   type="submit"
                   disabled={isLoading || !formData.name.trim() || !formData.description.trim()}
-                  className="flex-1 bookish-button-enhanced text-white py-2.5 rounded-xl disabled:opacity-50 text-sm min-h-[44px]"
+                  className="flex-1 btn btn-primary text-white py-2.5 rounded-xl disabled:opacity-50 text-sm min-h-[44px]"
                 >
                   {isLoading ? 'Creating...' : 'Create Society'}
                 </button>

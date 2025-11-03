@@ -1,184 +1,313 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import LoginForm from '../../components/Auth/LoginForm';
-import AuthLink from '../../components/Auth/AuthLink';
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  ArrowRightIcon,
+  BookOpenIcon
+} from '@heroicons/react/24/outline';
 import GoogleAuthButton from '../../components/Auth/GoogleAuthButton';
+import appLogo from '../../assets/icons/AppLogo.svg';
 
 const LoginPage = () => {
-  const { login, error: authError, isLoading: authLoading } = useAuth();
+  const { login, error: authError, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (loginCredentials) => {
-    const success = await login(loginCredentials);
-    if (success) {
-      navigate('/library', { replace: true });
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials({ ...credentials, [name]: value });
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: '' });
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!credentials.username) errors.username = 'Username is required';
+    if (!credentials.password) errors.password = 'Password is required';
+    if (credentials.password && credentials.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      const success = await login(credentials);
+      if (success) {
+        navigate('/profile/me', { replace: true });
+      }
     }
   };
 
   const handleGoogleAuth = () => {
-    // Handle Google OAuth success - navigate to main app
-    navigate('/library', { replace: true });
+    navigate('/profile/me', { replace: true });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bookish-gradient py-4 px-2 sm:px-4 lg:px-8 relative overflow-hidden">
-      <div className="absolute inset-0 floating-elements" />
-      <motion.div
-        className="absolute top-10 left-10 text-[var(--primary)] opacity-20 hidden sm:block"
-        animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+      {/* Left Side - Branding (Hidden on mobile) */}
+      <div
+        className="hidden md:flex md:w-1/2 lg:w-3/5 flex-col justify-center items-center p-12 relative overflow-hidden"
+        style={{ backgroundColor: 'var(--primary-500)' }}
       >
-        <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1z"/>
-        </svg>
-      </motion.div>
-      <motion.div
-        className="absolute bottom-10 right-10 text-[var(--accent)] opacity-20 hidden sm:block"
-        animate={{ y: [0, 15, 0], rotate: [0, -3, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      >
-        <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-        </svg>
-      </motion.div>
-      <motion.div
-        className="w-full max-w-sm bookish-glass bookish-shadow rounded-xl p-4 sm:p-6 relative z-10"
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-      >
-        <motion.div
-          className="text-center mb-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+        <div className="relative z-10 max-w-lg">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-3 mb-8">
+              <img src={appLogo} alt="BookSwaps" className="w-12 h-12" />
+              <h1
+                className="text-3xl font-bold"
+                style={{ color: 'var(--text-inverse)' }}
+              >
+                BookSwaps
+              </h1>
+            </div>
+
+            <h2
+              className="text-4xl lg:text-5xl font-bold mb-6"
+              style={{ color: 'var(--text-inverse)' }}
+            >
+              Welcome Back to Your Literary Community
+            </h2>
+
+            <p
+              className="text-lg mb-8"
+              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+            >
+              Connect with fellow readers, swap your favorite books, and discover your next great read.
+            </p>
+
+            {/* Features */}
+            <div className="space-y-4">
+              {[
+                'Access your personal library',
+                'Join vibrant book discussions',
+                'Swap books with readers nearby',
+                'Track your reading progress'
+              ].map((feature, index) => (
+                <motion.div
+                  key={index}
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" style={{ color: 'var(--text-inverse)' }}>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span style={{ color: 'var(--text-inverse)' }}>{feature}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Decorative Elements */}
+        <div
+          className="absolute top-20 right-20 opacity-10"
+          style={{ color: 'var(--text-inverse)' }}
         >
-          <div className="flex flex-row items-center justify-center mb-2">
-            <motion.img
-              src="/book.svg"
-              alt="BookSwaps Logo"
-              className="w-8 h-8 sm:w-7 sm:h-7 mr-2"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-            />
-            <motion.h2
-              className="text-2xl sm:text-2xl font-bold font-['Lora'] app-name"
-              style={{ color: '#456A76' }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5 }}
+          <BookOpenIcon className="w-64 h-64" />
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
+        <motion.div
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Mobile Logo */}
+          <div className="md:hidden flex items-center gap-3 mb-8">
+            <img src={appLogo} alt="BookSwaps" className="w-10 h-10" />
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: 'var(--primary-700)' }}
             >
               BookSwaps
-            </motion.h2>
+            </h1>
           </div>
-          <motion.h1
-            className="text-xl font-bold font-['Lora'] text-gradient mb-1"
-            animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            Welcome Back
-          </motion.h1>
-          <motion.p
-            className="text-[var(--text)] font-['Open_Sans'] text-xs"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            Sign in to continue your literary journey
-          </motion.p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <LoginForm onSubmit={handleLogin} error={authError} isLoading={authLoading} compact />
-        </motion.div>
 
-        {/* Google OAuth Section */}
-        <motion.div
-          className="mt-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+          {/* Form Card */}
+          <div className="card p-8">
+            <div className="mb-8">
+              <h2
+                className="text-3xl font-bold mb-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Sign In
+              </h2>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Welcome back! Please enter your details.
+              </p>
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Username/Email Input */}
+              <div className="form-group">
+                <label className="label" htmlFor="username">
+                  Username or Email
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={credentials.username}
+                  onChange={handleChange}
+                  className={`input ${fieldErrors.username ? 'input-error' : ''}`}
+                  placeholder="Enter your username or email"
+                  autoComplete="username"
+                  required
+                />
+                {fieldErrors.username && (
+                  <p className="error-text">{fieldErrors.username}</p>
+                )}
+              </div>
+
+              {/* Password Input */}
+              <div className="form-group">
+                <label className="label" htmlFor="password">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={credentials.password}
+                    onChange={handleChange}
+                    className={`input ${fieldErrors.password ? 'input-error' : ''}`}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+                {fieldErrors.password && (
+                  <p className="error-text">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="checkbox" />
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Remember me
+                  </span>
+                </label>
+                <Link
+                  to="/password-reset"
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--primary-600)' }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Error Message */}
+              {authError && (
+                <div
+                  className="p-3 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: 'var(--error-50)',
+                    color: 'var(--error-600)',
+                    border: '1px solid var(--error-200)'
+                  }}
+                >
+                  {authError}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading || !credentials.username || !credentials.password}
+                className="btn btn-primary btn-lg btn-block"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="spinner" style={{ borderTopColor: 'var(--text-inverse)' }} />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRightIcon className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full" style={{ borderTop: '1px solid var(--border-medium)' }} />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span
+                  className="px-2"
+                  style={{
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-tertiary)'
+                  }}
+                >
+                  Or continue with
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="mt-2">
+
+            {/* Google OAuth */}
             <GoogleAuthButton
               onSuccess={handleGoogleAuth}
               text="Sign in with Google"
-              small
             />
-          </div>
-        </motion.div>
 
-        <motion.div
-          className="mt-4 text-center space-y-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <div>
-            <AuthLink to="/register" text="Don't have an account? Join BookSwap" />
-          </div>
-          <div>
-            <AuthLink to="/password-reset" text="Forgot your password?" />
+            {/* Sign Up Link */}
+            <p className="mt-6 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="font-medium"
+                style={{ color: 'var(--primary-600)' }}
+              >
+                Sign up for free
+              </Link>
+            </p>
           </div>
         </motion.div>
-      </motion.div>
-      {/* Responsive styles */}
-      <style>
-        {`
-          @media (max-width: 640px) {
-            .bookish-glass, .bookish-shadow {
-              border-radius: 0.75rem !important;
-            }
-            .bookish-glass {
-              padding: 1rem !important;
-            }
-            /* Keep app name prominent on mobile */
-            .app-name {
-              font-size: 1.5rem !important;
-            }
-            /* Make other text smaller but not the app name */
-            .text-2xl:not(.app-name), .text-3xl:not(.app-name) {
-              font-size: 1.25rem !important;
-            }
-            .text-xl {
-              font-size: 1rem !important;
-            }
-            .text-gradient {
-              font-size: 1rem !important;
-            }
-            .max-w-sm {
-              max-width: 95vw !important;
-            }
-            .p-4, .p-6 {
-              padding: 0.75rem !important;
-            }
-            .mb-4, .mb-8 {
-              margin-bottom: 0.75rem !important;
-            }
-            .mt-4, .mt-6, .mt-8 {
-              margin-top: 0.75rem !important;
-            }
-            .space-y-6 {
-              --tw-space-y-reverse: 0;
-              margin-top: 0 !important;
-              margin-bottom: 0 !important;
-            }
-          }
-        `}
-      </style>
+      </div>
     </div>
   );
 };
